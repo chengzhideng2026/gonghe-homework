@@ -1,14 +1,16 @@
 from __future__ import annotations
 import copy
 import os, sys, json, uuid
+from pathlib import Path
 from datetime import date
 from decimal import Decimal, InvalidOperation
-from urllib.parse import urlencode
+from urllib.parse import urlencode, quote
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 
-def load_local_env(path=".env"):
+def load_local_env(path=None):
     """Small dotenv loader so the CLI has no third-party runtime dependency."""
+    path = path or Path(__file__).with_name(".env")
     if not os.path.exists(path):
         return
     with open(path, encoding="utf-8") as stream:
@@ -82,13 +84,13 @@ class ERPNextClient:
             params["filters"] = json.dumps(filters)
         if order_by:
             params["order_by"] = order_by
-        return self._req("GET", f"/api/resource/{doctype}", params=params)
+        return self._req("GET", f"/api/resource/{quote(doctype, safe='')}", params=params)
 
     def get(self, doctype, name):
-        return self._req("GET", f"/api/resource/{doctype}/{name}")
+        return self._req("GET", f"/api/resource/{quote(doctype, safe='')}/{quote(name, safe='')}")
 
     def create(self, doctype, doc):
-        return self._req("POST", f"/api/resource/{doctype}", json=doc)
+        return self._req("POST", f"/api/resource/{quote(doctype, safe='')}", json=doc)
 
 def overdue(invoices, ref=REFERENCE_DATE):
     """Compute overdue independently of ERPNext status/system clock."""
@@ -112,7 +114,7 @@ class Agent:
             qty_d, rate_d = Decimal(str(qty)), Decimal(str(rate))
         except InvalidOperation as exc:
             raise ValueError("qty and rate must be numbers") from exc
-        if qty_d <= 0 or rate_d < 0:
+        if not qty_d.is_finite() or not rate_d.is_finite() or qty_d <= 0 or rate_d < 0:
             raise ValueError("qty must be positive and rate must be non-negative")
         try:
             tx_date = date.fromisoformat(transaction_date)
@@ -161,8 +163,14 @@ class Agent:
             raise ERPError(f"Purchase Order create failed or timed out; it may have succeeded. Do not retry blindly: {exc}") from exc
         name = created.get("name") if isinstance(created, dict) else created
         if not name:
+            proposal["state"] = "failed"
             raise ERPError("ERPNext created a document without a name")
-        verified = self.c.get("Purchase Order", name)
+        proposal["created_name"] = name
+        try:
+            verified = self.c.get("Purchase Order", name)
+        except Exception as exc:
+            proposal["state"] = "failed"
+            raise ERPError(f"Purchase Order {name} was created, but read-back failed. Do not create again; inspect this document: {exc}") from exc
         del self.proposals[proposal_id]
         return {"name": name, "status": (verified or {}).get("status"), "verified": verified}
 
@@ -227,15 +235,20 @@ def main():
     import argparse
     parser = argparse.ArgumentParser(description="Plantcore ERPNext Agent")
     parser.add_argument("--demo", action="store_true", help="verify local CLI without ERP/LLM")
+    parser.add_argument("--check", action="store_true", help="check live ERPNext connectivity and model configuration without calling the LLM")
     args = parser.parse_args()
     agent = Agent(ERPNextClient())
     if args.demo:
         print("Demo mode: generic tools and confirmation state machine loaded.")
         return
     runner = LLMRunner(agent)
+    if args.check:
+        print(json.dumps({"erpnext_url": agent.c.base, "item_count": agent.c.count("Item"),
+                          "reference_date": REFERENCE_DATE, "llm_configured": runner.available()}, indent=2))
+        return
     if not runner.available():
         print("Missing LLM_API_KEY or LLM_MODEL. Copy .env.example to .env and fill them before live chat.")
-        return
+        raise SystemExit(2)
     print("Plantcore ERP Agent. Type /confirm <proposal-id> to execute a displayed PO, /quit to exit.")
     history = []
     while True:
@@ -248,7 +261,11 @@ def main():
         if question.startswith("/confirm "):
             proposal_id = question.split(maxsplit=1)[1]
             try:
-                print(json.dumps(agent.confirm(proposal_id), ensure_ascii=False, indent=2, default=str))
+                result = agent.confirm(proposal_id)
+                print(json.dumps(result, ensure_ascii=False, indent=2, default=str))
+                # Keep later answers grounded in the user's actual confirmed action.
+                history.append({"role": "user", "content": question})
+                history.append({"role": "assistant", "content": "Confirmed creation and read-back: " + json.dumps(result, ensure_ascii=False, default=str)})
             except Exception as exc:
                 print(f"ERROR: {exc}")
             continue
