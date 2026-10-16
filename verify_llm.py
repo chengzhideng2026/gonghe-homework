@@ -50,7 +50,7 @@ def main():
             print(answer, flush=True)
         except Exception as exc:
             errors += 1
-            result = {'question': question, 'error': str(exc), 'history': history}
+            result = {'question': question, 'error': str(exc), 'history': runner.last_trace}
             print('ERROR:', exc, flush=True)
         report['results'].append(result)
         result['elapsed_seconds'] = round(time.monotonic() - started, 2)

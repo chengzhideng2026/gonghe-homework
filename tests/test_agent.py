@@ -18,6 +18,8 @@ class FakeERP:
             return self.items
         if doctype == "Supplier":
             return self.suppliers
+        if doctype == "Company":
+            return [{"name": "Test Company", "default_currency": "USD"}]
         return []
 
     def create(self, doctype, doc):

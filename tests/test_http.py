@@ -55,6 +55,7 @@ class TestWriteRecovery(unittest.TestCase):
             return 'Please confirm.', history
         output = io.StringIO()
         with patch.object(app, 'ERPNextClient', return_value=erp), \
+             patch.object(app, 'ProposalStore', return_value=None), \
              patch.object(app.LLMRunner, 'available', return_value=True), \
              patch.object(app.LLMRunner, 'ask', ask), \
              patch('sys.argv', ['agent.py']), \
