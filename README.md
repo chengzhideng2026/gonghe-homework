@@ -41,7 +41,7 @@ python verify_llm.py
 - `verify_llm.py` 需要本机模型密钥，会产生模型 API 调用费用；逐条运行原题问答并保存工具轨迹到 `evidence/llm_acceptance.json`。答案正确性需与原题人工核对，脚本不把“有回复”标记为“答对”。它不会确认写入。
 - `python verify_live.py --create-test-po` 明确启用本地测试草稿创建，100 Meter × $29，总额 $2,900。只用于本题 seed 环境。创建前保存尝试记录，成功后记录单号；已有 `evidence/test_po_receipt.json` 时拒绝再次创建。异常后先查询核对，避免重复写入。
 
-完整当前验收状态见 `HANDOFF.md`。测试采购草稿会保留在数据库中，开放已提交订单的 seed 数据不受影响。不要为日常重启使用会删除数据库卷的命令。
+本机已使用百炼 `qwen3.8-max` 进行真实模型联调。北京地域兼容地址为 `https://dashscope.aliyuncs.com/compatible-mode/v1`；本机思考模式开启、thinking_budget=4096、超时180秒、工具循环最多16轮。密钥仅在被 Git 忽略的 `.env`。完整当前验收状态见 `HANDOFF.md`。测试采购草稿会保留在数据库中，开放已提交订单的 seed 数据不受影响。不要为日常重启使用会删除数据库卷的命令。
 
 ## 工具与扩展
 

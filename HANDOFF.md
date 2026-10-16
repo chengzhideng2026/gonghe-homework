@@ -9,7 +9,7 @@
 - 原始 ERPNext `compose.yml`、DATASET、备份和原始题目未修改。
 - `docker compose up -d` 已完成；restore-site 退出码 0，日志出现 **Restore complete.**。
 - 服务正在运行，页面 http://localhost:8080 已在 Chrome 打开；本地登录 Administrator / admin。
-- `.env` 已由样例创建，包含本地 ERP 连接参数，**LLM_API_KEY 与 LLM_MODEL 仍空白**。不把真实密钥发到聊天或提交 Git。
+- `.env` 已由样例创建，包含本地 ERP 连接参数，**已配置百炼 qwen3.8-max，思考模式开启**。不把真实密钥发到聊天或提交 Git。
 
 ## 本轮真实验收
 
@@ -22,12 +22,12 @@
 | 工单 MFG-WO-2026-00020 | 电机需30有20、泵需30有20、铜线需60有50 | 同上 |
 | 1HP/R32 毛利基础 | BOM成本 $575.20、标准售价 $600，可计算毛利 $24.80 / 4.13% | 同上（基础值检查） |
 | 逾期应收 | 按 2025-10-15，4 张合计 $25,380，排除未到期单据 | 同上 |
-| 无数据与歧义 | laptop 无物料、Employee=0、两张开放工单候选 | 同上（工具结果；模型行为待验） |
+| 无数据与歧义 | laptop 无物料、Employee=0、两张开放工单候选 | 同上（工具结果；模型行为已实测） |
 | 元数据 | 真实主表及子表 schema，去除界面脚本 | verify_live.py 与真实API |
 | 采购预览 | $2,900，固定日期、预览不写库 | evidence/live_read.json |
 | 采购创建及回读 | 已创建且回读，重复确认被拒绝 | evidence/live_write.json、test_po_receipt.json |
-| 单元回归 | 11/11，通过 HTTP 传输、确认、异常恢复等检查 | tests/ |
-| 真实模型问答 | **未执行：缺少模型配置**，不能将 REST 检查当作模型 E2E | verify_llm.py 已准备 |
+| 单元回归 | 14/14，通过 HTTP 传输、确认、异常恢复等检查 | tests/ |
+| 真实模型问答 | 百炼 qwen3.8-max 思考模式，10个样例已真实执行，最终主要求逐题核对 | evidence/llm_acceptance.json、LLM_REVIEW.md |
 
 ## 数据库变化（必须知悉）
 
@@ -50,14 +50,24 @@
 6. 元数据由约513KB精简至约29KB，保留7个采购主子表数据结构，去除界面脚本和布局。
 7. 新增 Windows 启动脚本、只读/显式写入验收和模型问答轨迹脚本；保留原 Git 历史。
 
-## 你回来后继续
+## 你回来后使用
 
-1. 在本机 `.env` 填写实际服务商的 LLM_API_KEY、LLM_MODEL、LLM_BASE_URL（需支持 Chat Completions 的工具调用）。
-2. `python agent.py --check` 确认 item_count=18 且 llm_configured=true。
-3. `python agent.py` 交互问答，或 `python verify_llm.py` 保存全部样例问答和工具轨迹（会调用收费API）。
-4. 人工逐条核对 `evidence/llm_acceptance.json` 的答案、日期、无数据和澄清行为。该脚本不确认采购，不会再创建订单。
-5. 模型验收后将工程推送到自己的新 GitHub 仓库，发送链接完成提交。当前没有配置 Git remote，也没有上传或代发给招聘方。
+1. `.env` 已配置，无需再次填写密钥。执行 `python agent.py --check` 可检查 ERP 与配置。
+2. 执行 `python agent.py` 开始交互，中文和英文均已实测。`/quit` 退出。
+3. `python verify_llm.py` 可重新保存十个原题问答和工具轨迹；不确认采购，因此不会增加单据。
+4. 最终模型样例检查见 LLM_REVIEW.md。诊断阶段的 initial/probe 文件保留用于说明修复过程，验收以最终结果为准。
+5. 后续尚需选择 GitHub 仓库并上传，再将链接提交招聘方。当前没有上传或代发。
 
 ## 能力边界
 
-真实 REST、预览和本地草稿写入已通过；真实 LLM 工具选择、多轮回答及未知问题正确性仍待验证。proposal 状态仅在进程内，不提供持久化跨会话幂等；不支持取消工单。不要把本地 seed 凭据用于生产环境。
+真实 REST、真实 LLM 十个样例、中文多轮、预览以及本地草稿写入均已实测。样例通过不代表未知问题全部正确，仍需独立留出题和人工复核。proposal 状态仅在进程内，不提供持久化跨会话幂等；不支持取消工单。不要把本地 seed 凭据用于生产环境。
+
+## API 联调补充
+
+- 百炼北京地域兼容接口已实际连通，模型 qwen3.8-max，enable_thinking=true，thinking_budget=4096。
+- 工具循环由8轮增至可配置16轮，请求超时可配置180秒；完整批次初跑每题2–5轮、工具错误0；含专项复测的最终结果每题2–8轮，有1次字段错误后自行恢复。
+- 修复单条过滤条件扁平数组导致 ERPNext 误报 DocType i 不存在的问题；过滤结构规范化并增加回归测试。
+- 修复 Windows GBK 控制台打印模型 Unicode 符号报错；CLI 和模型验收脚本统一 UTF-8。
+- 对无答案/无工具和截断输出显式报错，保留真实工具消息与模型上下文。
+- 当前未观察到 Docker 防火墙弹窗；本地ERP和百炼调用已正常，不需要修改防火墙。
+- 本轮模型测试只预览采购，没有新增/提交/取消采购或工单；采购总数仍28。
