@@ -31,6 +31,26 @@ class TestLLMProtocol(unittest.TestCase):
         result = requests[1]['messages'][3]
         self.assertEqual(result['tool_call_id'], 'call_1')
         self.assertEqual(json.loads(result['content']), {'ok': True, 'data': 18})
+        self.assertEqual(runner.receipts()[0]['summary'], 18)
+
+    def test_receipts_exclude_prior_turns_and_clear_on_clarification(self):
+        runner = self.runner()
+        old = [{'role': 'system', 'content': 'test'},
+               {'role': 'assistant', 'tool_calls': [{'id': 'old', 'function':
+                    {'name': 'count_documents', 'arguments': '{"doctype":"Item"}'}}]},
+               {'role': 'tool', 'tool_call_id': 'old', 'content': '{"ok":true,"data":18}'},
+               {'role': 'assistant', 'content': '18 Items'}]
+        response = {'choices': [{'message': {'role': 'assistant', 'content': 'Which item?'}, 'finish_reason': 'stop'}]}
+        with patch('agent.urlopen', return_value=io.BytesIO(json.dumps(response).encode())):
+            runner.ask('Buy some material', old)
+        self.assertEqual(runner.receipts(), [])
+
+    def test_list_always_returns_source_identifier_with_requested_fields(self):
+        runner = self.runner()
+        runner.agent.c.list.return_value = [{'name': 'I1', 'stock_uom': 'Nos'}]
+        result = runner._tool('list_documents', {'doctype': 'Item', 'fields': ['stock_uom', 'name']})
+        self.assertEqual(runner.agent.c.list.call_args.args[1], ['name', 'stock_uom'])
+        self.assertEqual(result['records'][0]['name'], 'I1')
 
     def test_truncated_or_empty_response_is_not_reported_as_success(self):
         for reason, message in [('length', {'content': 'partial'}), ('stop', {'content': ''})]:
