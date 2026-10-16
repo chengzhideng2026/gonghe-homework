@@ -63,7 +63,11 @@ def run(create_test_po=False):
     check('Ambiguous cancellation candidates', sorted(o['name'] for o in work_orders),
           ['MFG-WO-2026-00019', 'MFG-WO-2026-00020'])
     meta = client.meta('Purchase Order')
-    check('Generic metadata discovery', bool(meta), True)
+    schemas = {doc['name']: doc for doc in meta.get('docs', [])}
+    check('Generic metadata discovery',
+          'Purchase Order' in schemas and 'Purchase Order Item' in schemas and
+          any(f.get('fieldname') == 'items' and f.get('options') == 'Purchase Order Item'
+              for f in schemas['Purchase Order']['fields']), True)
     agent = Agent(client)
     before = client.count('Purchase Order')
     preview = agent.proposal_po('Tongling Magnet Wire Co.', 'RM-COIL-CU-2.0', 100, 'Meter', 29)

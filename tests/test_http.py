@@ -2,9 +2,13 @@
 import json
 import threading
 import unittest
+import io
+from contextlib import redirect_stdout
+from unittest.mock import patch
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from agent import ERPNextClient, Agent, ERPError
 from test_agent import FakeERP
+import agent as app
 
 
 class TestHTTPTransport(unittest.TestCase):
@@ -33,6 +37,25 @@ class TestHTTPTransport(unittest.TestCase):
 
 
 class TestWriteRecovery(unittest.TestCase):
+    def test_cli_displays_exact_preview_even_when_model_omits_payload(self):
+        erp = FakeERP()
+        def ask(runner, question, history):
+            runner.agent.proposal_po('Tongling Magnet Wire Co.', 'RM-COIL-CU-2.0', 100, 'Meter', 29)
+            return 'Please confirm.', history
+        output = io.StringIO()
+        with patch.object(app, 'ERPNextClient', return_value=erp), \
+             patch.object(app.LLMRunner, 'available', return_value=True), \
+             patch.object(app.LLMRunner, 'ask', ask), \
+             patch('sys.argv', ['agent.py']), \
+             patch('builtins.input', side_effect=['prepare a PO', '/quit']), redirect_stdout(output):
+            app.main()
+        rendered = output.getvalue()
+        self.assertIn('RM-COIL-CU-2.0', rendered)
+        self.assertIn('"estimated_total": "2900"', rendered)
+        self.assertIn('"transaction_date": "2025-10-15"', rendered)
+        self.assertIn('Type /confirm', rendered)
+        self.assertEqual(erp.created, [])
+
     def test_successful_create_with_failed_readback_keeps_name_and_blocks_recreate(self):
         class ReadFailure(FakeERP):
             def get(self, *args):
