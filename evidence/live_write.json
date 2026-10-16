@@ -1,0 +1,533 @@
+{
+  "timestamp_utc": "2026-10-16T11:06:56.174496+00:00",
+  "reference_date": "2025-10-15",
+  "scope": "Real ERPNext REST integration; no LLM involved",
+  "checks": [
+    {
+      "check": "Item count",
+      "passed": true,
+      "actual": 18,
+      "expected": 18
+    },
+    {
+      "check": "Copper stock/on-order/reserved",
+      "passed": true,
+      "actual": [
+        [
+          50.0,
+          200.0,
+          60.0
+        ]
+      ],
+      "expected": [
+        [
+          50,
+          200,
+          60
+        ]
+      ]
+    },
+    {
+      "check": "Open PO count",
+      "passed": true,
+      "actual": 6,
+      "expected": 6
+    },
+    {
+      "check": "Open PO total",
+      "passed": true,
+      "actual": "15065.5",
+      "expected": "15065.5"
+    },
+    {
+      "check": "Sales order count matches API count",
+      "passed": true,
+      "actual": 25,
+      "expected": 25
+    },
+    {
+      "check": "Most sales orders",
+      "passed": true,
+      "actual": [
+        [
+          "GreenAir HVAC Solutions",
+          5
+        ],
+        [
+          "Summit Climate OEM",
+          4
+        ]
+      ],
+      "expected": [
+        [
+          "GreenAir HVAC Solutions",
+          5
+        ],
+        [
+          "Summit Climate OEM",
+          4
+        ]
+      ]
+    },
+    {
+      "check": "Work order shortages",
+      "passed": true,
+      "actual": [
+        [
+          "RM-COIL-CU-2.0",
+          60.0,
+          50.0
+        ],
+        [
+          "SA-MOTOR-1HP",
+          30.0,
+          20.0
+        ],
+        [
+          "SA-PUMP-R32",
+          30.0,
+          20.0
+        ]
+      ],
+      "expected": [
+        [
+          "RM-COIL-CU-2.0",
+          60,
+          50
+        ],
+        [
+          "SA-MOTOR-1HP",
+          30,
+          20
+        ],
+        [
+          "SA-PUMP-R32",
+          30,
+          20
+        ]
+      ]
+    },
+    {
+      "check": "1HP/R32 BOM cost",
+      "passed": true,
+      "actual": 575.2,
+      "expected": 575.2
+    },
+    {
+      "check": "1HP/R32 list price",
+      "passed": true,
+      "actual": [
+        600.0
+      ],
+      "expected": [
+        600
+      ]
+    },
+    {
+      "check": "Invoice coverage",
+      "passed": true,
+      "actual": 21,
+      "expected": 21
+    },
+    {
+      "check": "Overdue invoice names",
+      "passed": true,
+      "actual": [
+        "ACC-SINV-2026-00011",
+        "ACC-SINV-2026-00013",
+        "ACC-SINV-2026-00015",
+        "ACC-SINV-2026-00017"
+      ],
+      "expected": [
+        "ACC-SINV-2026-00011",
+        "ACC-SINV-2026-00013",
+        "ACC-SINV-2026-00015",
+        "ACC-SINV-2026-00017"
+      ]
+    },
+    {
+      "check": "Overdue amount",
+      "passed": true,
+      "actual": 25380.0,
+      "expected": 25380
+    },
+    {
+      "check": "Missing laptop item",
+      "passed": true,
+      "actual": [],
+      "expected": []
+    },
+    {
+      "check": "Employee count",
+      "passed": true,
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "check": "Ambiguous cancellation candidates",
+      "passed": true,
+      "actual": [
+        "MFG-WO-2026-00019",
+        "MFG-WO-2026-00020"
+      ],
+      "expected": [
+        "MFG-WO-2026-00019",
+        "MFG-WO-2026-00020"
+      ]
+    },
+    {
+      "check": "Generic metadata discovery",
+      "passed": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "check": "PO preview amount",
+      "passed": true,
+      "actual": "2900",
+      "expected": "2900"
+    },
+    {
+      "check": "PO preview has no write",
+      "passed": true,
+      "actual": 27,
+      "expected": 27
+    },
+    {
+      "check": "PO dates pinned",
+      "passed": true,
+      "actual": [
+        "2025-10-15",
+        "2025-10-15"
+      ],
+      "expected": [
+        "2025-10-15",
+        "2025-10-15"
+      ]
+    },
+    {
+      "check": "Test PO draft status",
+      "passed": true,
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "check": "Test PO amount",
+      "passed": true,
+      "actual": 2900.0,
+      "expected": 2900
+    },
+    {
+      "check": "Test PO transaction date",
+      "passed": true,
+      "actual": "2025-10-15",
+      "expected": "2025-10-15"
+    },
+    {
+      "check": "Test PO count increased once",
+      "passed": true,
+      "actual": 28,
+      "expected": 28
+    },
+    {
+      "check": "Repeated confirmation blocked",
+      "passed": true,
+      "actual": true,
+      "expected": true
+    }
+  ],
+  "evidence": {
+    "copper": [
+      {
+        "item_code": "RM-COIL-CU-2.0",
+        "warehouse": "Stores - CCM",
+        "actual_qty": 50.0,
+        "ordered_qty": 200.0,
+        "reserved_qty_for_production": 60.0
+      }
+    ],
+    "open_purchase_orders": [
+      {
+        "name": "PUR-ORD-2026-00022",
+        "grand_total": 5800.0,
+        "status": "To Receive and Bill"
+      },
+      {
+        "name": "PUR-ORD-2026-00023",
+        "grand_total": 165.0,
+        "status": "To Receive and Bill"
+      },
+      {
+        "name": "PUR-ORD-2026-00024",
+        "grand_total": 7700.0,
+        "status": "To Receive and Bill"
+      },
+      {
+        "name": "PUR-ORD-2026-00025",
+        "grand_total": 990.0,
+        "status": "To Receive and Bill"
+      },
+      {
+        "name": "PUR-ORD-2026-00026",
+        "grand_total": 138.0,
+        "status": "To Receive and Bill"
+      },
+      {
+        "name": "PUR-ORD-2026-00027",
+        "grand_total": 272.5,
+        "status": "To Receive and Bill"
+      }
+    ],
+    "customers": {
+      "BlueRidge Cooling Systems": 3,
+      "Cascade Thermal Systems": 3,
+      "GreenAir HVAC Solutions": 5,
+      "Helio Comfort Appliances": 3,
+      "Meridian HVAC Group": 2,
+      "Nordic Air Industries": 3,
+      "Polaris Climate Tech": 2,
+      "Summit Climate OEM": 4
+    },
+    "shortages": [
+      [
+        "SA-MOTOR-1HP",
+        30.0,
+        20.0
+      ],
+      [
+        "SA-PUMP-R32",
+        30.0,
+        20.0
+      ],
+      [
+        "RM-COIL-CU-2.0",
+        60.0,
+        50.0
+      ]
+    ],
+    "overdue": [
+      {
+        "name": "ACC-SINV-2026-00011",
+        "customer": "GreenAir HVAC Solutions",
+        "due_date": "2025-08-17",
+        "outstanding_amount": 6000.0
+      },
+      {
+        "name": "ACC-SINV-2026-00013",
+        "customer": "Polaris Climate Tech",
+        "due_date": "2025-08-31",
+        "outstanding_amount": 4640.0
+      },
+      {
+        "name": "ACC-SINV-2026-00015",
+        "customer": "Helio Comfort Appliances",
+        "due_date": "2025-09-28",
+        "outstanding_amount": 8640.0
+      },
+      {
+        "name": "ACC-SINV-2026-00017",
+        "customer": "GreenAir HVAC Solutions",
+        "due_date": "2025-10-10",
+        "outstanding_amount": 6100.0
+      }
+    ],
+    "open_work_orders": [
+      {
+        "name": "MFG-WO-2026-00019",
+        "production_item": "SA-PUMP-R12",
+        "status": "In Process"
+      },
+      {
+        "name": "MFG-WO-2026-00020",
+        "production_item": "FG-COMP-1.5HP-R32",
+        "status": "Not Started"
+      }
+    ],
+    "preview": {
+      "proposal_id": "4df51f9e",
+      "doc": {
+        "doctype": "Purchase Order",
+        "supplier": "Tongling Magnet Wire Co.",
+        "transaction_date": "2025-10-15",
+        "schedule_date": "2025-10-15",
+        "items": [
+          {
+            "item_code": "RM-COIL-CU-2.0",
+            "qty": 100.0,
+            "uom": "Meter",
+            "rate": 29.0
+          }
+        ]
+      },
+      "estimated_total": "2900",
+      "requires_confirmation": true
+    },
+    "created_test_po": {
+      "name": "PUR-ORD-2026-00028",
+      "status": "Draft",
+      "verified": {
+        "name": "PUR-ORD-2026-00028",
+        "owner": "Administrator",
+        "creation": "2026-10-16 07:06:54.773479",
+        "modified": "2026-10-16 07:06:54.773479",
+        "modified_by": "Administrator",
+        "docstatus": 0,
+        "idx": 0,
+        "title": "{supplier_name}",
+        "naming_series": "PUR-ORD-.YYYY.-",
+        "supplier": "Tongling Magnet Wire Co.",
+        "supplier_name": "Tongling Magnet Wire Co.",
+        "transaction_date": "2025-10-15",
+        "transaction_time": "7:06:54.726158",
+        "schedule_date": "2025-10-15",
+        "company": "Crestwind Compressor Manufacturing Co.",
+        "is_subcontracted": 0,
+        "has_unit_price_items": 0,
+        "currency": "USD",
+        "conversion_rate": 1.0,
+        "buying_price_list": "Standard Buying",
+        "price_list_currency": "USD",
+        "plc_conversion_rate": 1.0,
+        "ignore_pricing_rule": 0,
+        "last_scanned_warehouse": null,
+        "total_qty": 100.0,
+        "total_net_weight": 0.0,
+        "base_total": 2900.0,
+        "base_net_total": 2900.0,
+        "total": 2900.0,
+        "net_total": 2900.0,
+        "tax_category": "",
+        "base_taxes_and_charges_added": 0.0,
+        "base_taxes_and_charges_deducted": 0.0,
+        "base_total_taxes_and_charges": 0.0,
+        "taxes_and_charges_added": 0.0,
+        "taxes_and_charges_deducted": 0.0,
+        "total_taxes_and_charges": 0.0,
+        "grand_total": 2900.0,
+        "in_words": "USD Two Thousand, Nine Hundred only.",
+        "disable_rounded_total": 0,
+        "rounding_adjustment": 0.0,
+        "rounded_total": 2900.0,
+        "base_grand_total": 2900.0,
+        "base_in_words": "USD Two Thousand, Nine Hundred only.",
+        "base_rounding_adjustment": 0.0,
+        "base_rounded_total": 2900.0,
+        "advance_paid": 0.0,
+        "apply_discount_on": "Grand Total",
+        "base_discount_amount": 0.0,
+        "additional_discount_percentage": 0.0,
+        "discount_amount": 0.0,
+        "supplier_group": "Local",
+        "status": "Draft",
+        "advance_payment_status": "Not Initiated",
+        "per_billed": 0.0,
+        "per_received": 0.0,
+        "letter_head": "Company Letterhead - Grey",
+        "group_same_items": 0,
+        "language": "en",
+        "party_account_currency": "USD",
+        "represents_company": "",
+        "is_internal_supplier": 0,
+        "is_old_subcontracting_flow": 0,
+        "doctype": "Purchase Order",
+        "items": [
+          {
+            "name": "d8kpp5i9hb",
+            "owner": "Administrator",
+            "creation": "2026-10-16 07:06:54.773479",
+            "modified": "2026-10-16 07:06:54.773479",
+            "modified_by": "Administrator",
+            "docstatus": 0,
+            "idx": 1,
+            "fg_item_qty": 0.0,
+            "item_code": "RM-COIL-CU-2.0",
+            "item_name": "Copper Coil 2.0mm",
+            "schedule_date": "2025-10-15",
+            "item_group": "Raw Materials",
+            "description": "",
+            "image": "",
+            "qty": 100.0,
+            "stock_uom": "Meter",
+            "subcontracted_qty": 0.0,
+            "uom": "Meter",
+            "conversion_factor": 1.0,
+            "stock_qty": 100.0,
+            "price_list_rate": 0.0,
+            "last_purchase_rate": 29.0,
+            "base_price_list_rate": 0.0,
+            "margin_type": "",
+            "margin_rate_or_amount": 0.0,
+            "rate_with_margin": 0.0,
+            "discount_percentage": 0.0,
+            "discount_amount": 0.0,
+            "distributed_discount_amount": 0.0,
+            "base_rate_with_margin": 0.0,
+            "rate": 29.0,
+            "amount": 2900.0,
+            "base_rate": 29.0,
+            "base_amount": 2900.0,
+            "stock_uom_rate": 29.0,
+            "is_free_item": 0,
+            "net_rate": 29.0,
+            "net_amount": 2900.0,
+            "base_net_rate": 29.0,
+            "base_net_amount": 2900.0,
+            "warehouse": "Stores - CCM",
+            "actual_qty": 50.0,
+            "company_total_stock": 50.0,
+            "delivered_by_supplier": 0,
+            "against_blanket_order": 0,
+            "blanket_order_rate": 0.0,
+            "received_qty": 0.0,
+            "returned_qty": 0.0,
+            "billed_amt": 0.0,
+            "expense_account": "Cost of Goods Sold - CCM",
+            "include_exploded_items": 0,
+            "weight_per_unit": 0.0,
+            "total_weight": 0.0,
+            "cost_center": "Main - CCM",
+            "is_fixed_asset": 0,
+            "item_tax_rate": "{}",
+            "page_break": 0,
+            "parent": "PUR-ORD-2026-00028",
+            "parentfield": "items",
+            "parenttype": "Purchase Order",
+            "doctype": "Purchase Order Item"
+          }
+        ],
+        "pricing_rules": [],
+        "supplied_items": [],
+        "taxes": [],
+        "item_wise_tax_details": [],
+        "payment_schedule": [
+          {
+            "name": "d8q0g4m4hf",
+            "owner": "Administrator",
+            "creation": "2026-10-16 07:06:55.461514",
+            "modified": "2026-10-16 07:06:55.461514",
+            "modified_by": "Administrator",
+            "docstatus": 0,
+            "idx": 1,
+            "due_date": "2025-10-15",
+            "invoice_portion": 100.0,
+            "credit_days": 0,
+            "credit_months": 0,
+            "discount": 0.0,
+            "discount_validity": 0,
+            "payment_amount": 2900.0,
+            "outstanding": 2900.0,
+            "paid_amount": 0.0,
+            "discounted_amount": 0.0,
+            "base_payment_amount": 2900.0,
+            "base_outstanding": 2900.0,
+            "base_paid_amount": 0.0,
+            "parent": "PUR-ORD-2026-00028",
+            "parentfield": "payment_schedule",
+            "parenttype": "Purchase Order",
+            "doctype": "Payment Schedule"
+          }
+        ]
+      }
+    }
+  }
+}
