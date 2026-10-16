@@ -1,48 +1,71 @@
 # Plantcore ERPNext Agent
 
-Python 标准库 CLI，使用真实 ERPNext REST/RPC 和兼容 OpenAI Chat Completions 的模型工具调用。原题保留于 `ORIGINAL_README.md`；原始 `erpnext/` 配置和 seed 数据保持完整。仓库沿用交接包内的 Git 历史。
+一个Python标准库CLI Agent：用阿里百炼/兼容Chat Completions的模型选择工具，通过ERPNext实时HTTP API读业务数据。包含原题ERP seed与连续Git历史，原题全文见 ORIGINAL_README.md。
 
-## 快速运行（Windows）
+## 五分钟启动流程
 
-要求：Docker Desktop 已启动，Python 3.10+，Git；无需 pip 安装。首次下载镜像和恢复数据库可能超过 5 分钟；镜像已缓存时按以下步骤启动。
+前提：Python 3.10+、Docker Desktop/Engine及Compose可用。首次镜像下载和站点恢复可能超过五分钟；本机已缓存并恢复完毕。无需pip安装。先进入解压/clone后的项目根目录（本机是 `D:\work\工核homework`）。
 
-```powershell
-cd "D:\work\工核homework\erpnext"
-docker compose up -d
-docker compose logs -f restore-site
-# 看到 Restore complete. 后 Ctrl+C 退出日志
-cd ..
-Copy-Item .env.example .env  # 仅第一次；不要覆盖已有配置
-# 在本机编辑 .env，填写 LLM_API_KEY、LLM_MODEL 和服务商 LLM_BASE_URL
+```text
+docker compose -f erpnext/compose.yml up -d
+docker compose -f erpnext/compose.yml logs -f restore-site
+```
+
+首次等待 `Restore complete.`；后续启动可能显示站点已存在并跳过恢复。Ctrl+C只退出日志查看。
+
+第一次复制配置：Windows PowerShell使用 `Copy-Item .env.example .env`；Linux/macOS使用 `cp .env.example .env`。在本机.env填写模型API密钥；样例已默认qwen3.8-max与百炼北京地域地址。如果换服务商，同时调整模型、地址与思考参数。不要覆盖已有.env。
+
+```text
 python agent.py --check
 python agent.py
 ```
 
-如果旧终端找不到 docker，可以重新打开终端，或在项目根目录执行 `powershell -File .\start_erp.ps1`，脚本会使用 Docker Desktop 的实际安装路径。`start_agent.ps1` 从自身目录加载项目。配置文件总是读取 `agent.py` 旁边的 `.env`，无需把密钥写入命令历史或提交到 Git。
+Linux上若命令名为python3，替换为python3。ERPNEXT Item数量应为18；--check只检查ERP连接和配置是否存在，不宣称验证模型质量。本机.env已经配置，可直接启动Agent。
 
-ERPNext 页面：http://localhost:8080 ，本地 seed 账户 `Administrator` / `admin`。`.env.example` 已包含本地 ERPNext API 测试凭据；模型密钥和模型名称必须自行填写。支持 tools/tool_calls 的 OpenAI-compatible `/chat/completions` 服务；当前实现未验证所有服务商。
+Docker命令在旧Windows终端未进入PATH时，可重新打开终端或执行 `powershell -File .\start_erp.ps1`。ERP网页：http://localhost:8080 ，seed本地账户 Administrator / admin。
 
-## 交互
+## 使用
 
-询问 `What's the current stock of copper coil?`，继续询问工单缺料、订单、毛利或逾期发票。所有事实从实时 API 读取，日期口径固定 `2025-10-15`。
+直接用中文或英文提问，例如：
 
-采购订单只会生成预览，显示物料、供应商、数量、单价、总额和日期。输入 `/confirm <proposal-id>` 才创建草稿并回读；不会自动提交订单。模型没有直接写入或取消工具。取消工单存在歧义时应请求澄清，不执行取消。`/quit` 退出。
+- What's the current stock of copper coil?
+- Show me overdue sales invoices.
+- 请按客户汇总未收回发票余额，不要只看逾期。
+- Create a new purchase order for 100 m of RM-COIL-CU-2.0 from Tongling Magnet Wire Co. at $29 per meter.
 
-## 验证与证据
+采购工具生成预览，CLI独立打印实际载荷。只有人工输入 `/confirm <proposal-id>` 才创建并回读草稿；模型不具备直接创建、确认或取消工具。只支持单行采购、公司本位币、物料stock_uom；多公司要求明确公司。不自动提交订单。
 
-```powershell
+| 命令 | 用途 |
+|---|---|
+| /pending | 查看本机保存的采购proposal及状态/是否过期 |
+| /confirm id | 确认未过期预览，重新校验后创建草稿 |
+| /discard id | 撤销pending预览，不改ERP单据 |
+| /reset | 清除模型对话，保留本地采购journal |
+| /quit | 退出 |
+
+交互CLI的状态存放 `.local/proposals.sqlite3`，Git与交接ZIP均排除该目录。预览15分钟过期。创建超时、进程中断或回读异常后，保留状态/已知单号以便人工核对，不自动重复POST。金额是行金额估算，税费和默认值差异在回读时显示review_required；单据仍为草稿。
+
+## 验证
+
+```text
 python -m unittest discover -s tests -v
 python verify_live.py
 python verify_llm.py
+python verify_extended.py
 ```
 
-- 单元测试覆盖确认状态机、日期、异常恢复、非有限金额、真实 HTTP 路径编码。
-- `verify_live.py` 调用真实 ERPNext，检查库存、开放采购订单、客户排名、工单缺料、毛利基础、逾期发票、空数据、元数据和采购预览。默认只读；证据保存到 `evidence/live_read.json`。
-- `verify_llm.py` 需要本机模型密钥，会产生模型 API 调用费用；逐条运行原题问答并保存工具轨迹到 `evidence/llm_acceptance.json`。答案正确性需与原题人工核对，脚本不把“有回复”标记为“答对”。它不会确认写入。
-- `python verify_live.py --create-test-po` 明确启用本地测试草稿创建，100 Meter × $29，总额 $2,900。只用于本题 seed 环境。创建前保存尝试记录，成功后记录单号；已有 `evidence/test_po_receipt.json` 时拒绝再次创建。异常后先查询核对，避免重复写入。
+- 29项代码测试覆盖HTTP、确认、重启、并发、异常、完整分页、Decimal计算与对话恢复。
+- verify_live.py默认只读，原题真实REST检查19项。
+- verify_llm.py真实调用模型，保存十个原题的工具轨迹；答案须人工核对，脚本不把“有回复”当作答对。
+- verify_extended.py检查未结应收/应付完整汇总，并真实询问新问题。模型调用可能消耗账户额度。
+- 仅对本地seed显式执行 `python verify_extended.py --create-test-po` 会测试一次真实模型预览、持久化、确认与回读；已有audit_write.json收据时拒绝再建。当前已执行，勿再次写入或删除收据来重跑。
 
-本机已使用百炼 `qwen3.8-max` 进行真实模型联调。北京地域兼容地址为 `https://dashscope.aliyuncs.com/compatible-mode/v1`；本机思考模式开启、thinking_budget=4096、超时180秒、工具循环最多16轮。密钥仅在被 Git 忽略的 `.env`。完整当前验收状态见 `HANDOFF.md`。测试采购草稿会保留在数据库中，开放已提交订单的 seed 数据不受影响。不要为日常重启使用会删除数据库卷的命令。
+先前真实测试草稿00028、本轮审计草稿00029均未提交；采购单总数29。原有已提交开放采购单仍6张、$15,065.50，库存未因草稿变化。不要为重启删除数据库卷。
 
-## 工具与扩展
+## 设计与交付状态
 
-模型可调用 `get_doctype_meta`、`count_documents`、`list_documents`、`get_document`、`prepare_purchase_order`。列表支持字段、过滤、排序和分页（每页最多 100）；完整统计应继续翻页或核对 count。详情读取包含子表，可跨 DocType 推理。新增只读 DocType 复用这些工具；新增写入类型需另加验证和显式确认路径。
+七个模型工具：元数据、计数、带完整性标记的分页列表、详情、完整聚合、受限Decimal算术、采购预览。新增只读DocType可复用工具；新增写入需专用验证/确认适配。
+
+完整架构、流程、业务坑和限制见 **ARCHITECTURE.md**；当前审计结论见 **AUDIT.md**；设计取舍见 WRITEUP.md；实测证据在 evidence/。原始ERP文件保持不变。
+
+代码尚未上传GitHub，尚未向招聘方提交链接。后续提交应保留现有多次Git提交，排除.env、.local及其他本机配置。样例与新增问题通过不构成对所有隐藏题的准确率保证。

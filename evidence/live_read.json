@@ -1,5 +1,5 @@
 {
-  "timestamp_utc": "2026-10-16T14:10:49.960614+00:00",
+  "timestamp_utc": "2026-10-16T14:40:35.801862+00:00",
   "reference_date": "2025-10-15",
   "scope": "Real ERPNext REST integration; no LLM involved",
   "checks": [
@@ -190,8 +190,8 @@
     {
       "check": "PO preview has no write",
       "passed": true,
-      "actual": 28,
-      "expected": 28
+      "actual": 29,
+      "expected": 29
     },
     {
       "check": "PO dates pinned",
@@ -314,12 +314,15 @@
       }
     ],
     "preview": {
-      "proposal_id": "36dfd675",
+      "proposal_id": "2c44328d",
       "doc": {
         "doctype": "Purchase Order",
         "supplier": "Tongling Magnet Wire Co.",
+        "docstatus": 0,
         "transaction_date": "2025-10-15",
         "schedule_date": "2025-10-15",
+        "company": "Crestwind Compressor Manufacturing Co.",
+        "currency": "USD",
         "items": [
           {
             "item_code": "RM-COIL-CU-2.0",
@@ -330,7 +333,9 @@
         ]
       },
       "estimated_total": "2900",
-      "requires_confirmation": true
+      "requires_confirmation": true,
+      "expires_in_seconds": 900,
+      "total_basis": "Line amount estimate; ERP taxes/rounding/defaults are checked on draft read-back"
     },
     "created_test_po": null
   }

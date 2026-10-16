@@ -1,3 +1,5 @@
+> 第一阶段历史联调报告。后续审计、工具扩展与新增测试以 AUDIT.md、ARCHITECTURE.md 和最新 evidence/ 为准。
+
 # 百炼 API 真实联调验收（2026-10-16）
 
 已使用本机 `.env` 中的密钥，实际调用阿里云百炼北京地域的 `qwen3.8-max`。密钥不包含在文档、Git 或交接 ZIP 中。思考模式开启，thinking_budget=4096；兼容地址为 `https://dashscope.aliyuncs.com/compatible-mode/v1`。
