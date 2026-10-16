@@ -1,4 +1,5 @@
 from __future__ import annotations
+import copy
 import os, sys, json, uuid
 from datetime import date
 from decimal import Decimal, InvalidOperation
@@ -139,7 +140,9 @@ class Agent:
             "transaction_date": transaction_date, "schedule_date": schedule_date,
             "items": [{"item_code": item, "qty": float(qty_d), "uom": uom, "rate": float(rate_d)}],
         }
-        self.proposals[proposal_id] = {"doc": doc, "total": str(total), "state": "pending"}
+        # Keep an immutable snapshot: changing a displayed preview must never
+        # silently alter the document that a later confirmation would write.
+        self.proposals[proposal_id] = {"doc": copy.deepcopy(doc), "total": str(total), "state": "pending"}
         return {"proposal_id": proposal_id, "doc": doc, "estimated_total": str(total), "requires_confirmation": True}
 
     def confirm(self, proposal_id):
