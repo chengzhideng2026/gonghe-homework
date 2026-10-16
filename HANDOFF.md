@@ -1,6 +1,6 @@
 # HANDOFF
 
-- 当前分支：master；封包前最新代码提交：93d180f；交接包内请用 `git log -1 --oneline` 确认最终文档提交。
+- 当前分支：master；交接包内请用 `git log -1 --oneline` 确认最终提交。
 - 工作区：本阶段更新 README.md、WRITEUP.md、HANDOFF.md；`.env` 不应提交。原始说明保留在 `ORIGINAL_README.md`，ERPNext seed stack 在 `erpnext/`。
 - 原始文件核对：桌面 ZIP `C:\Users\HP\Desktop\plantcore_erp_seed_homework2026-10.zip` 与 `ORIGINAL_README.md`、`erpnext/DATASET.md`、`erpnext/compose.yml`、`erpnext/.env.example` 内容一致；根目录 `.env.example` 是新增 Agent 配置文件，差异是有意的。
 - 已完成：通用 ERPNext REST 客户端（meta/list/get/count/create、字段/过滤/分页/排序、错误包装）；OpenAI-compatible chat-completions tool loop；固定参考日期和逾期规则；Purchase Order 预览→显式 `/confirm <id>`→创建→回读；Item/Supplier/UOM/日期校验；预览使用深拷贝快照；创建失败或超时禁止盲重试；本地 fake-client 单元测试。
