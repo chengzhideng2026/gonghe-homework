@@ -75,6 +75,8 @@ def main():
               'scope': spec['scope'], 'business_grading': 'manual, pending review', 'results': []}
     target = root / 'evidence' / options.output
     target.parent.mkdir(exist_ok=True)
+    if target.exists():
+        raise SystemExit('Output already exists; choose a new --output filename to preserve the original audit.')
     with ThreadPoolExecutor(max_workers=options.workers) as pool:
         tasks = {pool.submit(run_case, case): case['id'] for case in cases}
         for task in as_completed(tasks):
