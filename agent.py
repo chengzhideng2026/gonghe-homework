@@ -2,13 +2,23 @@ from __future__ import annotations
 import os, sys, json, uuid
 from datetime import date
 from decimal import Decimal, InvalidOperation
-from typing import Any
-import requests
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    pass
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
+from urllib.error import HTTPError, URLError
+
+def load_local_env(path=".env"):
+    """Small dotenv loader so the CLI has no third-party runtime dependency."""
+    if not os.path.exists(path):
+        return
+    with open(path, encoding="utf-8") as stream:
+        for line in stream:
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            os.environ.setdefault(key.strip(), value.strip().strip("'\""))
+
+load_local_env()
 
 REFERENCE_DATE = os.getenv("REFERENCE_DATE", "2025-10-15")
 
@@ -21,21 +31,30 @@ class ERPNextClient:
         key = key or os.getenv("ERPNEXT_API_KEY", "crestwind-agent")
         secret = secret or os.getenv("ERPNEXT_API_SECRET", "crestwind-agent-secret")
         self.timeout = timeout
-        self.s = requests.Session()
-        self.s.headers.update({"Authorization": f"token {key}:{secret}", "Accept": "application/json"})
+        self.headers = {"Authorization": f"token {key}:{secret}", "Accept": "application/json"}
 
     def _req(self, method, path, **kwargs):
+        params = kwargs.pop("params", None)
+        url = self.base + path
+        if params:
+            url += ("&" if "?" in url else "?") + urlencode(params)
+        body = kwargs.pop("json", None)
+        data = json.dumps(body).encode("utf-8") if body is not None else None
+        headers = dict(self.headers)
+        if data is not None:
+            headers["Content-Type"] = "application/json"
         try:
-            response = self.s.request(method, self.base + path, timeout=self.timeout, **kwargs)
-        except requests.RequestException as exc:
-            raise ERPError(f"ERPNext request failed: {exc}") from exc
-        if response.status_code >= 400:
-            detail = response.text[:700].replace("\n", " ")
-            raise ERPError(f"ERPNext HTTP {response.status_code}: {detail}")
+            response = urlopen(Request(url, data=data, headers=headers, method=method), timeout=self.timeout)
+            raw = response.read().decode("utf-8")
+        except HTTPError as exc:
+            detail = exc.read().decode("utf-8", errors="replace")[:700].replace("\n", " ")
+            raise ERPError(f"ERPNext HTTP {exc.code}: {detail}") from exc
+        except URLError as exc:
+            raise ERPError(f"ERPNext request failed: {exc.reason}") from exc
         try:
-            body = response.json()
+            body = json.loads(raw)
         except ValueError as exc:
-            raise ERPError(f"ERPNext returned non-JSON response: {response.text[:300]}") from exc
+            raise ERPError(f"ERPNext returned non-JSON response: {raw[:300]}") from exc
         if isinstance(body, dict) and body.get("exc"):
             raise ERPError(f"ERPNext error: {body['exc']}")
         if isinstance(body, dict) and "data" in body:
@@ -158,7 +177,6 @@ class LLMRunner:
         self.base = os.getenv("LLM_BASE_URL", "https://api.openai.com/v1").rstrip("/")
         self.key = os.getenv("LLM_API_KEY", "")
         self.model = os.getenv("LLM_MODEL", "")
-        self.session = requests.Session()
 
     def available(self):
         return bool(self.key and self.model)
@@ -179,10 +197,15 @@ class LLMRunner:
             messages.append({"role": "system", "content": f"You are a careful ERPNext analyst. Use live tools for every fact; never use DATASET.md as answer data. Reference date is {REFERENCE_DATE}. Explain evidence with document names, item codes, amounts and dates. Status fields may be wrong for overdue; compute due_date < {REFERENCE_DATE} and outstanding_amount > 0. Distinguish on-hand, reserved and on-order. Ask clarification for ambiguous writes. A prepared Purchase Order is only a preview; tell the user to type /confirm <proposal_id>."})
         messages.append({"role": "user", "content": question})
         for _ in range(8):
-            response = self.session.post(self.base + "/chat/completions", headers={"Authorization": f"Bearer {self.key}"}, json={"model": self.model, "messages": messages, "tools": TOOL_DEFS, "tool_choice": "auto", "temperature": 0}, timeout=60)
-            if response.status_code >= 400:
-                raise RuntimeError(f"LLM HTTP {response.status_code}: {response.text[:500]}")
-            msg = response.json()["choices"][0]["message"]
+            request = Request(self.base + "/chat/completions", data=json.dumps({"model": self.model, "messages": messages, "tools": TOOL_DEFS, "tool_choice": "auto", "temperature": 0}).encode("utf-8"), headers={"Authorization": f"Bearer {self.key}", "Content-Type": "application/json"}, method="POST")
+            try:
+                raw = urlopen(request, timeout=60).read().decode("utf-8")
+            except HTTPError as exc:
+                detail = exc.read().decode("utf-8", errors="replace")[:500]
+                raise RuntimeError(f"LLM HTTP {exc.code}: {detail}") from exc
+            except URLError as exc:
+                raise RuntimeError(f"LLM request failed: {exc.reason}") from exc
+            msg = json.loads(raw)["choices"][0]["message"]
             messages.append(msg)
             calls = msg.get("tool_calls") or []
             if not calls:
