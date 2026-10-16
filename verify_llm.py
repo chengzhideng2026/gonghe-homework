@@ -4,9 +4,11 @@ Requires a locally configured .env. Makes paid model API calls.
 Run: python verify_llm.py
 """
 import json
+import os
+import time
 from datetime import datetime, timezone
 from pathlib import Path
-from agent import Agent, ERPNextClient, LLMRunner
+from agent import Agent, ERPNextClient, LLMRunner, configure_console
 
 QUESTIONS = [
     "What's the current stock of copper coil?",
@@ -23,6 +25,7 @@ QUESTIONS = [
 
 
 def main():
+    configure_console()
     client = ERPNextClient()
     runner = LLMRunner(Agent(client))
     if not runner.available():
@@ -30,6 +33,8 @@ def main():
     before = client.count('Purchase Order')
     report = {'timestamp_utc': datetime.now(timezone.utc).isoformat(),
               'model': runner.model, 'base_url': runner.base,
+              'thinking': os.getenv('LLM_ENABLE_THINKING', 'provider default'),
+              'thinking_budget': os.getenv('LLM_THINKING_BUDGET'),
               'scope': 'Real LLM responses and tool traces; requires manual grading against ORIGINAL_README.md',
               'results': []}
     out = Path(__file__).with_name('evidence')
@@ -37,6 +42,7 @@ def main():
     errors = 0
     for question in QUESTIONS:
         history = []
+        started = time.monotonic()
         print('QUESTION:', question, flush=True)
         try:
             answer, history = runner.ask(question, history)
@@ -47,6 +53,7 @@ def main():
             result = {'question': question, 'error': str(exc), 'history': history}
             print('ERROR:', exc, flush=True)
         report['results'].append(result)
+        result['elapsed_seconds'] = round(time.monotonic() - started, 2)
         report['purchase_order_count_unchanged'] = client.count('Purchase Order') == before
         (out / 'llm_acceptance.json').write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8')
     if not report['purchase_order_count_unchanged']:

@@ -6,12 +6,23 @@ import io
 from contextlib import redirect_stdout
 from unittest.mock import patch
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from agent import ERPNextClient, Agent, ERPError
+from agent import ERPNextClient, Agent, ERPError, normalize_filters
 from test_agent import FakeERP
 import agent as app
 
 
 class TestHTTPTransport(unittest.TestCase):
+    def test_single_filter_does_not_become_character_level_doctype(self):
+        client = ERPNextClient()
+        with patch.object(client, '_req', return_value=[]) as request:
+            client.list('Item Price', ['price_list_rate'], ['item_code', '=', 'FG-COMP-1HP-R32'])
+        filters = json.loads(request.call_args.kwargs['params']['filters'])
+        self.assertEqual(filters, [['item_code', '=', 'FG-COMP-1HP-R32']])
+        self.assertEqual(normalize_filters([['status', 'in', ['Draft', 'Open']]]),
+                         [['status', 'in', ['Draft', 'Open']]])
+        with self.assertRaises(ValueError):
+            normalize_filters(['item_code', '='])
+
     def test_resource_paths_are_encoded_without_changing_document_identity(self):
         paths = []
         class Handler(BaseHTTPRequestHandler):
