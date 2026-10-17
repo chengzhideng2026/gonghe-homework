@@ -9,11 +9,13 @@ from pathlib import Path
 from datetime import date
 from decimal import Decimal, InvalidOperation, DecimalException
 from urllib.parse import urlencode, quote, urlsplit
-from urllib.request import Request, urlopen
+from urllib.request import Request
 from urllib.error import HTTPError, URLError
 from proposal_store import ProposalStore
 from tool_receipts import tool_receipts
 from answer_checks import evidence_issues
+from http_transport import safe_urlopen as urlopen, validate_url, read_body, redact, http_error_detail, TransportError
+from query_policy import normalize_filters, validate_doctype, validate_fields, validate_order_by
 
 def load_local_env(path=None):
     """Small dotenv loader so the CLI has no third-party runtime dependency."""
@@ -40,21 +42,6 @@ def configure_console():
 
 class ERPError(Exception):
     """A user-visible ERPNext API or validation error."""
-
-def normalize_filters(filters):
-    """Accept an unambiguous single condition as well as Frappe's condition list."""
-    if filters is None or isinstance(filters, dict):
-        return filters
-    if not isinstance(filters, list):
-        raise ValueError('filters must be an array of [field, operator, value] conditions')
-    if filters and isinstance(filters[0], str):
-        filters = [filters]
-    for condition in filters:
-        if not isinstance(condition, list) or len(condition) not in (3, 4):
-            raise ValueError('Each filter must be [field, operator, value] or [doctype, field, operator, value]')
-        if not all(isinstance(part, str) for part in condition[:-1]):
-            raise ValueError('Filter field names and operators must be strings')
-    return filters
 
 def has_child_join(doctype, filters):
     """Detect only explicit linked/child filter syntax that can repeat parents."""
@@ -105,11 +92,12 @@ def calculate(expression):
 
 class ERPNextClient:
     def __init__(self, base=None, key=None, secret=None, timeout=20):
-        self.base = (base or os.getenv("ERPNEXT_URL", "http://localhost:8080")).rstrip("/")
+        self.base = validate_url(base or os.getenv("ERPNEXT_URL", "http://localhost:8080"), endpoint=True)
         key = key or os.getenv("ERPNEXT_API_KEY", "crestwind-agent")
         secret = secret or os.getenv("ERPNEXT_API_SECRET", "crestwind-agent-secret")
         self.timeout = timeout
         self.headers = {"Authorization": f"token {key}:{secret}", "Accept": "application/json"}
+        self._secrets = (key, secret, self.headers['Authorization'])
 
     def _req(self, method, path, **kwargs):
         params = kwargs.pop("params", None)
@@ -123,18 +111,20 @@ class ERPNextClient:
             headers["Content-Type"] = "application/json"
         try:
             response = urlopen(Request(url, data=data, headers=headers, method=method), timeout=self.timeout)
-            raw = response.read().decode("utf-8")
+            raw = read_body(response, 8 * 1024 * 1024)
         except HTTPError as exc:
-            detail = exc.read().decode("utf-8", errors="replace")[:700].replace("\n", " ")
-            raise ERPError(f"ERPNext HTTP {exc.code}: {detail}") from exc
-        except URLError as exc:
-            raise ERPError(f"ERPNext request failed: {exc.reason}") from exc
+            detail = http_error_detail(exc, self._secrets)
+            raise ERPError(f"ERPNext HTTP {exc.code}: {detail}") from None
+        except (URLError, TimeoutError, OSError) as exc:
+            raise ERPError(f"ERPNext request failed: {redact(getattr(exc, 'reason', exc), self._secrets)}") from None
+        except (TransportError, UnicodeError) as exc:
+            raise ERPError('ERPNext response rejected: ' + redact(exc, self._secrets)) from None
         try:
             body = json.loads(raw)
         except ValueError as exc:
-            raise ERPError(f"ERPNext returned non-JSON response: {raw[:300]}") from exc
+            raise ERPError('ERPNext returned a non-JSON response') from exc
         if isinstance(body, dict) and body.get("exc"):
-            raise ERPError(f"ERPNext error: {body['exc']}")
+            raise ERPError('ERPNext error: ' + redact(body['exc'], self._secrets))
         if isinstance(body, dict) and "data" in body:
             return body["data"]
         if isinstance(body, dict) and "message" in body:
@@ -142,6 +132,7 @@ class ERPNextClient:
         return body
 
     def count(self, doctype, filters=None):
+        validate_doctype(doctype)
         filters = normalize_filters(filters)
         params = {"doctype": doctype}
         if filters:
@@ -149,6 +140,7 @@ class ERPNextClient:
         return self._req("GET", "/api/method/frappe.client.get_count", params=params)
 
     def meta(self, doctype):
+        validate_doctype(doctype)
         raw = self._req("GET", "/api/method/frappe.desk.form.load.getdoctype", params={"doctype": doctype, "with_parent": "1"})
         # Frappe returns UI scripts and layout metadata too (over 500 KB for PO).
         # Expose only the live data schema, preserving linked child DocTypes.
@@ -164,6 +156,9 @@ class ERPNextClient:
                          for doc in docs if doc.get("doctype") == "DocType"]}
 
     def list(self, doctype, fields=None, filters=None, limit=20, offset=0, order_by=None):
+        validate_doctype(doctype)
+        validate_fields(fields)
+        validate_order_by(order_by)
         filters = normalize_filters(filters)
         limit = max(1, min(int(limit), 100))
         params = {"limit_page_length": limit, "limit_start": max(0, int(offset))}
@@ -176,6 +171,10 @@ class ERPNextClient:
         return self._req("GET", f"/api/resource/{quote(doctype, safe='')}", params=params)
 
     def get(self, doctype, name):
+        validate_doctype(doctype)
+        if (not isinstance(name, str) or not 1 <= len(name) <= 512 or name in ('.', '..')
+                or any(ord(c) < 32 or ord(c) == 127 for c in name)):
+            raise ValueError('Document name must be bounded, nonempty text without control characters or dot segments')
         return self._req("GET", f"/api/resource/{quote(doctype, safe='')}/{quote(name, safe='')}")
 
     def get_many(self, doctype, names):
@@ -503,7 +502,7 @@ class Agent:
 TOOL_DEFS = [
     {"type": "function", "function": {"name": "get_doctype_meta", "description": "Discover fields and child tables for an ERPNext DocType.", "parameters": {"type": "object", "properties": {"doctype": {"type": "string"}}, "required": ["doctype"]}}},
     {"type": "function", "function": {"name": "count_documents", "description": "Count distinct documents with ERPNext filters. Explicit child-table filters use a complete bounded scan of at most 10000 matching raw rows to avoid counting a parent twice; narrow the query if the limit is exceeded.", "parameters": {"type": "object", "properties": {"doctype": {"type": "string"}, "filters": {"type": "array", "description": "AND conditions, e.g. [[field, operator, value]]. A four-element condition may start with DocType.", "items": {"type": "array", "minItems": 3, "maxItems": 4, "items": {}}}}, "required": ["doctype"]}}},
-    {"type": "function", "function": {"name": "list_documents", "description": "List ERPNext documents with fields, filters, pagination and ordering.", "parameters": {"type": "object", "properties": {"doctype": {"type": "string"}, "fields": {"type": "array", "items": {"type": "string"}}, "filters": {"type": "array", "description": "AND conditions, e.g. [[field, operator, value]]. A four-element condition may start with DocType.", "items": {"type": "array", "minItems": 3, "maxItems": 4, "items": {}}}, "limit": {"type": "integer"}, "offset": {"type": "integer"}, "order_by": {"type": "string"}}, "required": ["doctype"]}}},
+    {"type": "function", "function": {"name": "list_documents", "description": "List ERPNext documents with plain fields, filters, pagination and field ordering. No SQL expressions, aliases or wildcard fields; use aggregate_documents for sums and get_document for full named details.", "parameters": {"type": "object", "properties": {"doctype": {"type": "string"}, "fields": {"type": "array", "minItems": 1, "maxItems": 50, "items": {"type": "string"}}, "filters": {"type": "array", "description": "AND conditions, e.g. [[field, operator, value]]. A four-element condition may start with DocType.", "items": {"type": "array", "minItems": 3, "maxItems": 4, "items": {}}}, "limit": {"type": "integer"}, "offset": {"type": "integer"}, "order_by": {"type": "string", "description": "At most three plain field names with optional asc/desc, e.g. modified desc, name asc."}}, "required": ["doctype"]}}},
     {"type": "function", "function": {"name": "get_document", "description": "Read one ERPNext document by DocType and name, including child tables.", "parameters": {"type": "object", "properties": {"doctype": {"type": "string"}, "name": {"type": "string"}}, "required": ["doctype", "name"]}}},
     {"type": "function", "function": {
         "name": "get_documents",
@@ -537,7 +536,7 @@ TOOL_DEFS.append({'type': 'function', 'function': {
 class LLMRunner:
     def __init__(self, agent):
         self.agent = agent
-        self.base = os.getenv("LLM_BASE_URL", "https://api.openai.com/v1").rstrip("/")
+        self.base = validate_url(os.getenv("LLM_BASE_URL", "https://api.openai.com/v1"), endpoint=True)
         self.key = os.getenv("LLM_API_KEY", "")
         self.model = os.getenv("LLM_MODEL", "")
         self.timeout = float(os.getenv("LLM_TIMEOUT", "180"))
@@ -563,6 +562,7 @@ class LLMRunner:
             limit = max(1, min(int(args.get('limit', 20)), 100))
             offset = max(0, int(args.get('offset', 0)))
             fields = args.get('fields')
+            validate_fields(fields)
             if fields:
                 fields = list(dict.fromkeys(['name'] + fields))
             rows = self.agent.c.list(args['doctype'], fields, args.get('filters'), limit, offset, args.get('order_by') or 'name asc')
@@ -638,12 +638,14 @@ class LLMRunner:
                 payload['thinking_budget'] = int(os.environ['LLM_THINKING_BUDGET'])
             request = Request(self.base + "/chat/completions", data=json.dumps(payload).encode("utf-8"), headers={"Authorization": f"Bearer {self.key}", "Content-Type": "application/json"}, method="POST")
             try:
-                raw = urlopen(request, timeout=self.timeout).read().decode("utf-8")
+                raw = read_body(urlopen(request, timeout=self.timeout), 4 * 1024 * 1024)
             except HTTPError as exc:
-                detail = exc.read().decode("utf-8", errors="replace")[:500]
-                raise RuntimeError(f"LLM HTTP {exc.code}: {detail}") from exc
-            except URLError as exc:
-                raise RuntimeError(f"LLM request failed: {exc.reason}") from exc
+                detail = http_error_detail(exc, (self.key,), limit=500)
+                raise RuntimeError(f"LLM HTTP {exc.code}: {detail}") from None
+            except (URLError, TimeoutError, OSError) as exc:
+                raise RuntimeError(f"LLM request failed: {redact(getattr(exc, 'reason', exc), (self.key,), 500)}") from None
+            except (TransportError, UnicodeError) as exc:
+                raise RuntimeError('LLM response rejected: ' + redact(exc, (self.key,), 500)) from None
             choice = json.loads(raw)["choices"][0]
             if choice.get('finish_reason') == 'length':
                 raise RuntimeError('Model output was truncated; increase the output/thinking budget or simplify the request')

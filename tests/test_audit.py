@@ -158,7 +158,7 @@ class TestConversationRecovery(unittest.TestCase):
         tool = {'role': 'assistant', 'tool_calls': [{'id': 'call_x', 'type': 'function',
                 'function': {'name': 'get_document', 'arguments': '{"doctype":"Item","name":"x"}'}}]}
         first = io.BytesIO(json.dumps({'choices': [{'message': tool}]}).encode())
-        with patch('agent.urlopen', side_effect=[first, TimeoutError('lost response')]), self.assertRaises(TimeoutError):
+        with patch('agent.urlopen', side_effect=[first, TimeoutError('lost response')]), self.assertRaisesRegex(RuntimeError, 'lost response'):
             runner.ask('First question', history)
         self.assertEqual(history, [])
         self.assertEqual(runner.last_trace[-1]['role'], 'tool')

@@ -1,6 +1,6 @@
 # 项目接手与学习指南
 
-这份指南面向第一次接手项目的人：先自己运行，再把一次问答和一次采购预览沿代码走通，最后练习解释取舍。当前八工具、104项代码测试通过；已有REST及追加join/币种实测，模型真实回答仍有部分通过项。运行入口见 [README](README.md)，最新独立十题与定向分级见 [SCORING_REVIEW](evidence/SCORING_REVIEW.md)，早期复测与演进见 [FOLLOWUP_REVIEW](evidence/FOLLOWUP_REVIEW.md)、[AUDIT](AUDIT.md)。
+这份指南面向第一次接手项目的人：先自己运行，再把一次问答和一次采购预览沿代码走通，最后练习解释取舍。当前八工具、115项代码测试通过；已有REST及追加join/币种实测，模型真实回答仍有部分通过项。运行入口见 [README](README.md)，最新独立十题与定向分级见 [SCORING_REVIEW](evidence/SCORING_REVIEW.md)，早期复测与演进见 [FOLLOWUP_REVIEW](evidence/FOLLOWUP_REVIEW.md)、[AUDIT](AUDIT.md)。
 
 题目已经提供可恢复的 ERPNext 和业务数据，所以这份作业无需从零开发 ERP。我们实现的是 ERP 之上的问答与受控采购 Agent。代码规模可以比较小，但库存、账期、BOM、成本和不确定写入的业务边界需要仔细验证。
 
@@ -26,11 +26,13 @@
 ### 第一步：启动 ERP
 
 ```text
-docker compose -f erpnext/compose.yml up -d
-docker compose -f erpnext/compose.yml logs -f restore-site
+docker compose -f erpnext/compose.yml -f compose.local.yml up -d
+docker compose -f erpnext/compose.yml -f compose.local.yml logs -f restore-site
 ```
 
 首次恢复等待 `Restore complete.`；已有站点可能显示跳过恢复。`Ctrl+C` 退出日志查看，不是删除站点。用浏览器打开 [本地 ERPNext](http://localhost:8080)，本地 seed 账号见 README。
+
+启动时保留`-f compose.local.yml`：它覆盖原全网卡ports，只绑定IPv4/IPv6回环，要求Compose2.24.4+。`http_transport.py`统一出站URL、禁止重定向、响应限额与错误遮蔽；`query_policy.py`限制字段/排序/过滤语法。两者不提供租户鉴权，seed管理员权限仍需生产化时收紧，详见[SECURITY_AND_DEPLOYMENT](SECURITY_AND_DEPLOYMENT.md)。
 
 ### 第二步：确认配置位置
 
@@ -271,7 +273,7 @@ python -m unittest discover -s tests -v
 python verify_live.py
 ```
 
-前者检验代码机制，后者请求真实ERP；当前104项代码测试通过，既有19项REST又追加join/币种验证。两者均不能自动证明模型文字正确。后续数量看当次输出，不要把测试项数当正确率。想明确验证模型协议，可额外运行`--check-model`，它会消耗API额度。
+前者检验代码机制，后者请求真实ERP；当前115项代码测试通过，既有19项REST又追加join/币种验证。两者均不能自动证明模型文字正确。后续数量看当次输出，不要把测试项数当正确率。想明确验证模型协议，可额外运行`--check-model`，它会消耗API额度。
 
 ### 实验 B：铜线库存与证据
 

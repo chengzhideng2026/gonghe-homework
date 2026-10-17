@@ -1,0 +1,7 @@
+# Local-only overlay; retain the supplied ERP stack unchanged.
+# Requires Docker Compose 2.24.4+ for !override (or a newer major release).
+services:
+  frontend:
+    ports: !override
+      - "127.0.0.1:${HTTP_PORT:-8080}:8080"
+      - "[::1]:${HTTP_PORT:-8080}:8080"

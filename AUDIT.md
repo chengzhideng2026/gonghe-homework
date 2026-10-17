@@ -1,6 +1,14 @@
 # 审计记录（最新更新：2026-10-17）
 
-## 当前：评分导向的通用能力与写入边界
+## 当前：HTTP与网络安全追加
+
+115项代码测试、19项真实ERP检查通过。HTTP重定向均拒绝，远端要求HTTPS，成功响应/错误读取有界并关闭，用户可见错误遮蔽配置凭据；查询字段/排序/操作符本地校验。双本地HTTP服务测试覆盖GET/POST/模型POST和五种重定向码，目标未收到凭据。代码输出为`evidence/unit_security.txt`。
+
+原题Compose未改，新增overlay已把实际入口收紧到127.0.0.1与::1。只绑定IPv4时发现localhost约2秒回退，双回环后3次计数各约40—50毫秒；不是负载压测。真实模型协议再次通过，join仍raw2/distinct1/USD6600；采购名称29→29。见`evidence/security_live.json`、`evidence/model_security_check.json`及[SECURITY_AND_DEPLOYMENT](SECURITY_AND_DEPLOYMENT.md)。
+
+仍沿用题目管理员ERP账号，没有生产最小权限/应用鉴权、完整提示注入防护、独立网关或多实例负载均衡。未把本地边界测试当生产安全认证。
+
+## 上一阶段：评分导向的通用能力与写入边界
 
 当前104项代码测试、19项真实REST检查通过，并追加真实join/报价币种检查。独立新10题在旧七工具基线下核心10/10、整段7通过3部分；不是官方保密题或严格盲测，原始记录与分级见[evidence/SCORING_REVIEW.md](evidence/SCORING_REVIEW.md)。
 

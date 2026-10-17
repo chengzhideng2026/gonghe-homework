@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-104项代码测试通过；既有19项REST复核后又追加了真实join/币种检查。从非项目目录按脚本路径启动检查通过；可选`--check-model`约5秒完成Item18真实工具回路。当前八工具增加有界批量父单读取，并强化子表join计数、报价币种和小数字面精度。
+115项代码测试通过；既有19项REST复核后又追加了真实join/币种检查。从非项目目录按脚本路径启动检查通过；可选`--check-model`约5秒完成Item18真实工具回路。当前八工具增加有界批量父单读取，并强化子表join计数、报价币种和小数字面精度。
 
 用户充值后模型API已恢复，完成完整八题复跑与定向改进：完整八题核心8/8，整段6通过、2部分；最新定向E07通过，E01不再有历史断言，但额外公式未调用calculate，保守部分。三轮“库存→缺口→采购预览”核心与载荷断言通过，第二轮额外情景公式仍部分。本轮采购单名称集合均29→29，没有新建ERP采购单；这是本地证据，不是fresh seed的运行条件。
 
@@ -63,6 +63,8 @@ flowchart TD
 容器通过frappe_network通信；db-data、sites、logs、redis-queue-data保存在Docker卷。项目 `erpnext/backup` 以只读方式挂载给恢复服务。configurator和restore-site的Exited(0)是正常完成。
 
 原始compose、备份、DATASET、原题文档保持不变。MariaDB内部读写由ERPNext完成；Agent只访问ERP HTTP API。
+
+本机启动叠加`compose.local.yml`，替换ports为127.0.0.1/::1:8080；当前实际容器已采用该绑定。原有Nginx是反向代理入口，没有多副本高可用或独立API网关。共享HTTP策略禁止重定向、要求远端HTTPS、关闭响应并限制体积/错误输出；查询参数使用受限语法。实现与未做的权限/网络能力见[SECURITY_AND_DEPLOYMENT](SECURITY_AND_DEPLOYMENT.md)。
 
 ## 3. ERPNext数据是怎样组织的
 
@@ -204,6 +206,8 @@ SQLite的BEGIN IMMEDIATE使同一本地journal的并发确认只有一个领取�
 | 文件 | 用途 |
 |---|---|
 | agent.py | CLI、模型循环、八工具、只读协议检查、ERP HTTP客户端、采购规则 |
+| http_transport.py / query_policy.py | 共享HTTP安全策略和有限查询语法；不替代ERP权限 |
+| compose.local.yml | 覆盖主机端口为IPv4/IPv6回环，原题栈文件不变 |
 | proposal_store.py | SQLite确认journal与原子状态更新 |
 | tool_receipts.py | 从实际工具调用/结果生成可检查收据，不把模型自述当证据 |
 | answer_checks.py | 已知库存历史措辞门禁：一次修正，再失败拒绝；非通用真值验证 |
@@ -223,7 +227,7 @@ SQLite的BEGIN IMMEDIATE使同一本地journal的并发确认只有一个领取�
 
 ## 11. 独立审查与后续真实复测
 
-开发检查由主审和3个独立审查子Agent协作，运行时仍是单模型工具循环。当前104项代码测试覆盖聚合参数、预览目标、收据、查询范围、回答检查、批量、币种与join边界；真实验证分阶段保留。
+开发检查由主审和3个独立审查子Agent协作，运行时仍是单模型工具循环。当前115项代码测试覆盖聚合参数、预览目标、收据、查询范围、回答检查、批量、币种与join边界；真实验证分阶段保留。
 
 本轮两项实质修复：一是重复的`sum_fields`以前可能把一个金额加两次，现已校验并去重；二是本地持久预览以前没有绑定ERP环境，现已绑定端点和凭据配置指纹。`/trace`与列表`name`补充了审查证据，但没有把LLM文本变成完全确定的程序输出。
 

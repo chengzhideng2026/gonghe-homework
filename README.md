@@ -6,14 +6,16 @@
 
 ## 启动
 
-需要 Python 3.10+、Docker Desktop/Engine 与 Compose，以及可用的模型 API 配置。命令均在项目根目录运行；Linux/macOS 可将 `python` 换成 `python3`。无需安装第三方 Python 运行库。
+需要 Python 3.10+、Docker Desktop/Engine（推荐28+）、Compose2.24.4+，以及可用的模型 API 配置。命令均在项目根目录运行；Linux/macOS 可将 `python` 换成 `python3`。无需安装第三方 Python 运行库。
 
 ```text
-docker compose -f erpnext/compose.yml up -d
-docker compose -f erpnext/compose.yml logs -f restore-site
+docker compose -f erpnext/compose.yml -f compose.local.yml up -d
+docker compose -f erpnext/compose.yml -f compose.local.yml logs -f restore-site
 ```
 
 首次等待 `Restore complete.`；已有站点可能跳过恢复。`Ctrl+C` 退出日志查看。首次镜像下载与恢复所需时间取决于网络。
+
+`compose.local.yml`保留原题文件，将ERP仅发布到127.0.0.1与::1；日后启动继续带此overlay，避免回到全网卡发布。当前Nginx入口没有实现多副本负载均衡。HTTP、防注入、权限与生产化取舍见[SECURITY_AND_DEPLOYMENT](SECURITY_AND_DEPLOYMENT.md)。
 
 仅在根目录没有 `.env` 时复制样例：
 
@@ -28,6 +30,8 @@ cp .env.example .env
 ```
 
 在本机 `.env` 填写 `LLM_API_KEY`，核对 `LLM_BASE_URL`、`LLM_MODEL`；样例提供百炼配置。ERP 配置为 `ERPNEXT_URL`、`ERPNEXT_API_KEY`、`ERPNEXT_API_SECRET`。不覆盖已有配置，不提交密钥。
+
+远端API要求HTTPS，本机回环允许HTTP；基础URL不接受内嵌凭据/查询串。API重定向拒绝，响应大小有上限，错误遮蔽当前凭据。当前seed管理员权限较宽，只用于本机作业；正式部署必须配置最小权限账号。
 
 ```text
 python agent.py --check
@@ -73,7 +77,11 @@ python -m unittest discover -s tests -v
 python verify_live.py
 ```
 
-104项代码测试通过；既有19项REST后，真实join计数/金额及外币拒绝也已验证，见 [SCORING_REVIEW.md](evidence/SCORING_REVIEW.md)。非项目目录按脚本路径启动检查通过。按需运行模型案例会消耗API额度，使用新的输出文件保留审计：
+115项代码测试通过；既有19项REST后，真实join计数/金额及外币拒绝也已验证，见 [SCORING_REVIEW.md](evidence/SCORING_REVIEW.md)。非项目目录按脚本路径启动检查通过。
+
+最新115项输出为`evidence/unit_security.txt`，新增重定向、凭据遮蔽、响应限额和查询语法边界测试；真实模型协议与回环端口验证分别见`model_security_check.json`、`security_live.json`。历史104项和82项输出保留；不将本地验证称为生产安全认证。
+
+按需运行模型案例会消耗API额度，使用新的输出文件保留审计：
 
 ```text
 python verify_variants.py --output variants_my_run.json

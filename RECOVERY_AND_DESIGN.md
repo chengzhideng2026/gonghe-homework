@@ -2,6 +2,8 @@
 
 本项目是单人使用的 ERPNext CLI Agent。当前实现了通用只读工具、多轮工具选择、人工采购确认、本地持久状态、防同一预览重复派发和有界的恢复核查。它没有应用登录、完整 SaaS 租户权限、持久聊天检查点、长期用户记忆或运行时多模型路由。新增组件应解决可测的问题，不能用组件数量代替可靠性。
 
+后续HTTP与网络安全追加已完成，当前115项测试通过，见`evidence/unit_security.txt`和[SECURITY_AND_DEPLOYMENT](SECURITY_AND_DEPLOYMENT.md)。下文104项是恢复阶段记录，未改写原输出。
+
 ## 当前运行架构
 
 ```mermaid
