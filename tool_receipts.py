@@ -12,7 +12,8 @@ def tool_receipts(messages):
         for call in message.get('tool_calls') or []:
             function = call['function']
             try:
-                args = json.loads(function.get('arguments') or '{}')
+                raw_args = function.get('arguments') or '{}'
+                args = json.loads(raw_args, parse_float=str) if function['name'] == 'prepare_purchase_order' else json.loads(raw_args)
             except (ValueError, TypeError):
                 args = {'unparsed_arguments': function.get('arguments')}
             calls[call['id']] = {'call_id': call['id'], 'tool': function['name'], 'arguments': args}
@@ -38,9 +39,19 @@ def tool_receipts(messages):
                                       'record_names': [row.get('name') for row in data.get('records', [])],
                                       'warnings': data.get('warnings', [])}
             elif name == 'aggregate_documents' and isinstance(data, dict):
-                receipt['summary'] = {key: data.get(key) for key in ('doctype', 'count', 'complete', 'groups', 'consistency')}
+                receipt['summary'] = {key: data.get(key) for key in
+                                      ('doctype', 'count', 'matched_rows', 'duplicates_collapsed', 'complete', 'groups', 'consistency')}
             elif name == 'get_document' and isinstance(data, dict):
                 receipt['summary'] = {key: data[key] for key in ('doctype', 'name', 'docstatus') if key in data}
+            elif name == 'get_documents' and isinstance(data, dict):
+                receipt['summary'] = {key: data.get(key) for key in
+                                      ('doctype', 'input_count', 'requested_names', 'requested_count',
+                                       'success_count', 'error_count', 'complete', 'consistency')}
+                results = data.get('results') or []
+                receipt['summary']['record_names'] = [row['name'] for row in results
+                                                      if row.get('ok') is True]
+                receipt['summary']['failures'] = [{'name': row.get('name'), 'error': row.get('error')}
+                                                  for row in results if row.get('ok') is not True]
             elif name == 'get_doctype_meta' and isinstance(data, dict):
                 receipt['summary'] = {'doctype': data.get('doctype'),
                                       'schemas': [doc.get('name') for doc in data.get('docs', [])]}

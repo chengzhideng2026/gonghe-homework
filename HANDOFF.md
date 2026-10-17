@@ -5,7 +5,12 @@
 ## 当前状态
 
 - 用户充值后模型 API 已恢复，E07 探测在 10.67 秒内正常返回澄清。此前免费额度 HTTP403 是已保留的历史失败，不是当前阻断。
-- 54 项代码测试、19 项真实 REST 再次复核通过；从非项目目录使用脚本绝对路径运行 `--check` 也通过。已修复重复聚合/参数类型、预览 ERP 端点与凭据绑定，并新增 `/trace`、列表 name、query_scope、Bin 快照警告和受限回答检查。
+- 当前八工具、104项代码测试通过；既有19项REST后又追加真实join/币种检查。非项目目录启动`--check`通过；可选`--check-model`约5秒完成Item18真实工具回路，区分配置/ERP/模型/协议，默认启动不调用模型。
+- 连接绑定贯穿预览查询和修改，修复共享日志跨连接可见/丢弃缺口。`/reconcile id`只读核查已知单号，不创建；无单号仍阻断。104项输出为`unit_recovery.txt`；恢复/记忆/检索/租户边界见[RECOVERY_AND_DESIGN](RECOVERY_AND_DESIGN.md)。
+- H08新币种定向复测整段通过，不改写旧十题基线；范围路由S01—S03核心3通过，完整2通过1部分，混合题额外状态措辞没有证据。
+- 新增get_documents：最多20输入名、保序去重、逐项错误与身份校验，complete仅覆盖所请求名称。B01一调用三单成功/一单404，核心通过；泛称任何跨单据合计无效过头，整段部分，明确三单小计仍有效。它是开发定向增强，不计独立十题通过率。
+- 模型报价要求显式currency并匹配公司本位币；拒绝外币、不自动FX。JSON小数先按Decimal保留字面再做范围/浮点可表示性校验，收据保留报价文本。真实EUR被拒且无预览/PO变化，新currency接口E08真实USD预览12.60、未写入。
+- 新独立H01—H10为旧七工具基线，核心10/10、整段7通过3部分；H08 FX公式、H09付款证据、H10未查缩写仍需核证。随后修复H06接口检查揭示的join风险，真实ERP和J01模型均确认raw2→distinct1/父金额6600只计一次，实际calculate校验行金额；J01核心与整段通过。列表保留raw行/offset并标唯一父名和重复名。
 - 充值后完整八题复跑：核心 8/8，完整回答 6 通过、2 部分。E01 附带无凭证历史与额外公式，E07 把关键词候选当成业务类别全集，均未按完整正确处理。
 - 补充查询范围与快照警告后，定向复测 E07 通过，E01 仍部分。再加入 `answer_checks.py` 后，E01 不再有历史断言，但附加 130+100 公式未调用 calculate，保守仍部分；E07 通过。该实模运行未触发门禁修正，不能说真实修正链路已经触发过；机制由 mock 测试验证。
 - 三轮真实对话完成：Stores 实物 130 Nos、在途 100 → 目标 180、现货缺口 50（调用 calculate）→ 引用上轮 50 Nos 按 USD4.20 生成 USD210 预览。核心与载荷断言通过；第二轮额外在途情景公式未调用工具，整段部分。
@@ -23,6 +28,10 @@
 | `evidence/conversation_check.json` | 三轮库存→缺口→采购预览与未写检查 |
 | `evidence/VARIANT_REVIEW.md`、`AUDIT.md` | 主审人工分级与完整演进记录 |
 | [evidence/FOLLOWUP_REVIEW.md](evidence/FOLLOWUP_REVIEW.md) | 充值后完整复跑、定向与三轮会话的最新人工总判分 |
+| [evidence/SCORING_REVIEW.md](evidence/SCORING_REVIEW.md) | 新独立H01—H10、B01批量、J01与报价/协议检查，分开统计 |
+| `evidence/join_and_currency_live.json` | raw join行与distinct父单金额实测、真实EUR拒绝与未写检查 |
+| `evidence/currency_followup.json`、`evidence/scope_acceptance.json` | 外币和软范围路由定向检查，含独立人工分级 |
+| `evidence/recovery_live.json` | 临时失败fixture回查既有00029；显式说明原旧回执未绑定、不是实际断网或迁移 |
 
 `variants_initial.json` 保留最初 3 通过、4 部分、1 额度阻断的运行，不能作为当前 API 不可用的依据。后续改进没有覆盖全部新问法，也未把所有额外公式检查变成硬约束。
 
@@ -36,9 +45,9 @@
 
 ## 操作与恢复
 
-`python agent.py` 启动 CLI。`/trace` 看上一模型轮实际工具收据；`/pending` 看预览；`/confirm id` 对具体载荷确认并创建草稿；`/discard id` 只撤销本地预览；`/reset` 只清会话；`/quit` 退出。`--check`只证明 ERP 与配置存在，不验证 API 额度或回答质量。
+`python agent.py`启动CLI，输入问题才调用模型。`/trace`看上一模型轮收据，`/pending`看预览，`/confirm id`确认并创建草稿，`/discard id`仅撤销预览，`/reset`清会话，`/quit`退出。`--check`只查ERP与配置；可选`--check-model`会消耗额度，验证真实模型工具协议，不代表业务质量。
 
-交互状态在 `.local/proposals.sqlite3`。普通 `Agent(client)` 可使用内存状态隔离测试；历史可选写入验证使用独立 journal。预览过期、目标配置变化须重新准备；creating/failed 或回读失败先按单号对账，不能盲重发。
+交互状态在 `.local/proposals.sqlite3`。普通 `Agent(client)` 可使用内存状态隔离测试；历史可选写入验证使用独立 journal。预览过期、目标配置变化须重新准备；creating/failed已有单号用`/reconcile id`，无单号人工核查，不能盲重发。旧未绑定记录不隐式迁移。重建预览前应排除已有订单，避免表达重复业务意图。
 
 `/trace` 和 `query_scope` 显示查过什么、按什么过滤；关键词候选不证明类别全集，Bin 位置不证明历史转料。受限门禁只覆盖已知措辞，可请求改写一次或拒绝，不能保证所有最终文字正确。
 

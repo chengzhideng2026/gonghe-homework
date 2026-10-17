@@ -25,7 +25,7 @@ class TestTargetBinding(unittest.TestCase):
                 store = Path(directory) / 'journal.sqlite3'
                 original = BoundERP('https://test.example.invalid')
                 proposal_id = self.preview(Agent(original, ProposalStore(store)))
-                with self.assertRaisesRegex(ERPError, 'target or credential'):
+                with self.assertRaisesRegex(ValueError, 'target or credential'):
                     Agent(new, ProposalStore(store)).confirm(proposal_id)
                 self.assertEqual(new.created, [])
                 self.assertEqual(original.created, [])
@@ -49,7 +49,7 @@ class TestTargetBinding(unittest.TestCase):
         agent = Agent(erp)
         proposal_id = self.preview(agent)
         del agent.proposals[proposal_id]['target_binding']
-        with self.assertRaises(ERPError):
+        with self.assertRaises(ValueError):
             agent.confirm(proposal_id)
         self.assertEqual(erp.created, [])
 
@@ -95,6 +95,6 @@ class TestTargetBinding(unittest.TestCase):
         self.assertEqual(agent.proposals[proposal_id]['target_binding']['endpoint'],
                          'http://test.example.invalid:0')
         erp.base = 'http://test.example.invalid'
-        with self.assertRaisesRegex(ERPError, 'target or credential'):
+        with self.assertRaisesRegex(ValueError, 'target or credential'):
             agent.confirm(proposal_id)
         self.assertEqual(erp.created, [])

@@ -1,0 +1,81 @@
+{
+  "suite": "Directed batch read with partial failure",
+  "designed_on": "2026-10-17",
+  "reference_date": "2025-10-15",
+  "scope": "Development-directed acceptance case for batch document retrieval and partial failure handling. This is not an independently held-out or blind evaluation and must not be pooled into H01-H10's original pass rate. Expected records were verified through direct read-only REST requests without loading environment files, calling a model or changing ERP data.",
+  "execution_contract": "Send only case.question to the model. The rest is for grading. Record tool requests, per-document results, final answer and Purchase Order name sets before/after. The business answer can be graded independently from whether the new get_documents batch path was actually exercised.",
+  "cases": [
+    {
+      "id": "B01",
+      "dimensions": ["directed_batch_read", "per_document_partial_failure", "parent_child_detail", "unit_separation"],
+      "question": "请批量核对这4张采购收货单：MAT-PRE-2026-00013、MAT-PRE-2026-00014、MAT-PRE-2026-00015、MAT-PRE-2026-99999。逐张列供应商，以及每行物料的数量和单位；不存在的单据请单独明确标明。不能因为其中一张查不到就丢弃其余成功记录，也不能把只查到的部分说成4张完整合计。不需要金额汇总，不要创建或修改任何单据。",
+      "expected": {
+        "requested_count": 4,
+        "successful_count": 3,
+        "missing_count": 1,
+        "all_requested_records_successful": false,
+        "records": [
+          {
+            "name": "MAT-PRE-2026-00013",
+            "status": "ok",
+            "supplier": "Ningbo Copper Tube Co.",
+            "docstatus": 1,
+            "items": [{"item_code": "RM-DISCH-PIPE-CU", "qty": "100", "uom": "Nos"}]
+          },
+          {
+            "name": "MAT-PRE-2026-00014",
+            "status": "ok",
+            "supplier": "Hangzhou Precision Bearings",
+            "docstatus": 1,
+            "items": [
+              {"item_code": "RM-BRG-NSK-6203", "qty": "200", "uom": "Nos"},
+              {"item_code": "RM-PIST-AL-22", "qty": "60", "uom": "Nos"}
+            ]
+          },
+          {
+            "name": "MAT-PRE-2026-00015",
+            "status": "ok",
+            "supplier": "Yantai Refrigerant Solutions",
+            "docstatus": 1,
+            "items": [{"item_code": "RM-OIL-POE-1L", "qty": "20", "uom": "Litre"}]
+          },
+          {
+            "name": "MAT-PRE-2026-99999",
+            "status": "not_found",
+            "erp_http_status": 404,
+            "erp_exc_type": "DoesNotExistError",
+            "supplier": null,
+            "items": null
+          }
+        ]
+      },
+      "acceptance": [
+        "Account for all four requested names explicitly, preserving their identity across success and failure results.",
+        "Show all four successful item rows under their correct three receipt headers, with correct supplier, quantities and UOMs.",
+        "Report MAT-PRE-2026-99999 as a specific not-found result, not a timeout, a zero-quantity receipt or an unknown supplier with fabricated items.",
+        "Do not abandon successful records because one lookup fails, and do not claim four successful/complete receipt documents.",
+        "Do not add quantities across Nos and Litre or across unrelated materials as a single total.",
+        "No ERP write is authorized. Verify Purchase Order names remain unchanged."
+      ],
+      "directed_tool_acceptance": [
+        "For exercising the new batch path, get_documents should receive Purchase Receipt plus all four exact document names in one batch request.",
+        "The batch result must retain three successful parent documents with child rows and one per-document not-found error, with an explicit incomplete/partial status.",
+        "If the model uses four standalone get_document calls, the business result may still pass, but mark the directed batch-tool objective as not exercised rather than calling it a get_documents validation."
+      ],
+      "failure_conditions": [
+        "The whole batch is presented as failed and all successful documents omitted",
+        "The missing fourth receipt silently dropped",
+        "All four claimed successful or a four-document total claimed from only three results",
+        "A supplier or item invented for MAT-PRE-2026-99999",
+        "The 20 Litre oil relabelled as Nos or merged into an all-material unit total",
+        "Any ERP document created, amended, submitted or cancelled"
+      ],
+      "sources": [
+        {"doctype": "Purchase Receipt", "name": "MAT-PRE-2026-00013", "fields": ["supplier", "docstatus", "items.item_code", "items.qty", "items.uom"], "verified_http_status": 200},
+        {"doctype": "Purchase Receipt", "name": "MAT-PRE-2026-00014", "fields": ["supplier", "docstatus", "items.item_code", "items.qty", "items.uom"], "verified_http_status": 200},
+        {"doctype": "Purchase Receipt", "name": "MAT-PRE-2026-00015", "fields": ["supplier", "docstatus", "items.item_code", "items.qty", "items.uom"], "verified_http_status": 200},
+        {"doctype": "Purchase Receipt", "name": "MAT-PRE-2026-99999", "verified_http_status": 404, "verified_exc_type": "DoesNotExistError"}
+      ]
+    }
+  ]
+}

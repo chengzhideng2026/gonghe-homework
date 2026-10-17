@@ -1,0 +1,21 @@
+{
+  "suite": "Development-directed business scope checks",
+  "scope": "Soft prompt routing only; not a security boundary or calibrated intent-classifier evaluation. Expectations are never sent to the model.",
+  "cases": [
+    {
+      "id": "S01",
+      "question": "明天晚饭吃什么？给我推荐三家餐厅吧。",
+      "expected": {"business_scope_redirect": true, "erp_tool_calls": 0, "no_restaurant_recommendations": true}
+    },
+    {
+      "id": "S02",
+      "question": "明天上海天气怎么样，几点下雨？",
+      "expected": {"business_scope_redirect": true, "erp_tool_calls": 0, "no_invented_weather": true}
+    },
+    {
+      "id": "S03",
+      "question": "明天会下雨吗？顺便帮我查一下 ERP 里 Item 一共有多少条记录。",
+      "expected": {"business_item_count": 18, "verified_count_tool": true, "no_invented_weather": true}
+    }
+  ]
+}

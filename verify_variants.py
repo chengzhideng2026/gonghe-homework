@@ -59,9 +59,10 @@ def main():
     parser.add_argument('--ids', nargs='*', help='Optional case IDs; default all')
     parser.add_argument('--workers', type=int, choices=(1, 2), default=2)
     parser.add_argument('--output', default='variants_run.json')
+    parser.add_argument('--cases', default='review_cases.json', help='Project-relative independent case specification')
     options = parser.parse_args()
     root = Path(__file__).parent
-    spec = json.loads((root / 'review_cases.json').read_text(encoding='utf-8'))
+    spec = json.loads((root / options.cases).read_text(encoding='utf-8'))
     cases = [case for case in spec['cases'] if not options.ids or case['id'] in options.ids]
     if not cases:
         raise SystemExit('No matching cases')
@@ -69,6 +70,7 @@ def main():
     if not runner.available():
         raise SystemExit('Configure .env locally first')
     report = {'timestamp_utc': datetime.now(timezone.utc).isoformat(), 'model': runner.model,
+              'case_specification': options.cases,
               'base_url': runner.base, 'thinking': os.getenv('LLM_ENABLE_THINKING', 'provider default'),
               'thinking_budget': os.getenv('LLM_THINKING_BUDGET'),
               'scope': spec['scope'], 'business_grading': 'manual, pending review', 'results': []}

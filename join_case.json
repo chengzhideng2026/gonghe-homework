@@ -1,0 +1,21 @@
+{
+  "scope": "Targeted regression for a real duplicate-parent join observed in H06; not an independent blind or official held-out case. Expected data are never passed to the model.",
+  "cases": [
+    {
+      "id": "J01",
+      "question": "销售订单 SAL-ORD-2026-00010 实际关联了多少张已提交销售发票？请列出不同发票号，按币种汇总发票总额；一张发票的两条明细不能当成两张发票或重复累加表头金额。",
+      "expected": {
+        "unique_invoice_count": 1,
+        "invoice_names": ["ACC-SINV-2026-00010"],
+        "currency": "USD",
+        "grand_total": "6600",
+        "raw_join_rows": 2
+      },
+      "acceptance": [
+        "Use actual Sales Invoice Item.sales_order links, not matching numeric suffixes.",
+        "Count distinct parent invoice names and sum each parent's grand_total once.",
+        "Report USD 6600, never 13200 or two invoices."
+      ]
+    }
+  ]
+}

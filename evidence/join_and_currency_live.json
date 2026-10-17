@@ -1,0 +1,41 @@
+{
+  "timestamp_utc": "2026-10-17T07:37:14.927049+00:00",
+  "scope": "Direct read-only live API validation; no model involved",
+  "raw_join_count": 2,
+  "distinct_tool_count": 1,
+  "aggregate": {
+    "doctype": "Sales Invoice",
+    "count": 1,
+    "matched_rows": 2,
+    "duplicates_collapsed": 1,
+    "complete": true,
+    "groups": [
+      {
+        "group": {
+          "currency": "USD"
+        },
+        "count": 1,
+        "sums": {
+          "grand_total": "6600.0"
+        }
+      }
+    ],
+    "consistency": "Complete coverage of matching raw rows with initial/final count checks; count and group totals count each parent name once. Explicit child-join duplicates are collapsed only when projected fields agree. Not a transactional database snapshot. Use filters to avoid mixing currencies/UOMs."
+  },
+  "listing_pagination": {
+    "offset": 0,
+    "limit": 20,
+    "returned": 2,
+    "total": 2,
+    "total_basis": "raw_join_rows",
+    "unique_names_returned": 1,
+    "duplicate_names": [
+      "ACC-SINV-2026-00010"
+    ],
+    "has_more": false,
+    "next_offset": null
+  },
+  "foreign_quote_rejection": "Quote currency EUR differs from company base currency USD; supply an explicitly agreed base-currency price. No automatic conversion is supported.",
+  "no_preview_for_foreign_quote": true,
+  "no_erp_po_write": true
+}

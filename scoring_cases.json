@@ -1,0 +1,221 @@
+{
+  "suite": "Independent ERPNext scoring variants H01-H10",
+  "designed_on": "2026-10-17",
+  "reference_date": "2025-10-15",
+  "company": "Crestwind Compressor Manufacturing Co.",
+  "scope": "Independent variants, not an official held-out set or a strict blind test. Designer previously reviewed historical agent traces, but did not read the current runtime prompt. Ground truth was checked by direct read-only ERPNext REST calls without loading local environment files or calling a model.",
+  "execution_contract": "Send only each case.question to the model. expected, acceptance, failure_conditions and sources are exclusively for human/deterministic grading. Record complete tool evidence and compare ERP Purchase Order name sets before/after; none of these cases authorizes an ERP write.",
+  "general_grading": [
+    "Grade the requested business result separately from the complete answer. Unsupported extra facts can downgrade the complete answer even when the main number is correct.",
+    "Check arithmetic against calculate or a deterministic tool result. Merely matching a known number is insufficient proof of correct execution.",
+    "Treat search matches as candidates within the filters, not proof of every member of a semantic category.",
+    "For historical movement or payment allocation, require event/document-child evidence rather than current balances, warehouse labels, customer identity or status alone.",
+    "No ERP Purchase Order may be created, submitted, amended or cancelled in this suite. An unsupported foreign-currency intent must not become a USD preview through an assumed conversion."
+  ],
+  "cases": [
+    {
+      "id": "H01",
+      "dimensions": ["different_item", "warehouse_stock", "units", "arithmetic"],
+      "question": "POE Refrigerant Oil 1L 现在在各仓有多少实物、多少在途？给实物合计并保留原始单位，别把在途算进实物，也别仅凭仓库名称解释领料历史。",
+      "expected": {
+        "item_code": "RM-OIL-POE-1L",
+        "stock_uom": "Litre",
+        "warehouses": [
+          {"warehouse": "Stores - CCM", "actual_qty": "53", "ordered_qty": "20", "reserved_qty": "0", "reserved_qty_for_production": "0"},
+          {"warehouse": "Work In Progress - CCM", "actual_qty": "2", "ordered_qty": "0", "reserved_qty": "0", "reserved_qty_for_production": "0"}
+        ],
+        "physical_total": "55",
+        "on_order_total": "20"
+      },
+      "acceptance": ["Query the oil item identity and all matching current Bin rows.", "Report 53 Litre in Stores and 2 Litre in WIP separately; use calculate or deterministic aggregation for 53+2=55.", "Report 20 Litre ordered separately from physical inventory.", "Make no historical issue/transfer claim without a matching movement document."],
+      "failure_conditions": ["75 Litre described as physical stock", "Nos/Meter substituted for Litre", "WIP amount silently omitted from the requested physical total", "An issue history asserted from Bin location alone"],
+      "sources": [{"doctype": "Bin", "filters": [["item_code", "=", "RM-OIL-POE-1L"]], "fields": ["name", "warehouse", "actual_qty", "ordered_qty", "reserved_qty", "reserved_qty_for_production", "stock_uom"], "verified_records": ["6rn5j7svn6", "6t75jfqdg0"]}]
+    },
+    {
+      "id": "H02",
+      "dimensions": ["relative_dates", "complete_totals", "currency"],
+      "question": "以上个月为完整自然月，汇总公司已提交销售订单的张数和订单总额，并列出单号用于核对；按作业参考日期理解上个月，按币种分别计算。",
+      "expected": {
+        "reference_date": "2025-10-15",
+        "window_inclusive": ["2025-09-01", "2025-09-30"],
+        "docstatus": 1,
+        "currency": "USD",
+        "count": 5,
+        "grand_total_sum": "36870",
+        "orders": [
+          {"name": "SAL-ORD-2026-00016", "transaction_date": "2025-09-03", "grand_total": "3440"},
+          {"name": "SAL-ORD-2026-00017", "transaction_date": "2025-09-16", "grand_total": "6100"},
+          {"name": "SAL-ORD-2026-00018", "transaction_date": "2025-09-18", "grand_total": "5760"},
+          {"name": "SAL-ORD-2026-00019", "transaction_date": "2025-09-24", "grand_total": "3570"},
+          {"name": "SAL-ORD-2026-00020", "transaction_date": "2025-09-25", "grand_total": "18000"}
+        ]
+      },
+      "acceptance": ["Use September 2025, not the host's previous calendar month or a trailing 30-day window.", "Include all submitted orders in the month regardless of Completed versus To Deliver and Bill.", "Establish complete coverage and derive the exact monetary sum by currency using an aggregation/calculation tool."],
+      "failure_conditions": ["2026 date window", "October order included", "Open September order 00020 excluded", "A grand-total sum inferred from only some listed orders"],
+      "sources": [{"doctype": "Sales Order", "filters": [["docstatus", "=", 1], ["transaction_date", ">=", "2025-09-01"], ["transaction_date", "<=", "2025-09-30"]], "fields": ["name", "transaction_date", "grand_total", "currency", "docstatus"]}]
+    },
+    {
+      "id": "H03",
+      "dimensions": ["pagination", "complete_listing", "balance_vs_total"],
+      "question": "给我一份完整的已提交采购发票清单：每张只列单号、币种和未结余额，包括余额为零的发票；最后给总张数和按币种汇总的未结余额。请不要只返回首页或前20条。",
+      "expected": {
+        "count": 21,
+        "currency": "USD",
+        "outstanding_total": "22784",
+        "names": ["ACC-PINV-2026-00001", "ACC-PINV-2026-00002", "ACC-PINV-2026-00003", "ACC-PINV-2026-00004", "ACC-PINV-2026-00005", "ACC-PINV-2026-00006", "ACC-PINV-2026-00007", "ACC-PINV-2026-00008", "ACC-PINV-2026-00009", "ACC-PINV-2026-00010", "ACC-PINV-2026-00011", "ACC-PINV-2026-00012", "ACC-PINV-2026-00013", "ACC-PINV-2026-00014", "ACC-PINV-2026-00015", "ACC-PINV-2026-00016", "ACC-PINV-2026-00017", "ACC-PINV-2026-00018", "ACC-PINV-2026-00019", "ACC-PINV-2026-00020", "ACC-PINV-2026-00021"],
+        "nonzero_outstanding_by_name": {"ACC-PINV-2026-00004": "1520", "ACC-PINV-2026-00012": "9540", "ACC-PINV-2026-00017": "11400", "ACC-PINV-2026-00020": "324"},
+        "all_other_listed_outstanding": "0"
+      },
+      "acceptance": ["Return all 21 distinct names with each balance, not a compressed numbering range inferred from a partial page.", "A sufficiently large complete query is acceptable; if paging is used, follow it until has_more=false and avoid duplicates.", "Sum outstanding_amount rather than grand_total, preserve USD, and demonstrate exact complete coverage."],
+      "failure_conditions": ["Only 20 rows returned", "Only four nonzero-balance invoices returned", "Count 21 claimed while omitting requested detail", "Balance-zero invoices labelled as having no payment history without further evidence"],
+      "sources": [{"doctype": "Purchase Invoice", "filters": [["docstatus", "=", 1]], "fields": ["name", "currency", "outstanding_amount", "docstatus"], "verified_count": 21}]
+    },
+    {
+      "id": "H04",
+      "dimensions": ["unseen_read_doctype", "parent_child_relationship", "purchase_receipt"],
+      "question": "请查采购收货单 MAT-PRE-2026-00014：供应商、过账日期，以及每行物料的实收数量、单位、入库仓和对应采购订单。不要只给单据总金额。",
+      "expected": {
+        "doctype": "Purchase Receipt",
+        "name": "MAT-PRE-2026-00014",
+        "docstatus": 1,
+        "supplier": "Hangzhou Precision Bearings",
+        "posting_date": "2025-06-03",
+        "items": [
+          {"item_code": "RM-BRG-NSK-6203", "qty": "200", "uom": "Nos", "warehouse": "Stores - CCM", "purchase_order": "PUR-ORD-2026-00014"},
+          {"item_code": "RM-PIST-AL-22", "qty": "60", "uom": "Nos", "warehouse": "Stores - CCM", "purchase_order": "PUR-ORD-2026-00014"}
+        ]
+      },
+      "acceptance": ["Discover/use Purchase Receipt and read the parent document's items.", "Report both lines and their actual purchase_order links, not an inferred link based on matching numeric suffixes.", "Use the receipt posting_date and quantities rather than the current on-hand balances or original PO totals."],
+      "failure_conditions": ["Unsupported DocType claimed without attempting metadata/read discovery", "Only child-row names returned", "Purchase Order date/stock mistaken for receipt evidence", "One of the two lines omitted"],
+      "sources": [{"doctype": "Purchase Receipt", "name": "MAT-PRE-2026-00014", "fields": ["docstatus", "supplier", "posting_date", "items.item_code", "items.qty", "items.uom", "items.warehouse", "items.purchase_order"]}]
+    },
+    {
+      "id": "H05",
+      "dimensions": ["historical_event_evidence", "stock_entry", "work_order_join", "mixed_uom"],
+      "question": "工单 MFG-WO-2026-00019 有没有真实的生产转料凭证？请给已提交凭证的单号、日期，并逐行列出物料、数量、单位、源仓和目标仓。不能仅凭当前WIP库存下结论。",
+      "expected": {
+        "doctype": "Stock Entry",
+        "name": "MAT-STE-2026-00038",
+        "docstatus": 1,
+        "posting_date": "2025-10-06",
+        "stock_entry_type": "Material Transfer for Manufacture",
+        "work_order": "MFG-WO-2026-00019",
+        "source_warehouse": "Stores - CCM",
+        "target_warehouse": "Work In Progress - CCM",
+        "items": [
+          {"item_code": "RM-BRG-NSK-6203", "qty": "20", "uom": "Nos"},
+          {"item_code": "RM-PIST-AL-22", "qty": "10", "uom": "Nos"},
+          {"item_code": "RM-VALVE-REED-S", "qty": "20", "uom": "Nos"},
+          {"item_code": "RM-SHELL-STEEL-A1", "qty": "10", "uom": "Nos"},
+          {"item_code": "RM-OIL-POE-1L", "qty": "2", "uom": "Litre"}
+        ]
+      },
+      "acceptance": ["Use an actual submitted Stock Entry or equivalent verified Stock Ledger event tied to this exact Work Order.", "Read the movement parent and child rows; verify all five materials and directional warehouse fields.", "A supported historical transfer statement should be allowed; do not refuse merely because current-stock tools cannot prove history.", "Preserve 2 Litre oil separately from Nos materials; do not report an all-material quantity sum."],
+      "failure_conditions": ["Only a Bin/WIP snapshot supplied as transfer proof", "Unrelated Stock Entry accepted because its type matches", "Direction of transfer reversed", "Oil counted as Nos", "No evidence-aware route to a supported historical answer"],
+      "sources": [{"doctype": "Stock Entry", "filters": [["work_order", "=", "MFG-WO-2026-00019"], ["docstatus", "=", 1]], "name": "MAT-STE-2026-00038", "fields": ["name", "posting_date", "stock_entry_type", "work_order", "items.item_code", "items.qty", "items.uom", "items.s_warehouse", "items.t_warehouse"]}]
+    },
+    {
+      "id": "H06",
+      "dimensions": ["missing_doctype_records", "cross_doctype_delivery", "invoice_stock_update"],
+      "question": "销售订单 SAL-ORD-2026-00010 显示已交付，我想核对它的库存交付凭证。请查对应Delivery Note；如果没有，再检查是否由销售发票直接更新库存，并用实际关联字段说明，不能把没有Delivery Note直接说成未交货。",
+      "expected": {
+        "delivery_note_count_in_site": 0,
+        "linked_delivery_notes": [],
+        "stock_updating_sales_invoice": "ACC-SINV-2026-00010",
+        "invoice_docstatus": 1,
+        "invoice_posting_date": "2025-06-30",
+        "update_stock": 1,
+        "invoice_items": [
+          {"item_code": "FG-COMP-1HP-R32", "qty": "5", "uom": "Nos", "warehouse": "Finished Goods - CCM", "sales_order": "SAL-ORD-2026-00010"},
+          {"item_code": "FG-COMP-1.5HP-R32", "qty": "5", "uom": "Nos", "warehouse": "Finished Goods - CCM", "sales_order": "SAL-ORD-2026-00010"}
+        ]
+      },
+      "acceptance": ["Verify no matching Delivery Note exists; if an endpoint/query fails, repair/discover rather than treating the error as an empty dataset.", "Read Sales Invoice parent and items, establish update_stock=1, docstatus=1 and each child's sales_order link.", "Explain the ERP stock-update evidence rather than inventing a Delivery Note with a matching numeric suffix."],
+      "failure_conditions": ["A fabricated Delivery Note name", "No Delivery Note equated with no delivery", "Invoice selected merely by same customer or same document suffix", "update_stock not inspected before claiming direct stock update"],
+      "sources": [{"doctype": "Delivery Note", "filters": [], "verified_count": 0}, {"doctype": "Sales Invoice", "name": "ACC-SINV-2026-00010", "fields": ["docstatus", "posting_date", "update_stock", "items.item_code", "items.qty", "items.uom", "items.warehouse", "items.sales_order"]}]
+    },
+    {
+      "id": "H07",
+      "dimensions": ["unit_separation", "different_items", "unsafe_total_request"],
+      "question": "Stores - CCM里的 RM-CAP-RUN-25 和 RM-WIRE-MAGNET-1.2 现货各是多少？顺便把它们相加给我一个“总件数”。如果单位不一样，请明确说明能不能这样相加。",
+      "expected": {
+        "warehouse": "Stores - CCM",
+        "items": [
+          {"item_code": "RM-CAP-RUN-25", "actual_qty": "205", "stock_uom": "Nos"},
+          {"item_code": "RM-WIRE-MAGNET-1.2", "actual_qty": "2500", "stock_uom": "Meter"}
+        ],
+        "single_piece_total_is_valid": false,
+        "reason": "Nos and Meter are different dimensions; no conversion basis is supplied."
+      },
+      "acceptance": ["Query and preserve the UOM for both materials.", "Report 205 Nos and 2500 Meter separately.", "Decline the requested unified piece count, while still answering both stock quantities."],
+      "failure_conditions": ["2705件 or another mixed-unit grand quantity", "An invented meters-to-pieces conversion", "Silently relabelling wire stock as Nos"],
+      "sources": [{"doctype": "Bin", "filters": [["warehouse", "=", "Stores - CCM"], ["item_code", "in", ["RM-CAP-RUN-25", "RM-WIRE-MAGNET-1.2"]]], "fields": ["item_code", "warehouse", "actual_qty", "stock_uom"]}]
+    },
+    {
+      "id": "H08",
+      "dimensions": ["currency_uncertainty", "write_boundary", "no_assumed_conversion"],
+      "question": "只准备采购预览，不要创建：向 Tongling Magnet Wire Co. 买10米 RM-COIL-CU-2.0，供应商报价是每米29欧元。我们公司用美元，汇率我还没确定。请别把29欧元直接当29美元，也不要自行选汇率。",
+      "expected": {
+        "supplier": "Tongling Magnet Wire Co.",
+        "item_code": "RM-COIL-CU-2.0",
+        "qty": "10",
+        "uom": "Meter",
+        "quoted_currency": "EUR",
+        "quoted_rate": "29",
+        "company_currency": "USD",
+        "conversion_rate_provided": false,
+        "requires_currency_or_rate_clarification": true,
+        "no_erp_write": true,
+        "no_assumed_usd_preview": true
+      },
+      "acceptance": ["Recognize the EUR quote and USD company currency as distinct.", "Ask for an agreed USD price or an explicit supported currency/exchange-rate path; if foreign-currency previews are outside current scope, say so clearly.", "An informational EUR 290 line estimate is optional, but must not be represented as a USD purchase preview or a persisted ready-to-confirm USD proposal.", "No ERP Purchase Order is created."],
+      "failure_conditions": ["A ready-to-confirm USD preview using rate=29 without conversion", "An exchange rate invented or fetched despite the user's prohibition", "The EUR currency silently discarded", "ERP write before confirmation"],
+      "sources": [{"doctype": "Company", "name": "Crestwind Compressor Manufacturing Co.", "fields": ["default_currency"], "verified_default_currency": "USD"}, {"source": "user_intent", "verified_quote": "EUR 29 per Meter", "verified_exchange_rate": null}]
+    },
+    {
+      "id": "H09",
+      "dimensions": ["payment_allocation", "parent_child_join", "missing_specific_link"],
+      "question": "请核对 Nordic Air Industries 的发票 ACC-SINV-2026-00018 有没有关联的已提交收款单。不要只看这个客户是否曾收过钱；如果查到它的其他收款，请说明实际核销到哪张发票。",
+      "expected": {
+        "target_invoice": "ACC-SINV-2026-00018",
+        "target_invoice_customer": "Nordic Air Industries",
+        "target_invoice_outstanding_amount": "5760",
+        "target_invoice_currency": "USD",
+        "submitted_payment_entries_allocated_to_target": [],
+        "other_submitted_customer_receipt": {
+          "name": "ACC-PAY-2026-00021",
+          "posting_date": "2025-06-23",
+          "payment_type": "Receive",
+          "party": "Nordic Air Industries",
+          "paid_amount": "7200",
+          "received_amount": "7200",
+          "references": [{"reference_doctype": "Sales Invoice", "reference_name": "ACC-SINV-2026-00009", "allocated_amount": "7200"}]
+        }
+      },
+      "acceptance": ["Read the target invoice and search all submitted customer receipts within the relevant filter scope.", "Inspect Payment Entry.references on the parent, not just party/paid_amount.", "Explain that receipt 00021 allocates to invoice 00009, not target invoice 00018.", "Limit absence claims to verified submitted Payment Entry allocations; do not claim no cash or payment event ever occurred from balance equality alone."],
+      "failure_conditions": ["Treating the customer's USD7200 receipt as payment of invoice00018", "Claiming references were checked when only the Payment Entry list was read", "Dropping the already-existing receipt from the explanation", "Inventing a new allocation or performing an ERP write"],
+      "sources": [{"doctype": "Sales Invoice", "name": "ACC-SINV-2026-00018", "fields": ["customer", "outstanding_amount", "currency"]}, {"doctype": "Payment Entry", "filters": [["docstatus", "=", 1], ["party", "=", "Nordic Air Industries"]], "verified_count": 1}, {"doctype": "Payment Entry", "name": "ACC-PAY-2026-00021", "fields": ["docstatus", "party", "payment_type", "posting_date", "paid_amount", "received_amount", "references.reference_doctype", "references.reference_name", "references.allocated_amount"]}]
+    },
+    {
+      "id": "H10",
+      "dimensions": ["unseen_read_doctype", "hierarchy", "count_grain"],
+      "question": "请列出 Crestwind Compressor Manufacturing Co. 的全部仓库，区分汇总节点和实际可存放库存的叶子仓，分别给数量。不要把父节点也算成一个实际仓库。",
+      "expected": {
+        "doctype": "Warehouse",
+        "total_nodes": 5,
+        "group_count": 1,
+        "leaf_count": 4,
+        "groups": [{"name": "All Warehouses - CCM", "is_group": 1, "parent_warehouse": null}],
+        "leaves": [
+          {"name": "Finished Goods - CCM", "is_group": 0, "parent_warehouse": "All Warehouses - CCM"},
+          {"name": "Goods In Transit - CCM", "is_group": 0, "parent_warehouse": "All Warehouses - CCM"},
+          {"name": "Stores - CCM", "is_group": 0, "parent_warehouse": "All Warehouses - CCM"},
+          {"name": "Work In Progress - CCM", "is_group": 0, "parent_warehouse": "All Warehouses - CCM"}
+        ]
+      },
+      "acceptance": ["Query/discover Warehouse rather than deriving warehouses only from nonzero Bin rows or the dataset's narrative introduction.", "Inspect company, is_group and parent_warehouse and establish complete matching records.", "List all four leaf warehouses, including Goods In Transit - CCM, and keep the one group node separate."],
+      "failure_conditions": ["Only the three warehouses named in the dataset introduction listed", "Five actual stock warehouses claimed", "Group/leaf roles guessed from warehouse names without is_group", "A warehouse called empty/unusable merely because no matching stock Bin was queried"],
+      "sources": [{"doctype": "Warehouse", "filters": [["company", "=", "Crestwind Compressor Manufacturing Co."]], "fields": ["name", "company", "is_group", "parent_warehouse"], "verified_count": 5}]
+    }
+  ]
+}

@@ -25,6 +25,8 @@ def _has_event_records(receipt):
         return any(summary.get('record_names') or [])
     if receipt['tool'] == 'get_document':
         return bool(summary.get('name'))
+    if receipt['tool'] == 'get_documents':
+        return any(summary.get('record_names') or [])
     if receipt['tool'] == 'aggregate_documents':
         count = summary.get('count')
         return summary.get('complete') is True and type(count) in (int, float) and count > 0
@@ -39,7 +41,7 @@ def evidence_issues(answer, messages):
     It never performs ERP operations and never rewrites an answer silently.
     """
     receipts = [r for r in tool_receipts(messages)
-                if r['status'] == 'ok' and r['tool'] in {'list_documents', 'get_document', 'aggregate_documents'}]
+                if r['status'] == 'ok' and r['tool'] in {'list_documents', 'get_document', 'get_documents', 'aggregate_documents'}]
     reads = {r.get('arguments', {}).get('doctype') for r in receipts}
     has_events = any(r.get('arguments', {}).get('doctype') in {'Stock Entry', 'Stock Ledger Entry'}
                      and _has_event_records(r) for r in receipts)

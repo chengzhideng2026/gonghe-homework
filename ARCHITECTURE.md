@@ -2,11 +2,11 @@
 
 ## 当前状态
 
-54项代码测试、19项真实REST复核通过；从非项目目录按脚本绝对路径运行`--check`也通过，配置按脚本位置加载。已修复重复聚合字段导致双计、采购预览未绑定ERP目标的问题，并新增CLI `/trace`实际工具收据、列表`name/query_scope`、Bin快照警告及受限回答检查。
+104项代码测试通过；既有19项REST复核后又追加了真实join/币种检查。从非项目目录按脚本路径启动检查通过；可选`--check-model`约5秒完成Item18真实工具回路。当前八工具增加有界批量父单读取，并强化子表join计数、报价币种和小数字面精度。
 
 用户充值后模型API已恢复，完成完整八题复跑与定向改进：完整八题核心8/8，整段6通过、2部分；最新定向E07通过，E01不再有历史断言，但额外公式未调用calculate，保守部分。三轮“库存→缺口→采购预览”核心与载荷断言通过，第二轮额外情景公式仍部分。本轮采购单名称集合均29→29，没有新建ERP采购单；这是本地证据，不是fresh seed的运行条件。
 
-技术选型、隐藏题原文依据与替换条件见[TECH_REVIEW.md](TECH_REVIEW.md)，接手操作见[PROJECT_GUIDE.md](PROJECT_GUIDE.md)；最新总判分见[FOLLOWUP_REVIEW.md](evidence/FOLLOWUP_REVIEW.md)，完整逐阶段记录见AUDIT.md，历史失败保留原有语境。
+技术选型见[TECH_REVIEW.md](TECH_REVIEW.md)，接手操作见[PROJECT_GUIDE.md](PROJECT_GUIDE.md)；新增独立十题、批量与join判分见[SCORING_REVIEW.md](evidence/SCORING_REVIEW.md)，早期复测见[FOLLOWUP_REVIEW.md](evidence/FOLLOWUP_REVIEW.md)，完整演进见AUDIT.md。历史七工具轨迹不改成八工具，真实日期与审计记录保留。
 
 ## 先回答：现在算不算全部做完
 
@@ -83,21 +83,24 @@ ERPNext以DocType描述业务对象。一个DocType可理解为“带字段定�
 
 子表并不总能通过列表API完整读取所有字段。现在列表工具显式提示缺失字段，复杂子表优先通过父单详情读取，避免把“只返回name”误当成数量为零。
 
-## 4. 暴露给模型的七个工具
+## 4. 暴露给模型的八个工具
 
 | 工具 | 输入/输出与边界 |
 |---|---|
 | get_doctype_meta | 发现字段、Link/Table关系；去掉Frappe界面脚本与布局，保留真实主子表schema |
-| count_documents | 按DocType/过滤计数 |
-| list_documents | 指定字段、过滤、排序、分页；包含name与query_scope；返回records与total/has_more/next_offset；Bin另带当前快照警告 |
+| count_documents | 按DocType/过滤计父单；显式子表join走完整扫描，按distinct父name计数 |
+| list_documents | 字段/过滤/排序/分页，含name与query_scope；join时保留raw行及offset，说明本页唯一父名/重复名；Bin另带快照警告 |
 | get_document | 读取指定单据及子表 |
-| aggregate_documents | 完整有界扫描，按字段分组计数、Decimal金额求和；分组/求和字段校验并去重；最多10000行，重复/提前结束/缺字段/计数变化时拒绝给完整总额 |
+| get_documents | 同DocType最多20个输入名，保序去重后逐项GET；回读身份校验、逐项错误/成功计数，全部成功才complete；不自动join/重试 |
+| aggregate_documents | 完整有界扫描、分组计数和Decimal求和；字段去重；显式join的重复父名仅在投影一致时折叠，冲突拒绝；无join重复仍拒绝 |
 | calculate | Decimal的加减乘除和括号；用于净额、占比、毛利。AST仅接受数字与算术，不提供eval、函数调用、变量或系统访问 |
-| prepare_purchase_order | 校验供应商/物料/单位/数量/价格/日期/公司/币种，生成载荷快照与proposal-id；不创建ERP单据 |
+| prepare_purchase_order | 显式报价currency必须匹配公司本位币，校验供应商/物料/单位/数值/日期后生成快照；不自动换汇、不创建单据 |
 
 `ERPNextClient.create`存在于Python内部，但不在模型工具白名单。模型无法调用确认、直接创建、取消、SQL或shell工具。新增只读DocType复用现有工具；新增写入类型应单独添加业务验证和确认适配器。
 
 `aggregate_documents`输出分组金额字符串，避免后续二进制浮点累计误差。HTTP JSON目前先按普通浮点解析，Decimal不能恢复输入阶段已丢失的极大金额精度，不能宣称任意金额均绝对精确。模型仍负责解释、分组选择和业务口径；完整扫描并不自动意味着“选对了业务过滤条件”。
+
+批量complete只覆盖指定名称，不代表整个DocType/业务类别。部分404仍返回其他成功单据，不能称四单完整合计，但明确范围的三单小计仍有效。B01真实一调用三单成功/一单404，核心通过；模型额外泛称任何跨单据合计无效，整段部分。
 
 ## 5. 一次问答如何执行
 
@@ -120,6 +123,10 @@ CLI支持`/reset`清对话，不会删除采购状态。长对话没有自动摘
 
 `answer_checks.py`检查全对话中的已知库存历史措辞：在当前或历史Bin快照语境缺少非空事件查询证据，却声称“已发/已转”等时，要求模型修正一次；仍违规，则拒绝最终答案。空事件查询不能解除限制，规则兼顾前后置不确定表达和问句，反馈按当前库存/明确历史请求区分。它不证明非空事件的相关性，也不检查任意事实或所有算术。机制通过mock验证；最新真实定向运行没有触发修正，能说的是回答不再含该历史断言，不能说已实测触发过纠错链路。
 
+采购工具的JSON小数参数单独使用`parse_float=Decimal`，避免在进入校验前先被Python浮点悄悄舍入；随后仍做原有范围、总额与ERP浮点可表示性检查。收据按报价小数文本保留参数。该改进针对模型报价输入，不代表ERP读响应的所有小数已无限精确。
+
+可选`--check-model`先检查配置，再读ERP的Item计数，最后要求模型调用匹配的`count_documents`并核对实际收据；错误阶段为configuration/erp/model/tool_protocol。它验证连通与协议，不是业务正确率，也不写采购单；只有显式运行才消耗模型请求，普通CLI启动不自动调用。
+
 ## 6. 写入路径为什么要单独处理
 
 流程为：
@@ -132,18 +139,23 @@ CLI支持`/reset`清对话，不会删除采购状态。长对话没有自动摘
 - 单位使用物料stock_uom；不自动做采购单位换算。
 - 数量为正，价格非负，拒绝NaN/Infinity、浮点溢出/下溢和不可表达的精度。
 - 公司有且唯一时可自动选定；多公司须明确。币种固定为该公司的本位币，不悄悄做外币换算。
+- 模型工具必须显式传入报价currency，并与公司本位币比较；外币报价拒绝，须明确协商本位币单价。受信Python调用保留currency=None兼容入口，不是模型可省略币种的通道。真实EUR校验已拒绝且未生成预览/采购单。
 - 相对日期固定参考日2025-10-15；默认交易日和需求日一起传给ERPNext。
 - CLI独立打印真正保存的快照，避免依赖模型是否完整复述。
 - 预览保存规范化ERP端点与凭据配置指纹，确认时必须一致；更换端点/凭据或旧预览没有绑定时要求重新准备。日志不保存凭据原文；这不是对同地址背后远端站点身份的完整证明。
 - 默认预览有效期15分钟，按真实机器经过时间计时；业务参考日不会让预览永不过期。
 - 确认前再查供应商、物料、公司币种，变化时拒绝沿用旧预览。
-- 回读检查单据字段、明细、总额、docstatus。税费/默认值/舍入造成差异时，返回review_required与差异列表；单据保持草稿，需人工复核。
+- 回读检查单据身份、字段、明细、总额、docstatus。税费/默认值/舍入或外部状态变化时，返回review_required与差异列表；本程序不自动提交或修改，需人工复核。
 
 **SQLite状态**：pending → creating → completed；失败或回读异常进入failed并记录已知单号；用户可将pending改为discarded；超时预览拒绝确认。creating在网络超时/进程崩溃后保留，防止重启后再POST一次。
 
 SQLite的BEGIN IMMEDIATE使同一本地journal的并发确认只有一个领取成功。它提供本地proposal级防重复，不是ERP服务端的全局exactly-once：两台机器各有journal、或用户重新准备新proposal时，仍需业务核对；不提供自动重试不确定写入。
 
 只读库和主模型验证使用内存proposal，保持测试隔离；交互CLI使用 `.local/proposals.sqlite3`。`/pending`查看状态，`/discard id`撤销预览。这里撤销的是本地意图，不会取消ERP订单。
+
+加载、按ID查询、pending、confirm、discard和reconcile都限定当前连接绑定，SQLite修改事务内再次核对。修复前只有confirm防误写，共享journal仍可见/丢弃其他连接预览；该缺口已由14项作用域测试覆盖。它不是SaaS登录或文件级权限隔离。
+
+新增`/reconcile id`仅对creating/failed的已记录单号GET回读，失败保留状态与单号；成功通过状态/名称比较更新结果，差异要求复核。未知单号不重发、不自动搜索相似单据认定成功。完整断线分支、记忆/检索/路由/租户取舍见[RECOVERY_AND_DESIGN](RECOVERY_AND_DESIGN.md)。仍没有服务端业务幂等键和持久聊天检查点。
 
 ## 7. 2026-10-16检查发现的真实问题（历史）
 
@@ -191,7 +203,7 @@ SQLite的BEGIN IMMEDIATE使同一本地journal的并发确认只有一个领取�
 
 | 文件 | 用途 |
 |---|---|
-| agent.py | CLI、模型循环、七工具、ERP HTTP客户端、采购规则 |
+| agent.py | CLI、模型循环、八工具、只读协议检查、ERP HTTP客户端、采购规则 |
 | proposal_store.py | SQLite确认journal与原子状态更新 |
 | tool_receipts.py | 从实际工具调用/结果生成可检查收据，不把模型自述当证据 |
 | answer_checks.py | 已知库存历史措辞门禁：一次修正，再失败拒绝；非通用真值验证 |
@@ -203,6 +215,7 @@ SQLite的BEGIN IMMEDIATE使同一本地journal的并发确认只有一个领取�
 | verify_extended.py | 新问题、完整汇总和可选单张本地草稿写入 |
 | verify_variants.py / review_cases.json | 8个独立业务变式、预期与运行轨迹；不是招聘方官方保密题 |
 | verify_conversation.py | 三轮真实会话、引用上轮缺口生成预览、载荷断言与未写检查 |
+| scoring_cases.json / batch_case.json / join_case.json | 独立H01—H10规格；开发定向B01/J01规格，不混入独立十题通过率 |
 | evidence/ | 分阶段原始证据 |
 | README.md / WRITEUP.md / TECH_REVIEW.md / PROJECT_GUIDE.md | 运行、设计取舍、技术复核与接手学习 |
 
@@ -210,7 +223,7 @@ SQLite的BEGIN IMMEDIATE使同一本地journal的并发确认只有一个领取�
 
 ## 11. 独立审查与后续真实复测
 
-开发检查由主审和3个独立审查子Agent协作，运行时仍是单模型工具循环。54项代码测试覆盖聚合参数、预览目标、工具收据、查询范围和受限回答检查等边界；真实REST19项复核通过。
+开发检查由主审和3个独立审查子Agent协作，运行时仍是单模型工具循环。当前104项代码测试覆盖聚合参数、预览目标、收据、查询范围、回答检查、批量、币种与join边界；真实验证分阶段保留。
 
 本轮两项实质修复：一是重复的`sum_fields`以前可能把一个金额加两次，现已校验并去重；二是本地持久预览以前没有绑定ERP环境，现已绑定端点和凭据配置指纹。`/trace`与列表`name`补充了审查证据，但没有把LLM文本变成完全确定的程序输出。
 
@@ -219,3 +232,11 @@ SQLite的BEGIN IMMEDIATE使同一本地journal的并发确认只有一个领取�
 增加query_scope/Bin警告后的`variants_refined.json`中E07通过、E01仍部分；增加受限回答检查后的`variants_checked.json`中E01不再有历史断言，但130+100附加公式未调用calculate，保守仍部分，E07通过。该运行没有触发门禁，修正与拒绝机制由mock测试验证。
 
 `conversation_check.json`真实完成三轮：Stores现货130 Nos/在途100→目标180、用calculate得缺口50→引用上轮50 Nos、单价USD4.20生成USD210预览。核心与载荷断言通过；第二轮附加在途情景公式未调用工具，整段部分。所有这些复测的采购单集合保持29→29。完整人工分级由AUDIT及证据记录维护，不能将不同定向运行拼成“最新完整八题全过”。
+
+## 12. 扩展性与评分复核补充
+
+H01—H10为旧七工具下的新独立基线，核心10/10、整段7通过3部分。H08未来FX公式的单价/总额口径含混，H09把Payment Entry查询范围外事实概括为分文未收，H10未查Company.abbr即补CCM；H06/H07额外算式仅记纪律问题，不当作核心错误。随后接口复核另发现H06显式子表过滤重复父单风险；最终分级与复核结论由[SCORING_REVIEW](evidence/SCORING_REVIEW.md)统一说明。
+
+显式child join可能让一张父发票出现两行。内部`ERPNextClient.count`仍提供API原始行计数用于分页；模型的`count_documents`和聚合则按distinct父name。聚合完整扫描raw行，保留matched_rows/duplicates_collapsed；只有显式join且同父name所有请求投影字段值和类型一致才折叠，投影冲突拒绝，未声明join的重复仍拒绝。列表不静默去重，total/offset/next_offset维持raw_join_rows，另给本页唯一父名数量和重复名，以免丢失子行语义。
+
+真实ERP复核已得到raw_count=2、工具distinct=1，聚合count=1/matched_rows=2/duplicates_collapsed=1/USD6600，列表标明raw分页与唯一父名1，见`evidence/join_and_currency_live.json`。J01模型也正确报告raw2/unique1、父金额6600，并调用calculate校验行金额而不重复累计，核心与整段通过。这不代表自动支持任意关联：需要子行金额应读明细，不能把不同子行投影硬折叠。J01/B01均为开发定向案例，不计独立十题通过率；B01核心过但额外概括过头，整段部分。

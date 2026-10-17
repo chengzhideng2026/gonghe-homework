@@ -56,6 +56,18 @@ def normalize_filters(filters):
             raise ValueError('Filter field names and operators must be strings')
     return filters
 
+def has_child_join(doctype, filters):
+    """Detect only explicit linked/child filter syntax that can repeat parents."""
+    filters = normalize_filters(filters)
+    if isinstance(filters, dict):
+        return any(isinstance(field, str) and '.' in field for field in filters)
+    for condition in filters or []:
+        if len(condition) == 4 and condition[0] != doctype:
+            return True
+        if '.' in condition[-3]:
+            return True
+    return False
+
 def calculate(expression):
     """Decimal arithmetic only: no names, attributes, calls, indexing, or eval."""
     if not isinstance(expression, str) or len(expression) > 512:
@@ -166,6 +178,36 @@ class ERPNextClient:
     def get(self, doctype, name):
         return self._req("GET", f"/api/resource/{quote(doctype, safe='')}/{quote(name, safe='')}")
 
+    def get_many(self, doctype, names):
+        """Read at most 20 named parents; partial failures never imply completeness."""
+        if not isinstance(doctype, str) or not doctype.strip():
+            raise ValueError('doctype must be a nonempty string')
+        if not isinstance(names, list) or not 1 <= len(names) <= 20:
+            raise ValueError('names must be an array containing 1 to 20 document names')
+        if any(not isinstance(name, str) or not name.strip() for name in names):
+            raise ValueError('Each document name must be a nonempty string')
+        unique_names = list(dict.fromkeys(names))
+        results = []
+        for name in unique_names:
+            try:
+                document = self.get(doctype, name)
+                if not isinstance(document, dict) or document.get('name') != name:
+                    raise ERPError(f'Invalid document read-back: expected an object with name {name!r}')
+                if document.get('doctype', doctype) != doctype:
+                    raise ERPError(f'Invalid document read-back: expected DocType {doctype!r}')
+                results.append({'name': name, 'ok': True, 'data': document})
+            except Exception as exc:
+                results.append({'name': name, 'ok': False, 'error': str(exc)})
+        success_count = sum(result['ok'] for result in results)
+        return {'doctype': doctype, 'input_count': len(names),
+                'requested_names': unique_names, 'requested_count': len(unique_names),
+                'success_count': success_count, 'error_count': len(results)-success_count,
+                'complete': success_count == len(unique_names), 'results': results,
+                'consistency': 'Sequential reads of requested names only; not a transactional snapshot. '
+                               'complete means all requested documents succeeded, not that every document '
+                               'in the DocType or business category was covered. Partial failures must '
+                               'not be treated as a complete total. No automatic joins or retries.'}
+
     def aggregate(self, doctype, filters=None, group_by=None, sum_fields=None, max_rows=10000):
         """Bounded complete scan, stable pagination, exact Decimal sums; no SQL tool."""
         group_by = [] if group_by is None else group_by
@@ -177,19 +219,33 @@ class ERPNextClient:
         # Model arguments may repeat a field; project and accumulate it once.
         group_by = list(dict.fromkeys(group_by))
         sum_fields = list(dict.fromkeys(sum_fields))
+        filters = normalize_filters(filters)
+        joined = has_child_join(doctype, filters)
         total = self.count(doctype, filters)
         if total > max_rows:
             raise ERPError(f'{total} rows exceeds complete-scan limit {max_rows}; narrow the filters')
         fields = list(dict.fromkeys(['name'] + group_by + sum_fields))
-        seen, groups = set(), {}
-        while len(seen) < total:
-            rows = self.list(doctype, fields, filters, min(100, total-len(seen)), len(seen), 'name asc')
+        seen, groups, matched_rows = {}, {}, 0
+        while matched_rows < total:
+            rows = self.list(doctype, fields, filters, min(100, total-matched_rows), matched_rows, 'name asc')
             if not rows:
                 raise ERPError('Dataset changed or pagination ended early; no complete total can be reported')
+            if matched_rows + len(rows) > total:
+                raise ERPError('More rows returned than the initial count; no complete total can be reported')
             for row in rows:
-                if row.get('name') in seen or any(f not in row for f in fields):
+                if (not isinstance(row, dict) or any(f not in row for f in fields)
+                        or not isinstance(row['name'], str) or not row['name']):
                     raise ERPError('Incomplete/duplicate rows; read child tables from parent documents or retry a stable query')
-                seen.add(row['name'])
+                projection = {field: row[field] for field in fields}
+                if row['name'] in seen:
+                    if not joined:
+                        raise ERPError('Incomplete/duplicate rows; read child tables from parent documents or retry a stable query')
+                    previous = seen[row['name']]
+                    if any(type(projection[field]) is not type(previous[field])
+                           or projection[field] != previous[field] for field in fields):
+                        raise ERPError('Conflicting projection for a repeated parent document; read parent details before aggregating')
+                    continue
+                seen[row['name']] = projection
                 key = tuple(row[f] for f in group_by)
                 bucket = groups.setdefault(key, {'count': 0, 'sums': {f: Decimal(0) for f in sum_fields}})
                 bucket['count'] += 1
@@ -203,13 +259,18 @@ class ERPNextClient:
                     if not number.is_finite():
                         raise ERPError(f'Cannot sum non-finite field {field}')
                     bucket['sums'][field] += number
-        if len(seen) != total or self.count(doctype, filters) != total:
+            matched_rows += len(rows)
+        if matched_rows != total or self.count(doctype, filters) != total:
             raise ERPError('Record count changed while scanning; no consistent total available')
-        return {'doctype': doctype, 'count': total, 'complete': True,
+        return {'doctype': doctype, 'count': len(seen), 'matched_rows': matched_rows,
+                'duplicates_collapsed': matched_rows-len(seen), 'complete': True,
                 'groups': [{'group': dict(zip(group_by, key)), 'count': value['count'],
                             'sums': {f: str(n) for f, n in value['sums'].items()}}
                            for key, value in groups.items()],
-                'consistency': 'Count and duplicate checks; not a transactional database snapshot. Use filters to avoid mixing currencies/UOMs.'}
+                'consistency': 'Complete coverage of matching raw rows with initial/final count checks; '
+                               'count and group totals count each parent name once. Explicit child-join duplicates '
+                               'are collapsed only when projected fields agree. Not a transactional database '
+                               'snapshot. Use filters to avoid mixing currencies/UOMs.'}
 
     def create(self, doctype, doc):
         return self._req("POST", f"/api/resource/{quote(doctype, safe='')}", json=doc)
@@ -229,7 +290,7 @@ class Agent:
         self.c = client
         self.store = store
         self.proposal_ttl = proposal_ttl
-        self.proposals = store.active() if store else {}
+        self.proposals = store.active(self._target_binding()) if store else {}
 
     def _target_binding(self):
         """Bind a preview to one endpoint and credential configuration, without storing credentials."""
@@ -262,7 +323,7 @@ class Agent:
         if suppliers[0].get('disabled'):
             raise ERPError(f'Supplier is disabled: {supplier}')
 
-    def proposal_po(self, supplier, item, qty, uom, rate, transaction_date=REFERENCE_DATE, schedule_date=REFERENCE_DATE, company=None):
+    def proposal_po(self, supplier, item, qty, uom, rate, transaction_date=REFERENCE_DATE, schedule_date=REFERENCE_DATE, company=None, currency=None):
         target_binding = self._target_binding()
         if not all([supplier, item, qty, uom, rate is not None]):
             raise ValueError("supplier, item, qty, uom and rate are required")
@@ -286,6 +347,11 @@ class Agent:
         companies = self.c.list('Company', ['name', 'default_currency'], [['name', '=', company]] if company else None, limit=2)
         if len(companies) != 1:
             raise ERPError('Specify one valid company; company is missing or ambiguous')
+        if currency is not None:
+            if not isinstance(currency, str) or not currency.strip():
+                raise ValueError('Quote currency must be an explicit currency code')
+            if currency.strip().upper() != companies[0]['default_currency'].upper():
+                raise ERPError(f"Quote currency {currency} differs from company base currency {companies[0]['default_currency']}; supply an explicitly agreed base-currency price. No automatic conversion is supported.")
         total = qty_d * rate_d
         if not math.isfinite(float(total)) or Decimal(str(qty_f)) != qty_d or Decimal(str(rate_f)) != rate_d:
             raise ValueError('qty/rate/total exceed supported numeric precision or range')
@@ -308,11 +374,8 @@ class Agent:
                 'total_basis': 'Line amount estimate; ERP taxes/rounding/defaults are checked on draft read-back'}
 
     def confirm(self, proposal_id):
-        proposal = self.store.get(proposal_id) if self.store else self.proposals.get(proposal_id)
-        if not proposal:
-            raise ValueError("Unknown or expired proposal id")
-        if proposal['state'] == 'pending' and proposal.get('target_binding') != self._target_binding():
-            raise ERPError('ERP target or credential configuration changed, or this preview predates target binding; prepare and review a fresh preview')
+        binding = self._target_binding()
+        proposal = self._get_proposal(proposal_id, binding)
         if proposal["state"] == "creating":
             raise ERPError("A create request is already in flight; reconcile ERPNext manually before retrying")
         if proposal["state"] == "failed":
@@ -327,7 +390,7 @@ class Agent:
         if not companies or companies[0]['default_currency'] != proposal['doc']['currency']:
             raise ERPError('Company or base currency changed; prepare a fresh preview')
         if self.store:
-            proposal = self.store.claim(proposal_id, self.proposal_ttl)
+            proposal = self.store.claim(proposal_id, self.proposal_ttl, target_binding=binding)
             self.proposals[proposal_id] = proposal
         proposal["state"] = "creating"
         try:
@@ -335,32 +398,80 @@ class Agent:
         except Exception as exc:
             proposal["state"] = "failed"
             if self.store:
-                self.store.finish(proposal_id, 'failed', error=str(exc))
+                self.store.finish(proposal_id, 'failed', target_binding=binding,
+                                  expected_states=('creating',), error=str(exc))
             raise ERPError(f"Purchase Order create failed or timed out; it may have succeeded. Do not retry blindly: {exc}") from exc
         name = created.get("name") if isinstance(created, dict) else created
         if not name:
             proposal["state"] = "failed"
             if self.store:
-                self.store.finish(proposal_id, 'failed', error='ERP returned no document name')
+                self.store.finish(proposal_id, 'failed', target_binding=binding,
+                                  expected_states=('creating',), error='ERP returned no document name')
             raise ERPError("ERPNext created a document without a name")
         proposal["created_name"] = name
         if self.store:
-            self.store.finish(proposal_id, 'creating', created_name=name)
+            self.store.finish(proposal_id, 'creating', target_binding=binding,
+                              expected_states=('creating',), created_name=name)
+        return self._complete_readback(proposal_id, proposal, binding)
+
+    def _get_proposal(self, proposal_id, binding):
+        proposal = self.store.get(proposal_id, target_binding=binding) if self.store else self.proposals.get(proposal_id)
+        if not proposal or proposal.get('target_binding') != binding:
+            # Do not reveal whether an id exists under a different connection.
+            raise ValueError('Unknown proposal id for current ERP target or credential configuration')
+        return proposal
+
+    def active_proposals(self):
+        binding = self._target_binding()
+        if self.store:
+            self.proposals = self.store.active(target_binding=binding)
+        else:
+            self.proposals = {key: value for key, value in self.proposals.items()
+                              if value.get('target_binding') == binding and value['state'] != 'completed'}
+        return self.proposals
+
+    def reconcile(self, proposal_id):
+        """Read a previously recorded remote name; never dispatch or retry a write."""
+        binding = self._target_binding()
+        proposal = self._get_proposal(proposal_id, binding)
+        if proposal['state'] not in ('creating', 'failed'):
+            raise ERPError('Only an unresolved create can be reconciled')
+        if not proposal.get('created_name'):
+            raise ERPError('Remote document name is unknown; inspect ERPNext manually. '
+                           'Do not recreate or infer success from similar documents.')
+        return self._complete_readback(proposal_id, proposal, binding, reconciled=True)
+
+    def _complete_readback(self, proposal_id, proposal, binding, reconciled=False):
+        name = proposal['created_name']
         try:
-            verified = self.c.get("Purchase Order", name)
+            result = self._readback_result(proposal, name)
         except Exception as exc:
-            proposal["state"] = "failed"
-            if self.store:
-                self.store.finish(proposal_id, 'failed', created_name=name, error=str(exc))
-            raise ERPError(f"Purchase Order {name} was created, but read-back failed. Do not create again; inspect this document: {exc}") from exc
-        if not isinstance(verified, dict):
             proposal['state'] = 'failed'
             if self.store:
-                self.store.finish(proposal_id, 'failed', created_name=name, error='Malformed read-back')
-            raise ERPError(f'Purchase Order {name} was created, but read-back was malformed; inspect it and do not recreate')
+                self.store.finish(proposal_id, 'failed', target_binding=binding,
+                                  expected_states=('creating', 'failed'), expected_created_name=name,
+                                  error=str(exc))
+            raise ERPError(f'Purchase Order {name} was created, but read-back failed. '
+                           f'Do not create again; inspect this document: {exc}') from exc
+        if reconciled:
+            result['reconciled'] = True
+        if self.store:
+            self.store.finish(proposal_id, 'completed', target_binding=binding,
+                              expected_states=('creating', 'failed'), expected_created_name=name,
+                              result=result)
+        self.proposals.pop(proposal_id, None)
+        return result
+
+    def _readback_result(self, proposal, name):
+        item = proposal['doc']['items'][0]
+        verified = self.c.get('Purchase Order', name)
+        if not isinstance(verified, dict):
+            raise ERPError('Malformed read-back')
         differences = []
         if verified.get('name') != name:
             differences.append('name')
+        if verified.get('doctype') != 'Purchase Order':
+            differences.append('doctype')
         for field in ('supplier', 'company', 'currency', 'transaction_date', 'schedule_date'):
             if verified.get(field) != proposal['doc'].get(field):
                 differences.append(field)
@@ -377,31 +488,42 @@ class Agent:
             differences.append('items')
         result = {"name": name, "status": (verified or {}).get("status"), "verified": verified,
                   'review_required': bool(differences), 'differences_from_preview': differences}
-        if self.store:
-            self.store.finish(proposal_id, 'completed', created_name=name, result=result)
-        self.proposals.pop(proposal_id, None)
         return result
 
     def discard(self, proposal_id):
-        proposal = self.proposals.get(proposal_id)
-        if not proposal or proposal['state'] != 'pending':
+        binding = self._target_binding()
+        proposal = self._get_proposal(proposal_id, binding)
+        if proposal['state'] != 'pending':
             raise ValueError('Only a pending proposal can be discarded')
         if self.store:
-            self.store.discard(proposal_id)
+            self.store.discard(proposal_id, target_binding=binding)
         proposal['state'] = 'discarded'
+        self.proposals[proposal_id] = proposal
 
 TOOL_DEFS = [
     {"type": "function", "function": {"name": "get_doctype_meta", "description": "Discover fields and child tables for an ERPNext DocType.", "parameters": {"type": "object", "properties": {"doctype": {"type": "string"}}, "required": ["doctype"]}}},
-    {"type": "function", "function": {"name": "count_documents", "description": "Count documents in a DocType, optionally with ERPNext filters.", "parameters": {"type": "object", "properties": {"doctype": {"type": "string"}, "filters": {"type": "array", "description": "AND conditions, e.g. [[field, operator, value]]. A four-element condition may start with DocType.", "items": {"type": "array", "minItems": 3, "maxItems": 4, "items": {}}}}, "required": ["doctype"]}}},
+    {"type": "function", "function": {"name": "count_documents", "description": "Count distinct documents with ERPNext filters. Explicit child-table filters use a complete bounded scan of at most 10000 matching raw rows to avoid counting a parent twice; narrow the query if the limit is exceeded.", "parameters": {"type": "object", "properties": {"doctype": {"type": "string"}, "filters": {"type": "array", "description": "AND conditions, e.g. [[field, operator, value]]. A four-element condition may start with DocType.", "items": {"type": "array", "minItems": 3, "maxItems": 4, "items": {}}}}, "required": ["doctype"]}}},
     {"type": "function", "function": {"name": "list_documents", "description": "List ERPNext documents with fields, filters, pagination and ordering.", "parameters": {"type": "object", "properties": {"doctype": {"type": "string"}, "fields": {"type": "array", "items": {"type": "string"}}, "filters": {"type": "array", "description": "AND conditions, e.g. [[field, operator, value]]. A four-element condition may start with DocType.", "items": {"type": "array", "minItems": 3, "maxItems": 4, "items": {}}}, "limit": {"type": "integer"}, "offset": {"type": "integer"}, "order_by": {"type": "string"}}, "required": ["doctype"]}}},
     {"type": "function", "function": {"name": "get_document", "description": "Read one ERPNext document by DocType and name, including child tables.", "parameters": {"type": "object", "properties": {"doctype": {"type": "string"}, "name": {"type": "string"}}, "required": ["doctype", "name"]}}},
-    {"type": "function", "function": {"name": "prepare_purchase_order", "description": "Validate and preview a Purchase Order. Never creates it; returns a proposal requiring explicit user /confirm.", "parameters": {"type": "object", "properties": {"supplier": {"type": "string"}, "item": {"type": "string"}, "qty": {"type": "number"}, "uom": {"type": "string"}, "rate": {"type": "number"}, "transaction_date": {"type": "string"}, "schedule_date": {"type": "string"}, "company": {"type": "string", "description": "Exact company name; required if multiple companies exist"}}, "required": ["supplier", "item", "qty", "uom", "rate"]}}},
+    {"type": "function", "function": {
+        "name": "get_documents",
+        "description": "Read 1 to 20 named parent documents of one DocType, including child tables. "
+                       "Names are deduplicated in input order. Returns per-document success or error; "
+                       "complete is true only when every requested document succeeded. Never use partial "
+                       "results as a complete total. Completeness covers these names only, not all "
+                       "records matching a business question. Read-only; no joins, writes or retries.",
+        "parameters": {"type": "object", "properties": {
+            "doctype": {"type": "string", "minLength": 1},
+            "names": {"type": "array", "minItems": 1, "maxItems": 20,
+                      "items": {"type": "string", "minLength": 1}}},
+            "required": ["doctype", "names"], "additionalProperties": False}}},
+    {"type": "function", "function": {"name": "prepare_purchase_order", "description": "Validate and preview a Purchase Order. Explicit quote currency is required and must match company base currency; never silently reinterpret or convert a foreign quote. Never creates it; returns a proposal requiring explicit user /confirm.", "parameters": {"type": "object", "properties": {"supplier": {"type": "string"}, "item": {"type": "string"}, "qty": {"type": "number"}, "uom": {"type": "string"}, "rate": {"type": "number"}, "currency": {"type": "string", "description": "Currency code of the agreed unit price, e.g. USD. Must be explicitly supplied; foreign quotes are rejected."}, "transaction_date": {"type": "string"}, "schedule_date": {"type": "string"}, "company": {"type": "string", "description": "Exact company name; required if multiple companies exist"}}, "required": ["supplier", "item", "qty", "uom", "rate", "currency"]}}},
 ]
 
 
 TOOL_DEFS.append({"type": "function", "function": {
     "name": "aggregate_documents",
-    "description": "Complete bounded scan with stable pagination and exact Decimal sums/grouped counts. Use for totals and rankings. Fails rather than reporting a partial total. Group monetary amounts by currency/company; do not mix units. Child-table fields may require reading parent documents instead.",
+    "description": "Complete bounded scan with stable pagination and Decimal sums/grouped counts per distinct parent name. Explicit child-join duplicates are folded only when parent projections agree; count differs from matched_rows. Use for totals and rankings; incomplete/conflicting scans fail. Group money by currency/company; do not mix units. Read parent details for child-row amounts.",
     "parameters": {"type": "object", "properties": {
         "doctype": {"type": "string"},
         "filters": {"type": "array", "items": {"type": "array", "minItems": 3, "maxItems": 4, "items": {}}},
@@ -433,7 +555,10 @@ class LLMRunner:
     def _tool(self, name, args):
         if name == 'calculate': return calculate(args['expression'])
         if name == "get_doctype_meta": return self.agent.c.meta(args["doctype"])
-        if name == "count_documents": return self.agent.c.count(args["doctype"], args.get("filters"))
+        if name == "count_documents":
+            if has_child_join(args['doctype'], args.get('filters')):
+                return self.agent.c.aggregate(args['doctype'], args.get('filters'))['count']
+            return self.agent.c.count(args["doctype"], args.get("filters"))
         if name == "list_documents":
             limit = max(1, min(int(args.get('limit', 20)), 100))
             offset = max(0, int(args.get('offset', 0)))
@@ -442,13 +567,29 @@ class LLMRunner:
                 fields = list(dict.fromkeys(['name'] + fields))
             rows = self.agent.c.list(args['doctype'], fields, args.get('filters'), limit, offset, args.get('order_by') or 'name asc')
             total = self.agent.c.count(args['doctype'], args.get('filters'))
+            joined = has_child_join(args['doctype'], args.get('filters'))
             has_more = offset + len(rows) < total
+            occurrences = {}
+            for row in rows:
+                if isinstance(row, dict) and isinstance(row.get('name'), str):
+                    occurrences[row['name']] = occurrences.get(row['name'], 0) + 1
+            duplicate_names = [document for document, count in occurrences.items() if count > 1]
             warnings = []
+            if joined:
+                warnings.append('Child-table join filters may repeat parent documents. pagination.total, offset, '
+                                'returned and next_offset refer to raw joined rows, not distinct documents. '
+                                'Use count_documents or aggregate_documents for distinct parent counts. '
+                                'Do not sum repeated parent amounts or silently drop matching child rows.')
+            elif duplicate_names:
+                warnings.append('Duplicate document names appeared without an explicit child-join filter; '
+                                'the page may overlap or be unstable. Do not use it as a complete total.')
             if rows and args.get('fields') and any(field not in rows[0] for field in args['fields']):
                 warnings.append('Requested fields are missing; child DocTypes may return only names. Read parent documents; do not assume missing values are zero.')
             if args['doctype'] == 'Bin':
                 warnings.append('CURRENT SNAPSHOT ONLY: warehouse is a location label, not evidence of a completed issue/transfer/receipt. Do not describe material as already issued or transferred without Stock Entry/Stock Ledger event evidence. projected_qty is returned by ERP; its formula cannot be inferred from a subset of planning fields.')
             return {'records': rows, 'pagination': {'offset': offset, 'limit': limit, 'returned': len(rows), 'total': total,
+                                                   'total_basis': 'raw_join_rows' if joined else 'documents',
+                                                   'unique_names_returned': len(occurrences), 'duplicate_names': duplicate_names,
                                                    'has_more': has_more, 'next_offset': offset+len(rows) if has_more else None},
                     'query_scope': {'doctype': args['doctype'], 'filters': normalize_filters(args.get('filters')),
                                     'fields': fields or ['name'],
@@ -457,7 +598,11 @@ class LLMRunner:
         if name == 'aggregate_documents':
             return self.agent.c.aggregate(args['doctype'], args.get('filters'), args.get('group_by'), args.get('sum_fields'))
         if name == "get_document": return self.agent.c.get(args["doctype"], args["name"])
-        if name == "prepare_purchase_order": return self.agent.proposal_po(**args)
+        if name == "get_documents": return self.agent.c.get_many(args["doctype"], args["names"])
+        if name == "prepare_purchase_order":
+            if not isinstance(args.get('currency'), str) or not args['currency'].strip():
+                raise ValueError('An explicit quote currency is required for the purchase preview')
+            return self.agent.proposal_po(**args)
         raise ValueError(f"Unknown tool: {name}")
 
     def ask(self, question, history=None):
@@ -470,6 +615,11 @@ class LLMRunner:
         # Generic evidence/clarification rules, never case-specific answers.
         if len(messages) == 1:
             messages[0]['content'] += (
+                ' Your scope is ERPNext business analysis and supported ERP workflows. '
+                'For a wholly unrelated request such as food recommendations or general weather, briefly explain the business scope '
+                'and invite an ERP question without calling ERP tools or inventing external information. Greetings need no tools. '
+                'For a mixed request, complete its ERP business part and briefly redirect the unrelated part. '
+                'An unfamiliar business DocType or wording is not automatically out of scope: discover metadata or ask for clarification. '
                 ' Clarify missing item identity, quantity/UOM, supplier and agreed price before broad procurement research or preparing a write. '
                 'Do not choose quantities for the user or infer the current cheapest supplier from old orders. '
                 'A confirmed missing document needs no broad enumeration; do not infer unseen naming ranges from a partial page. '
@@ -516,7 +666,10 @@ class LLMRunner:
                 return msg.get("content", ""), messages
             for call in calls:
                 try:
-                    args = json.loads(call["function"].get("arguments") or "{}")
+                    raw_args = call["function"].get("arguments") or "{}"
+                    # Preserve quoted decimal precision until the PO validator
+                    # checks that ERP JSON numbers can represent it faithfully.
+                    args = json.loads(raw_args, parse_float=Decimal) if call['function']['name'] == 'prepare_purchase_order' else json.loads(raw_args)
                     result = self._tool(call["function"]["name"], args)
                     payload = {"ok": True, "data": result}
                 except Exception as exc:
@@ -524,14 +677,43 @@ class LLMRunner:
                 messages.append({"role": "tool", "tool_call_id": call["id"], "content": json.dumps(payload, ensure_ascii=False, default=str)})
         raise RuntimeError(f"LLM tool loop exceeded {self.max_rounds} rounds")
 
+def check_model(runner):
+    """Opt-in paid connectivity check with an actual ERP read-tool roundtrip."""
+    started = time.monotonic()
+    stage = 'configuration'
+    try:
+        if not runner.available():
+            raise RuntimeError('Configure LLM_API_KEY and LLM_MODEL locally first')
+        stage = 'erp'
+        expected = runner.agent.c.count('Item')
+        if type(expected) is not int or expected < 0:
+            raise ERPError('ERP returned an invalid Item count')
+        stage = 'model'
+        runner.max_rounds = min(runner.max_rounds, 3)
+        answer, _ = runner.ask('Use count_documents to count Item and report that count only. Do not prepare any write.', [])
+        stage = 'tool_protocol'
+        receipts = runner.receipts()
+        if not any(r['tool'] == 'count_documents' and r['status'] == 'ok'
+                   and r.get('arguments', {}).get('doctype') == 'Item' and r.get('summary') == expected
+                   for r in receipts):
+            raise RuntimeError('Model responded without a successful matching count_documents roundtrip')
+        return {'ok': True, 'model': runner.model, 'item_count': expected, 'answer': answer,
+                'elapsed_seconds': round(time.monotonic()-started, 2),
+                'scope': 'Connectivity and read-tool protocol only; not a business-answer quality score'}
+    except Exception as exc:
+        return {'ok': False, 'stage': stage, 'error': str(exc),
+                'elapsed_seconds': round(time.monotonic()-started, 2)}
+
+
 def main():
     configure_console()
     import argparse
     parser = argparse.ArgumentParser(description="Plantcore ERPNext Agent")
     parser.add_argument("--demo", action="store_true", help="verify local CLI without ERP/LLM")
     parser.add_argument("--check", action="store_true", help="check live ERPNext connectivity and model configuration without calling the LLM")
+    parser.add_argument('--check-model', action='store_true', help='opt-in real model/read-tool protocol check; consumes model API quota')
     args = parser.parse_args()
-    store = None if args.demo or args.check else ProposalStore(Path(__file__).with_name('.local') / 'proposals.sqlite3')
+    store = None if args.demo or args.check or args.check_model else ProposalStore(Path(__file__).with_name('.local') / 'proposals.sqlite3')
     agent = Agent(ERPNextClient(), store=store)
     if args.demo:
         print("Demo mode: generic tools and confirmation state machine loaded.")
@@ -541,11 +723,18 @@ def main():
         print(json.dumps({"erpnext_url": agent.c.base, "item_count": agent.c.count("Item"),
                           "reference_date": REFERENCE_DATE, "llm_configured": runner.available()}, indent=2))
         return
+    if args.check_model:
+        result = check_model(runner)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        if not result['ok']:
+            raise SystemExit(1)
+        return
     if not runner.available():
         print("Missing LLM_API_KEY or LLM_MODEL. Copy .env.example to .env and fill them before live chat.")
         raise SystemExit(2)
     print("Plantcore ERP Agent. Type /confirm <proposal-id> to execute a displayed PO, /quit to exit.")
     print('Pending previews survive restart for 15 minutes. /pending lists them; /discard <id> invalidates a preview.')
+    print('/reconcile <id> reads an already recorded PO name after an interrupted create; it never creates a document.')
     print('/trace shows actual tool receipts for the last model turn, including failures and pagination.')
     history = []
     while True:
@@ -565,9 +754,7 @@ def main():
             print('Conversation reset. Local proposal states are retained; inspect /pending or use /discard <id>.')
             continue
         if question == '/pending':
-            if agent.store:
-                agent.proposals = agent.store.active()
-            for proposal_id, proposal in agent.proposals.items():
+            for proposal_id, proposal in agent.active_proposals().items():
                 print(json.dumps({'proposal_id': proposal_id, **proposal,
                                   'expired': time.time()-proposal['created_at'] > agent.proposal_ttl}, ensure_ascii=False, indent=2))
             continue
@@ -578,14 +765,17 @@ def main():
             except Exception as exc:
                 print(f'ERROR: {exc}')
             continue
-        if question.startswith("/confirm "):
+        if question.startswith(('/confirm ', '/reconcile ')):
             proposal_id = question.split(maxsplit=1)[1]
             try:
-                result = agent.confirm(proposal_id)
+                reconciling = question.startswith('/reconcile ')
+                result = agent.reconcile(proposal_id) if reconciling else agent.confirm(proposal_id)
                 print(json.dumps(result, ensure_ascii=False, indent=2, default=str))
                 # Keep later answers grounded in the user's actual confirmed action.
                 history.append({"role": "user", "content": question})
-                history.append({"role": "assistant", "content": "Confirmed creation and read-back: " + json.dumps(result, ensure_ascii=False, default=str)})
+                history.append({"role": "assistant", "content":
+                                ('Read-only reconciliation of recorded document: ' if reconciling else 'Confirmed creation and read-back: ')
+                                + json.dumps(result, ensure_ascii=False, default=str)})
             except Exception as exc:
                 print(f"ERROR: {exc}")
             continue

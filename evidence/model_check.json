@@ -1,0 +1,9 @@
+{
+  "ok": true,
+  "model": "qwen3.8-max",
+  "item_count": 18,
+  "answer": "**Item count: 18**",
+  "elapsed_seconds": 3.46,
+  "scope": "Connectivity and read-tool protocol only; not a business-answer quality score",
+  "timestamp_utc": "2026-10-17T07:39:53.190133+00:00"
+}
