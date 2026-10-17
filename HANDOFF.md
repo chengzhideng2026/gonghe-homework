@@ -5,7 +5,8 @@
 ## 当前状态
 
 - 用户充值后模型 API 已恢复，E07 探测在 10.67 秒内正常返回澄清。此前免费额度 HTTP403 是已保留的历史失败，不是当前阻断。
-- 当前八工具、115项代码测试与19项真实REST通过。新增HTTP重定向/URL/响应限额/凭据遮蔽及查询语法测试；最新输出为`unit_security.txt`。模型协议再次通过，见`model_security_check.json`；默认启动不调用模型。
+- 当前默认八工具、128项代码测试与19项真实REST通过。最新输出为`unit_registry.txt`；注册表新增13项发现/执行/启停/旧视图/CLI等测试，前一阶段115项安全输出`unit_security.txt`保留。
+- 工具Schema/handler在`erp_tools.py`一起注册，`ToolRegistry`支持运行时可信代码增删与会话启停。实际模型临时调用第9个扩展工具读取Item18，移除回8、停用/恢复为7→8；无ERP写入，见`registry_live.json`和[TOOL_REGISTRY](TOOL_REGISTRY.md)。没有脚本自动热加载或插件沙箱。
 - 本机容器仅发布127.0.0.1和::1:8080，今后启动带`-f compose.local.yml`；只绑定IPv4曾导致Windows localhost约2秒回退，双回环后样本约40—50毫秒。原题文件与数据卷保留，未改变系统防火墙。详见[SECURITY_AND_DEPLOYMENT](SECURITY_AND_DEPLOYMENT.md)。
 - 连接绑定贯穿预览查询和修改，修复共享日志跨连接可见/丢弃缺口。`/reconcile id`只读核查已知单号，不创建；无单号仍阻断。恢复阶段104项输出为`unit_recovery.txt`；恢复/记忆/检索/租户边界见[RECOVERY_AND_DESIGN](RECOVERY_AND_DESIGN.md)。
 - H08新币种定向复测整段通过，不改写旧十题基线；范围路由S01—S03核心3通过，完整2通过1部分，混合题额外状态措辞没有证据。
@@ -34,6 +35,7 @@
 | `evidence/currency_followup.json`、`evidence/scope_acceptance.json` | 外币和软范围路由定向检查，含独立人工分级 |
 | `evidence/recovery_live.json` | 临时失败fixture回查既有00029；显式说明原旧回执未绑定、不是实际断网或迁移 |
 | `evidence/security_live.json`、`evidence/model_security_check.json` | 双回环发布、只读延迟样本、join/元数据与实际模型工具协议；不是压测 |
+| `evidence/registry_live.json`、`evidence/unit_registry.txt` | 动态新增/移除、启停与真实模型协议，默认集合未永久变化 |
 
 `variants_initial.json` 保留最初 3 通过、4 部分、1 额度阻断的运行，不能作为当前 API 不可用的依据。后续改进没有覆盖全部新问法，也未把所有额外公式检查变成硬约束。
 

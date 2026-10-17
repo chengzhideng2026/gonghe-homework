@@ -69,25 +69,29 @@ class TestEvidenceChecks(unittest.TestCase):
 
     def test_runner_repairs_once_before_accepting_final_answer(self):
         runner = LLMRunner(Agent(Mock()))
+        runner.agent.c.list.return_value = []
+        runner.agent.c.count.return_value = 0
         runner.base, runner.key, runner.model = 'https://example.invalid/v1', 'test-key', 'test-model'
         messages = [bin_trace()[0], {'role': 'assistant', 'content': '20件已发到生产线。'},
                     {'role': 'assistant', 'content': 'WIP仓当前有20件；未核实转料历史。'}]
         def respond(request, timeout):
             return io.BytesIO(json.dumps({'choices': [{'message': messages.pop(0), 'finish_reason': 'stop'}]}).encode())
-        with patch('agent.urlopen', side_effect=respond), patch.object(runner, '_tool', return_value={'records': []}):
+        with patch('agent.urlopen', side_effect=respond):
             answer, _ = runner.ask('库存多少？')
         self.assertEqual(answer, 'WIP仓当前有20件；未核实转料历史。')
         self.assertTrue(any('PROGRAM EVIDENCE CHECK' in (m.get('content') or '') for m in runner.last_trace))
 
     def test_runner_fails_closed_if_repair_still_asserts_history(self):
         runner = LLMRunner(Agent(Mock()))
+        runner.agent.c.list.return_value = []
+        runner.agent.c.count.return_value = 0
         runner.base, runner.key, runner.model = 'https://example.invalid/v1', 'test-key', 'test-model'
         history = []
         messages = [bin_trace()[0], {'role': 'assistant', 'content': '20件已发到生产线。'},
                     {'role': 'assistant', 'content': '材料已经转入车间。'}]
         def respond(request, timeout):
             return io.BytesIO(json.dumps({'choices': [{'message': messages.pop(0), 'finish_reason': 'stop'}]}).encode())
-        with patch('agent.urlopen', side_effect=respond), patch.object(runner, '_tool', return_value={'records': []}), \
+        with patch('agent.urlopen', side_effect=respond), \
                 self.assertRaisesRegex(RuntimeError, 'after one repair'):
             runner.ask('库存多少？', history)
         self.assertEqual(history, [])

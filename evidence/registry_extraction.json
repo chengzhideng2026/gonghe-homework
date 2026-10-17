@@ -1,0 +1,14 @@
+{
+  "scope": "Mechanical AST comparison of extracted built-in handler bodies, restoring context references. Registry validation/discovery is tested separately.",
+  "before_commit": "6b5409c",
+  "handler_body_equivalence": {
+    "get_doctype_meta": true,
+    "count_documents": true,
+    "list_documents": true,
+    "get_document": true,
+    "get_documents": true,
+    "prepare_purchase_order": true,
+    "aggregate_documents": true,
+    "calculate": true
+  }
+}

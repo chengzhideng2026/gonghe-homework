@@ -1,0 +1,9 @@
+{
+  "ok": true,
+  "model": "qwen3.8-max",
+  "item_count": 18,
+  "answer": "The Item master contains **18** documents (count_documents, no filters).",
+  "elapsed_seconds": 4.23,
+  "scope": "Connectivity and read-tool protocol only; not a business-answer quality score",
+  "timestamp_utc": "2026-10-17T08:27:46.854452+00:00"
+}

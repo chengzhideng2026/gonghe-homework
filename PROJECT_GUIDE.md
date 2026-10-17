@@ -1,6 +1,6 @@
 # 项目接手与学习指南
 
-这份指南面向第一次接手项目的人：先自己运行，再把一次问答和一次采购预览沿代码走通，最后练习解释取舍。当前八工具、115项代码测试通过；已有REST及追加join/币种实测，模型真实回答仍有部分通过项。运行入口见 [README](README.md)，最新独立十题与定向分级见 [SCORING_REVIEW](evidence/SCORING_REVIEW.md)，早期复测与演进见 [FOLLOWUP_REVIEW](evidence/FOLLOWUP_REVIEW.md)、[AUDIT](AUDIT.md)。
+这份指南面向第一次接手项目的人：先自己运行，再把一次问答和一次采购预览沿代码走通，最后练习解释取舍。当前八工具、128项代码测试通过；已有REST及追加join/币种实测，模型真实回答仍有部分通过项。运行入口见 [README](README.md)，最新独立十题与定向分级见 [SCORING_REVIEW](evidence/SCORING_REVIEW.md)，早期复测与演进见 [FOLLOWUP_REVIEW](evidence/FOLLOWUP_REVIEW.md)、[AUDIT](AUDIT.md)。
 
 题目已经提供可恢复的 ERPNext 和业务数据，所以这份作业无需从零开发 ERP。我们实现的是 ERP 之上的问答与受控采购 Agent。代码规模可以比较小，但库存、账期、BOM、成本和不确定写入的业务边界需要仔细验证。
 
@@ -12,8 +12,8 @@
 | 2 | [原题](ORIGINAL_README.md) | 评分标准、六小时约束、交付物和留出题到底是什么？ |
 | 3 | [数据说明](erpnext/DATASET.md) | 业务参考日是什么？单号、业务日期和系统日期为什么不一致？ |
 | 4 | 本指南的第 3—8 节 | 谁理解问题、谁访问 ERP、谁控制写入？ |
-| 5 | [agent.py](agent.py) | 先找 `ERPNextClient`、`Agent`、`TOOL_DEFS`、`LLMRunner`、`main`，逐个阅读职责 |
-| 6 | [proposal_store.py](proposal_store.py)、[tool_receipts.py](tool_receipts.py)、[answer_checks.py](answer_checks.py) | 状态如何保存？证据如何提取？哪些已知措辞会被检查？ |
+| 5 | [agent.py](agent.py)、[erp_tools.py](erp_tools.py) | 客户端、状态机与模型循环，以及Schema和工具函数如何一起注册 |
+| 6 | [tool_registry.py](tool_registry.py)、[proposal_store.py](proposal_store.py)、[tool_receipts.py](tool_receipts.py)、[answer_checks.py](answer_checks.py) | 能力如何增删？状态如何保存？哪些证据/措辞会被检查？ |
 | 7 | [tests](tests/)、[验证脚本](verify_live.py) | 哪些机制有自动验证？哪些自然语言结论仍须人工判断？ |
 | 8 | [架构说明](ARCHITECTURE.md)、[技术复核](TECH_REVIEW.md)、[WRITEUP](WRITEUP.md) | 为什么这样设计？哪些地方尚有边界？面试时如何解释？ |
 
@@ -113,6 +113,8 @@ flowchart TD
 
 ## 4. 八个工具：通用读取，专用写入预览
 
+这是默认集合，可以变化。工具Schema与同步handler位于`erp_tools.py`，使用装饰器一起注册；Runner每次模型请求发现当前工具视图，再由同一注册记录执行。`agent.TOOL_DEFS`只是兼容导出，不是运行时控制入口。先用`/tools`、`/tools disable calculate`、`/tools enable calculate`观察变化；它们不消耗模型额度。新增工具、移除、会话隔离和并发变更语义见[TOOL_REGISTRY](TOOL_REGISTRY.md)。
+
 模型得到的是函数名称、说明和参数 schema；实际执行由 Python 分发器完成。模型不能因为在回答中写出某个函数名，就任意执行系统代码。
 
 | 工具 | 适用问题 | 重要边界 |
@@ -139,7 +141,7 @@ flowchart TD
 以“铜线有多少库存”为例，下列是可能的执行过程，不要求每次模型都调用完全相同的工具：
 
 1. CLI 把用户文字交给 `LLMRunner.ask()`。Runner 复制当前对话历史，加入系统规则、业务参考日与用户问题。
-2. Runner 向模型发送 messages 和八个工具的定义。系统规则指导模型查实时数据、区分现货/在途、不要凭空解释。
+2. Runner 向模型发送 messages 和当前注册表启用的工具定义（默认8个）。系统规则指导模型查实时数据、区分现货/在途、不要凭空解释。
 3. 模型可能返回 `tool_calls`，例如先用列表找到物料，再查询相应 `Bin`。这里返回的是工具名称与 JSON 参数，还没有执行 ERP 操作。
 4. `_tool()` 只识别白名单中的名称，调用 Client 或 Agent。HTTP 成功、参数错误、无数据是不同情况。
 5. Python 将结果包装为 `ok/data` 或 `ok/error`，以对应的 `tool_call_id` 放回 messages。
@@ -273,7 +275,7 @@ python -m unittest discover -s tests -v
 python verify_live.py
 ```
 
-前者检验代码机制，后者请求真实ERP；当前115项代码测试通过，既有19项REST又追加join/币种验证。两者均不能自动证明模型文字正确。后续数量看当次输出，不要把测试项数当正确率。想明确验证模型协议，可额外运行`--check-model`，它会消耗API额度。
+前者检验代码机制，后者请求真实ERP；当前128项代码测试通过，既有19项REST又追加join/币种验证。两者均不能自动证明模型文字正确。后续数量看当次输出，不要把测试项数当正确率。想明确验证模型协议，可额外运行`--check-model`，它会消耗API额度。
 
 ### 实验 B：铜线库存与证据
 

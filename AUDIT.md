@@ -1,6 +1,12 @@
 # 审计记录（最新更新：2026-10-17）
 
-## 当前：HTTP与网络安全追加
+## 当前：工具注册与运行时变化
+
+工具Schema、handler、版本/effect与Decimal解析策略统一注册，替换原静态TOOL_DEFS/if分发。每个Runner复制默认目录，支持启停、注册、移除；每次模型请求发现视图，执行前检查停用/替换。模型无管理入口，原人工确认与ERP权限边界保留。
+
+128项代码测试与19项真实ERP检查通过，新增13项工具注册测试，见`evidence/unit_registry.txt`。真实模型临时调用第9个新工具读取Item18，移除回8且旧名拒绝，calculate停用/恢复7→8，采购集合29→29；见`evidence/registry_live.json`。没有永久增加默认能力、自动脚本热加载或不可信插件沙箱。详细说明见[TOOL_REGISTRY](TOOL_REGISTRY.md)。
+
+## 上一阶段：HTTP与网络安全追加
 
 115项代码测试、19项真实ERP检查通过。HTTP重定向均拒绝，远端要求HTTPS，成功响应/错误读取有界并关闭，用户可见错误遮蔽配置凭据；查询字段/排序/操作符本地校验。双本地HTTP服务测试覆盖GET/POST/模型POST和五种重定向码，目标未收到凭据。代码输出为`evidence/unit_security.txt`。
 

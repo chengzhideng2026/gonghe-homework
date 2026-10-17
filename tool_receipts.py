@@ -6,17 +6,23 @@ the answer follows from the data. Full transcripts are retained by eval scripts.
 import json
 
 
-def tool_receipts(messages):
+def tool_receipts(messages, tool_metadata=None):
+    tool_metadata = tool_metadata or {}
     calls, receipts = {}, []
     for message in messages:
         for call in message.get('tool_calls') or []:
             function = call['function']
             try:
                 raw_args = function.get('arguments') or '{}'
-                args = json.loads(raw_args, parse_float=str) if function['name'] == 'prepare_purchase_order' else json.loads(raw_args)
+                metadata = tool_metadata.get(call['id'], {})
+                decimal_arguments = metadata.get('decimal_arguments', function['name'] == 'prepare_purchase_order')
+                args = json.loads(raw_args, parse_float=str) if decimal_arguments else json.loads(raw_args)
             except (ValueError, TypeError):
                 args = {'unparsed_arguments': function.get('arguments')}
             calls[call['id']] = {'call_id': call['id'], 'tool': function['name'], 'arguments': args}
+            if call['id'] in tool_metadata:
+                calls[call['id']].update(tool_version=tool_metadata[call['id']]['version'],
+                                        tool_effect=tool_metadata[call['id']]['effect'])
         if message.get('role') != 'tool':
             continue
         receipt = dict(calls.get(message.get('tool_call_id'),

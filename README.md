@@ -1,6 +1,6 @@
 # Plantcore ERPNext Agent
 
-通过实时 ERPNext API 回答库存、采购、工单、BOM 和财务问题，并在人工确认后创建采购草稿。使用 Python 标准库 CLI、八个模型工具和本地 SQLite 确认日志；题目提供的 ERPNext 环境保留在 `erpnext/`。
+通过实时 ERPNext API 回答库存、采购、工单、BOM 和财务问题，并在人工确认后创建采购草稿。使用 Python 标准库 CLI、默认八个可注册模型工具和本地 SQLite 确认日志；题目提供的 ERPNext 环境保留在 `erpnext/`。
 
 第一次接手请读 [项目指南](PROJECT_GUIDE.md)；原题与评分要求见 [ORIGINAL_README.md](ORIGINAL_README.md)。
 
@@ -56,6 +56,8 @@ Show me overdue sales invoices.
 | 命令 | 作用 |
 |---|---|
 | `/trace` | 查看上一模型轮的实际工具收据、查询范围、分页与错误 |
+| `/tools` | 查看当前进程的注册工具、启用状态、版本及effect |
+| `/tools enable 名称`、`/tools disable 名称` | 启停已注册的模型工具；不调用模型，重启恢复默认 |
 | `/pending` | 查看当前连接保存的采购预览及状态 |
 | `/confirm id` | 明确确认该预览，重新校验后创建并回读草稿 |
 | `/reconcile id` | 中断创建已有单号时，只读回查原单并更新本地核查结果 |
@@ -68,6 +70,8 @@ Show me overdue sales invoices.
 
 纯天气、吃饭问题由同一模型按业务范围规则引导返回；混合问题处理其中的ERP部分。这是软提示路由。恢复、记忆、检索、模型路由与租户的详细取舍见 [RECOVERY_AND_DESIGN](RECOVERY_AND_DESIGN.md)。
 
+`erp_tools.py`将Schema与handler一起注册到`ToolRegistry`，可信代码可运行时注册/移除；停用与同名替换后旧调用拒绝，新工具下一次模型请求可见。没有模型可调用的工具管理功能或任意脚本热加载。接入示例与边界见[TOOL_REGISTRY](TOOL_REGISTRY.md)。
+
 ## 验证与已知边界
 
 本地代码测试和真实 REST 检查：
@@ -77,9 +81,9 @@ python -m unittest discover -s tests -v
 python verify_live.py
 ```
 
-115项代码测试通过；既有19项REST后，真实join计数/金额及外币拒绝也已验证，见 [SCORING_REVIEW.md](evidence/SCORING_REVIEW.md)。非项目目录按脚本路径启动检查通过。
+128项代码测试通过；既有19项REST后，真实join计数/金额及外币拒绝也已验证，见 [SCORING_REVIEW.md](evidence/SCORING_REVIEW.md)。非项目目录按脚本路径启动检查通过。
 
-最新115项输出为`evidence/unit_security.txt`，新增重定向、凭据遮蔽、响应限额和查询语法边界测试；真实模型协议与回环端口验证分别见`model_security_check.json`、`security_live.json`。历史104项和82项输出保留；不将本地验证称为生产安全认证。
+最新128项输出为`evidence/unit_registry.txt`，含13项新增注册表/运行中变更测试。真实模型曾临时调用第9个工具得到Item18，随后移除回8、停用/恢复得到7→8，见`registry_live.json`。安全阶段115项输出为`unit_security.txt`，真实协议与回环端口见`model_security_check.json`、`security_live.json`；历史104/82项也保留。不将本地验证称为生产安全认证。
 
 按需运行模型案例会消耗API额度，使用新的输出文件保留审计：
 

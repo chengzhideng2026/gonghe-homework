@@ -25,8 +25,10 @@ class TestQuoteCurrency(unittest.TestCase):
 
     def test_model_tool_must_supply_quote_currency(self):
         runner = LLMRunner(Agent(FakeERP()))
-        with self.assertRaisesRegex(ValueError, 'explicit quote currency'):
+        with self.assertRaisesRegex(ValueError, 'currency'):
             runner._tool('prepare_purchase_order', ARGS)
+        self.assertEqual(runner.agent.proposals, {})
+        self.assertEqual(runner.agent.c.created, [])
         schema = next(t['function']['parameters'] for t in TOOL_DEFS
                       if t['function']['name'] == 'prepare_purchase_order')
         self.assertIn('currency', schema['required'])
