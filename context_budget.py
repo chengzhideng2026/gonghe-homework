@@ -81,6 +81,11 @@ def _tool_summary(call, result):
         summary['data'] = _important_record(data)
     else:
         summary['data'] = _safe_scalar(data)
+    if 'reference_date_evidence' in payload:
+        evidence = payload['reference_date_evidence']
+        summary['reference_date_evidence'] = {
+            **evidence, 'records': evidence.get('records', [])[:20],
+            'summary_scope': 'Historical evidence for retained records only; not a current-state assessment.'}
     io = payload.get('io')
     if isinstance(io, dict):
         sources = io.get('sources') or []

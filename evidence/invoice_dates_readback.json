@@ -1,0 +1,229 @@
+{
+  "timestamp_utc": "2026-10-17T16:22:56.612307+00:00",
+  "reference_date": "2025-10-15",
+  "scope": {
+    "doctype": "Sales Invoice",
+    "filters": [
+      [
+        "docstatus",
+        "=",
+        1
+      ],
+      [
+        "outstanding_amount",
+        ">",
+        0
+      ]
+    ],
+    "records": 7,
+    "count": 7,
+    "complete": true
+  },
+  "raw_records": [
+    {
+      "name": "ACC-SINV-2026-00011",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "currency": "USD",
+      "docstatus": 1,
+      "status": "Overdue",
+      "due_date": "2025-08-17",
+      "outstanding_amount": 6000.0
+    },
+    {
+      "name": "ACC-SINV-2026-00013",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "currency": "USD",
+      "docstatus": 1,
+      "status": "Overdue",
+      "due_date": "2025-08-31",
+      "outstanding_amount": 4640.0
+    },
+    {
+      "name": "ACC-SINV-2026-00015",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "currency": "USD",
+      "docstatus": 1,
+      "status": "Overdue",
+      "due_date": "2025-09-28",
+      "outstanding_amount": 8640.0
+    },
+    {
+      "name": "ACC-SINV-2026-00017",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "currency": "USD",
+      "docstatus": 1,
+      "status": "Overdue",
+      "due_date": "2025-10-10",
+      "outstanding_amount": 6100.0
+    },
+    {
+      "name": "ACC-SINV-2026-00018",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "currency": "USD",
+      "docstatus": 1,
+      "status": "Overdue",
+      "due_date": "2025-10-18",
+      "outstanding_amount": 5760.0
+    },
+    {
+      "name": "ACC-SINV-2026-00020",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "currency": "USD",
+      "docstatus": 1,
+      "status": "Overdue",
+      "due_date": "2025-11-01",
+      "outstanding_amount": 4880.0
+    },
+    {
+      "name": "ACC-SINV-2026-00021",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "currency": "USD",
+      "docstatus": 1,
+      "status": "Overdue",
+      "due_date": "2025-11-06",
+      "outstanding_amount": 1700.0
+    }
+  ],
+  "program_date_evidence": [
+    {
+      "name": "ACC-SINV-2026-00011",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "currency": "USD",
+      "docstatus": 1,
+      "due_date": "2025-08-17",
+      "outstanding_amount": 6000.0,
+      "reference_date": "2025-10-15",
+      "erp_status": "Overdue",
+      "due_date_relation": "before",
+      "due_date_minus_reference_days": -59,
+      "overdue_by_reference_date": true,
+      "rule": "due_date < reference_date AND outstanding_amount > 0"
+    },
+    {
+      "name": "ACC-SINV-2026-00013",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "currency": "USD",
+      "docstatus": 1,
+      "due_date": "2025-08-31",
+      "outstanding_amount": 4640.0,
+      "reference_date": "2025-10-15",
+      "erp_status": "Overdue",
+      "due_date_relation": "before",
+      "due_date_minus_reference_days": -45,
+      "overdue_by_reference_date": true,
+      "rule": "due_date < reference_date AND outstanding_amount > 0"
+    },
+    {
+      "name": "ACC-SINV-2026-00015",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "currency": "USD",
+      "docstatus": 1,
+      "due_date": "2025-09-28",
+      "outstanding_amount": 8640.0,
+      "reference_date": "2025-10-15",
+      "erp_status": "Overdue",
+      "due_date_relation": "before",
+      "due_date_minus_reference_days": -17,
+      "overdue_by_reference_date": true,
+      "rule": "due_date < reference_date AND outstanding_amount > 0"
+    },
+    {
+      "name": "ACC-SINV-2026-00017",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "currency": "USD",
+      "docstatus": 1,
+      "due_date": "2025-10-10",
+      "outstanding_amount": 6100.0,
+      "reference_date": "2025-10-15",
+      "erp_status": "Overdue",
+      "due_date_relation": "before",
+      "due_date_minus_reference_days": -5,
+      "overdue_by_reference_date": true,
+      "rule": "due_date < reference_date AND outstanding_amount > 0"
+    },
+    {
+      "name": "ACC-SINV-2026-00018",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "currency": "USD",
+      "docstatus": 1,
+      "due_date": "2025-10-18",
+      "outstanding_amount": 5760.0,
+      "reference_date": "2025-10-15",
+      "erp_status": "Overdue",
+      "due_date_relation": "after",
+      "due_date_minus_reference_days": 3,
+      "overdue_by_reference_date": false,
+      "rule": "due_date < reference_date AND outstanding_amount > 0"
+    },
+    {
+      "name": "ACC-SINV-2026-00020",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "currency": "USD",
+      "docstatus": 1,
+      "due_date": "2025-11-01",
+      "outstanding_amount": 4880.0,
+      "reference_date": "2025-10-15",
+      "erp_status": "Overdue",
+      "due_date_relation": "after",
+      "due_date_minus_reference_days": 17,
+      "overdue_by_reference_date": false,
+      "rule": "due_date < reference_date AND outstanding_amount > 0"
+    },
+    {
+      "name": "ACC-SINV-2026-00021",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "currency": "USD",
+      "docstatus": 1,
+      "due_date": "2025-11-06",
+      "outstanding_amount": 1700.0,
+      "reference_date": "2025-10-15",
+      "erp_status": "Overdue",
+      "due_date_relation": "after",
+      "due_date_minus_reference_days": 22,
+      "overdue_by_reference_date": false,
+      "rule": "due_date < reference_date AND outstanding_amount > 0"
+    }
+  ],
+  "overdue_names": [
+    "ACC-SINV-2026-00011",
+    "ACC-SINV-2026-00013",
+    "ACC-SINV-2026-00015",
+    "ACC-SINV-2026-00017"
+  ],
+  "total_calculation": {
+    "expression": "6000.0 + 4640.0 + 8640.0 + 6100.0",
+    "result": "25380.0",
+    "precision": 28
+  },
+  "io": {
+    "http_attempts": 2,
+    "cache_hits": 0,
+    "rejected_requests": 0,
+    "sources": [
+      {
+        "source": "http",
+        "path": "/api/resource/Sales%20Invoice",
+        "fetched_at": "2026-10-17T16:22:56.356219+00:00",
+        "age_seconds": 0
+      },
+      {
+        "source": "http",
+        "path": "/api/method/frappe.client.get_count",
+        "fetched_at": "2026-10-17T16:22:56.611928+00:00",
+        "age_seconds": 0
+      }
+    ],
+    "source_log_capped": false,
+    "limits": {
+      "requests_per_turn": 40,
+      "requests_per_minute": 120
+    },
+    "freshness": "Cache hits are prior observations at fetched_at, not proof of current state. Exact request reuse only; partial pages retain their original coverage."
+  },
+  "runtime_sha256": {
+    "agent.py": "aa49a7e99d3242645b09d4db17cd8937586e85e7e50dafd2cbf95bd6e266ce38",
+    "erp_tools.py": "f5df2a13c3910a1fd86661638ad6dac73ff232708b145c30206bb9a9401ef78b",
+    "tool_receipts.py": "8f1b67c8f6b8ad67200c2b455a10f7a8f8e952bd892e842b057edbda37e1e39a",
+    "context_budget.py": "93888d9bb073cb9d7aaa79cb9e71190ec205b33f2644fe6b238ffcdce01ded31"
+  }
+}

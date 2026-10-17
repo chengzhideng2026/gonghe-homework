@@ -1,0 +1,26 @@
+{
+  "scope": "Final focused rerun of original R1 and original overdue query after opt-in date evidence; earlier runs remain preserved.",
+  "cases": [
+    {
+      "id": "D1",
+      "boundary": "original_R1_balance_without_unsolicited_dates",
+      "question": "只查销售发票 ACC-SINV-2026-00018 的当前未结余额、总额、币种和状态，简短回答。若两个金额相等，能据此说它从未收款或没有核销历史吗？不要额外查付款流水。",
+      "review_criteria": [
+        "Outstanding USD5760 is explicitly an unpaid balance, not an absent net difference",
+        "No inference of payment or allocation history",
+        "No unsolicited due-date explanation or history query"
+      ]
+    },
+    {
+      "id": "D3",
+      "boundary": "original_overdue_sales_invoice_query",
+      "question": "Show me overdue sales invoices.",
+      "review_criteria": [
+        "Correct reference date and date/balance assessment, not raw-status filtering",
+        "Submitted invoice scope, company and currency are supported",
+        "Each listed amount and total has tool evidence with complete query scope",
+        "No unrequested historical-payment or causal explanation"
+      ]
+    }
+  ]
+}

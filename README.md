@@ -86,7 +86,9 @@ python -m unittest discover -s tests -v
 python verify_live.py
 ```
 
-158项代码测试通过，本轮输出`evidence/unit_answer_boundaries.txt`，新增2项预览/实际ERP状态证据契约测试。三类边界复测见[ANSWER_BOUNDARIES_REVIEW](evidence/ANSWER_BOUNDARIES_REVIEW.md)：R2字段范围收敛，R3标签明确，但R1完整回答失败、R3部分；本人操作验证尚未执行。既有19项REST和历史模型记录不代表当前全部文字通过。
+163项代码测试通过，最新输出`evidence/unit_invoice_dates_scoped.txt`，新增5项程序日期及真实ask协议测试。日期比较与已有`overdue()`共用规则；问逾期时在读工具显式设置`assess_due_date=true`，返回独立`reference_date_evidence`，不改原始status、不增加HTTP。余额读取默认不附评估。见[日期复测](evidence/INVOICE_DATE_REVIEW.md)：19项REST及最终2次HTTP核对通过；真实模型共8轮，最终原R1与原题逾期查询的日期/余额目标通过，完整回答仍部分，本人操作尚未验证。
+
+ce95390阶段158项输出`unit_answer_boundaries.txt`及[三类边界旧复测](evidence/ANSWER_BOUNDARIES_REVIEW.md)保留，其中R1日期失败原文未改；新复测不能替代全部历史模型验收。
 
 截止/上下文阶段156项输出为`evidence/unit_turn_controls.txt`，包含7项真实`ask()`截止/上下文/轨迹测试；`unit_read_policy.txt`保留此前17项API复用/限额/新鲜度及4项幂等/长任务测试。真实模型三轮ERP请求为1→0→0：查询18、本地计算36、再次计数命中约10秒缓存并标注时间，见`read_efficiency.json`。本轮六个新的只读变式（C01—C06）见`closeout_run_20261017.json`；C02初始预期选错后保留原记录并用`closeout_c02_corrected_20261017.json`重跑，不能把初始错误预期当代码失败。按[业务正确性验收](BUSINESS_ACCEPTANCE.md)由AI逐项复核后，C01和C05为核心通过/完整部分，C02修正记录完整通过；没有为测试写死答案。注册表阶段128项输出`unit_registry.txt`含13项注册变更测试；临时第9工具实测见`registry_live.json`。安全阶段115项及历史104/82项原记录保留，不将本地验证称为生产安全认证。
 

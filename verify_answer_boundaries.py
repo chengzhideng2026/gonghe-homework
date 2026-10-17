@@ -55,6 +55,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', required=True, help='New JSON filename under evidence/')
     parser.add_argument('--phase', required=True, choices=['before', 'after'])
+    parser.add_argument('--cases', default='answer_boundary_cases.json', help='Case JSON filename in project root')
     args = parser.parse_args()
     root = Path(__file__).resolve().parent
     if Path(args.output).name != args.output or not args.output.endswith('.json'):
@@ -62,7 +63,10 @@ def main():
     target = root / 'evidence' / args.output
     if target.exists():
         parser.error('Choose a new filename to preserve earlier evidence')
-    spec = json.loads((root / 'answer_boundary_cases.json').read_text(encoding='utf-8'))
+    if Path(args.cases).name != args.cases or not args.cases.endswith('.json'):
+        parser.error('Use a case JSON filename inside the project root')
+    case_path = root / args.cases
+    spec = json.loads(case_path.read_text(encoding='utf-8'))
     audit = NoWritesERP()
     before = po_names(audit)
     report = {'timestamp_utc': datetime.now(timezone.utc).isoformat(), 'phase': args.phase,
@@ -70,7 +74,8 @@ def main():
               'git_head': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=root).decode().strip(),
               'runtime_sha256': {name: hashlib.sha256((root / name).read_bytes()).hexdigest()
                                  for name in ['agent.py', 'erp_tools.py', 'tool_receipts.py', 'context_budget.py']},
-              'spec_sha256': hashlib.sha256((root / 'answer_boundary_cases.json').read_bytes()).hexdigest(),
+              'cases_file': args.cases,
+              'spec_sha256': hashlib.sha256(case_path.read_bytes()).hexdigest(),
               'program_checks': {'no_post': 'pending', 'po_names_unchanged': 'pending'},
               'human_operator_validation': {'status': 'not_performed'}, 'results': []}
     fixture_parent = root / '.local' / 'answer-boundary-checks'

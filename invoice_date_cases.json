@@ -1,0 +1,23 @@
+{
+  "scope": "Three date-fix acceptance questions: original R1, an explicit reference-date comparison, and the original overdue query. Only questions are sent to the model; criteria require separate review.",
+  "cases": [
+    {
+      "id": "D1",
+      "boundary": "original_R1_balance_without_unsolicited_dates",
+      "question": "只查销售发票 ACC-SINV-2026-00018 的当前未结余额、总额、币种和状态，简短回答。若两个金额相等，能据此说它从未收款或没有核销历史吗？不要额外查付款流水。",
+      "review_criteria": ["Outstanding USD5760 is explicitly an unpaid balance, not an absent net difference", "No inference of payment or allocation history", "No unsolicited due-date explanation or history query"]
+    },
+    {
+      "id": "D2",
+      "boundary": "raw_status_and_reference_date_are_distinct",
+      "question": "销售发票 ACC-SINV-2026-00018 按业务参考日 2025-10-15 是否逾期？请核对到期日、当前未结余额，区分 ERP 原始 status 和按参考日的判断，简短回答，不查付款历史。",
+      "review_criteria": ["Program evidence states due date after reference date and overdue false", "Raw ERP status Overdue is preserved and identified separately", "Outstanding USD5760 remains unpaid, not evidence of never-paid history"]
+    },
+    {
+      "id": "D3",
+      "boundary": "original_overdue_sales_invoice_query",
+      "question": "Show me overdue sales invoices.",
+      "review_criteria": ["Correct reference date and date/balance assessment, not raw-status filtering", "Submitted invoice scope, company and currency are supported", "Each listed amount and total has tool evidence with complete query scope", "No unrequested historical-payment or causal explanation"]
+    }
+  ]
+}

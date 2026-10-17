@@ -69,5 +69,7 @@ def tool_receipts(messages, tool_metadata=None):
                 receipt['summary'] = data
         if 'io' in result:
             receipt['io'] = result['io']
+        if result.get('ok') and 'reference_date_evidence' in result:
+            receipt['reference_date_evidence'] = result['reference_date_evidence']
         receipts.append(receipt)
     return receipts

@@ -1,0 +1,146 @@
+{
+  "reviewed_at_utc": "2026-10-17T16:26:37.206804+00:00",
+  "baseline_commit": "ce95390",
+  "scope": "Confirmed date comparison, separation of raw status from reference-date assessment, and current-balance wording only. No preview changes.",
+  "program_checks": {
+    "local_tests": {
+      "passed": 163,
+      "evidence": "evidence/unit_invoice_dates_scoped.txt",
+      "added_tests": 5,
+      "scope": "Program/protocol checks; no prose grading"
+    },
+    "rest_regression": {
+      "passed": 19,
+      "evidence": "evidence/invoice_dates_rest.json",
+      "stage": "Initial shared date helper; later signed-day/opt-in changes covered by final local tests and focused read-back"
+    },
+    "final_focused_readback": {
+      "evidence": "evidence/invoice_dates_readback.json",
+      "http_attempts": 2,
+      "complete_submitted_unpaid_rows": 7,
+      "computed_overdue_count": 4,
+      "computed_overdue_total": "25380.0"
+    },
+    "model_execution": [
+      {
+        "file": "invoice_dates_model.json",
+        "turns": 3,
+        "no_post": true,
+        "po_names_unchanged": true,
+        "po_count_before": 29,
+        "po_count_after": 29
+      },
+      {
+        "file": "invoice_dates_model_final.json",
+        "turns": 3,
+        "no_post": true,
+        "po_names_unchanged": true,
+        "po_count_before": 29,
+        "po_count_after": 29
+      },
+      {
+        "file": "invoice_dates_model_scoped.json",
+        "turns": 2,
+        "no_post": true,
+        "po_names_unchanged": true,
+        "po_count_before": 29,
+        "po_count_after": 29
+      }
+    ],
+    "evaluated_final_runtime_hashes_match": true,
+    "historical_evidence_unchanged": [
+      {
+        "file": "evidence/answer_boundaries_before.json",
+        "unchanged_from_ce95390": true,
+        "working_sha256": "b1b899bb4d9804f978146bf2b3ced92d828dc3e487bc0ecc68322e46536ccc7f"
+      },
+      {
+        "file": "evidence/answer_boundaries_after.json",
+        "unchanged_from_ce95390": true,
+        "working_sha256": "4a756578cb44e578aa16fe35f465cdedff760586057f4fed92d59edbb8af5fcf"
+      },
+      {
+        "file": "evidence/answer_boundaries_review.json",
+        "unchanged_from_ce95390": true,
+        "working_sha256": "0d8c4df2937d920ddc9ed203218973a7682720ed5bdf574cd1ce8efe32c53e34"
+      },
+      {
+        "file": "evidence/ANSWER_BOUNDARIES_REVIEW.md",
+        "unchanged_from_ce95390": true,
+        "working_sha256": "9ea7c7653748165919cf68963354d2364da20b07c0ce708631a250fd8c401cb7"
+      },
+      {
+        "file": "evidence/variants_initial.json",
+        "unchanged_from_ce95390": true,
+        "working_sha256": "cc25dc893e837408fbc111b02dffaa7f42477c8a5f143d0761d962125c590982"
+      },
+      {
+        "file": "evidence/variants_refined.json",
+        "unchanged_from_ce95390": true,
+        "working_sha256": "6eb7ab775daf536ca9bbc1326ea1ce1c80e80d077f9e1ba4d532ea5c9baa0535"
+      },
+      {
+        "file": "evidence/scoring_baseline.json",
+        "unchanged_from_ce95390": true,
+        "working_sha256": "69301351f7586cf7e47dda255aebe90b8895927553f705b4d7b168f96aef1ea1"
+      }
+    ]
+  },
+  "ai_review": {
+    "reviewer": "Current Codex primary agent; no additional model judge or human operation",
+    "method": "Read full answers, exact tool arguments/results, date sidecars, receipts and calculation results. No regex business scorer or generic truth proof.",
+    "initial_and_refined_runs": {
+      "date_judgments": "Correct; no repeat of 2025-10-18 before 2025-10-15",
+      "D1": "Partial: both automatic-sidecar runs still added unsolicited date explanations; initial also added a difference and ambiguous reduction wording.",
+      "D2": "Date target passes in both earlier runs. Initial three-day phrase had no explicit day-difference output; refined run has signed day-difference evidence. No claim that the later opt-in get_document path was re-run with a real model; its protocol is tested locally.",
+      "D3": "Core invoice set and calculated total correct in both runs. These do not establish a general business pass rate."
+    },
+    "final_cases": [
+      {
+        "id": "D1",
+        "source_question": "Original R1 unchanged",
+        "date_and_balance_target": "pass",
+        "complete_answer": "partial",
+        "facts": [
+          "Outstanding USD5760 is explicitly a current unpaid balance; grand_total USD5760; raw status Overdue and docstatus 1 preserved.",
+          "get_document does not request assess_due_date; no date sidecar and no due-date explanation in final prose.",
+          "One ERP HTTP request; no payment history queries and no unsupported no-net-balance conclusion."
+        ],
+        "remaining_issue": "Still adds a speculative receipt/refund/unallocation example despite brevity instructions; not counted as a fully concise answer."
+      },
+      {
+        "id": "D3",
+        "source_question": "Original Show me overdue sales invoices. unchanged",
+        "date_and_balance_target": "pass",
+        "complete_answer": "partial",
+        "facts": [
+          "list_documents explicitly sets assess_due_date=true; source status remains Overdue for all 7 returned unpaid records.",
+          "Complete page covers submitted outstanding>0 invoices; program date evidence identifies four before and three after the reference date.",
+          "Invoices 00011/00013/00015/00017 have balances USD6000/4640/8640/6100; calculate result is 25380 and final prose matches.",
+          "Days-overdue column corresponds to the magnitude of computed signed date offsets -59/-45/-17/-5; no mental calendar comparison is needed.",
+          "Invoice 00018 remains unpaid USD5760, with date relation after and overdue_by_reference_date=false."
+        ],
+        "remaining_issue": "Company scope is not explicitly stated in prose or projected; the query is not filtered by company. Core date result passes, full reporting standard remains partial."
+      }
+    ]
+  },
+  "human_operator_validation": {
+    "status": "not_performed"
+  },
+  "evidence_sha256": {
+    "evidence\\invoice_dates_model.json": "6679039a4e7820716430be5468ba569c817dd6fa418ffe7feb806e4e8c975f42",
+    "evidence\\invoice_dates_model_final.json": "b067d339ed342dd610effa458a5e2675144d03e309bbecb16f5f1d6c77bb96f0",
+    "evidence\\invoice_dates_model_scoped.json": "0d2d565e3e1e44311355f09dccbe4a66bc47af8910095d3ad9c7a6081603a2a1",
+    "evidence\\invoice_dates_readback.json": "6d019cd4b7420c41441da8af2d01c66682c7b92dcaaaee07f0f492421e032b23",
+    "evidence\\invoice_dates_rest.json": "2328ba530a98ffc88e7d179ffbc6a8de065923be7dd2f78425cf5e485e370d26",
+    "evidence\\invoice_dates_initial_code.patch": "6f71cf11e11a5a70871bf1c9aeea70bea0bb83662bb5355263607fe6c26a9b9b",
+    "evidence\\invoice_dates_refined_code.patch": "70e14f7e429e49da424f7b93f915e6f1722d2b2aa5b70b10791819165085082e"
+  },
+  "limits": [
+    "Eight real-model user turns total (3+3+2); no further paid reruns this turn.",
+    "Not a general answer validator; model still has verbosity/extra-explanation issues.",
+    "Reference-date assessment uses returned current outstanding balance, not a historical ledger reconstruction.",
+    "No ERP create/confirm/submit/cancel/delete, no .env or volume changes, no purchase-preview modification.",
+    "Existing persistent trace depth limit truncates nested per-record date fields; assessment header is retained. Full date evidence is retained in raw model reports, tool receipts and history summaries."
+  ]
+}

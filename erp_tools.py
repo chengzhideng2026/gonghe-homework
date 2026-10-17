@@ -51,7 +51,10 @@ def count_documents(context, args):
  'function': {'name': 'list_documents',
               'description': 'List ERPNext documents with plain fields, filters, pagination and field '
                              'ordering. No SQL expressions, aliases or wildcard fields; use '
-                             'aggregate_documents for sums and get_document for full named details.',
+                             'aggregate_documents for sums and get_document for full named details. '
+                             'For invoice overdue questions set assess_due_date=true for program '
+                             'reference_date_evidence; include '
+                             'due_date and outstanding_amount to assess overdue, keeping raw status separate.',
               'parameters': {'type': 'object',
                              'properties': {'doctype': {'type': 'string'},
                                             'fields': {'type': 'array',
@@ -75,7 +78,9 @@ def count_documents(context, args):
                                                          'description': 'At most three plain field '
                                                                         'names with optional asc/desc, '
                                                                         'e.g. modified desc, name '
-                                                                        'asc.'}},
+                                                                        'asc.'},
+                                            'assess_due_date': {'type': 'boolean',
+                                                                'description': 'Default false. Enable only for invoice due-date/overdue questions; computes local date evidence from returned fields without extra ERP reads. Leave false for current-balance-only requests.'}},
                              'required': ['doctype']}}})
 def list_documents(context, args):
     limit = max(1, min(int(args.get('limit', 20)), 100))
@@ -109,9 +114,13 @@ def list_documents(context, args):
 
 @BUILTIN_TOOLS.tool({'type': 'function',
  'function': {'name': 'get_document',
-              'description': 'Read one ERPNext document by DocType and name, including child tables.',
+              'description': 'Read one ERPNext document by DocType and name, including child tables. '
+                             'For invoice overdue questions set assess_due_date=true for program '
+                             'reference_date_evidence beside unchanged data; use it, not raw ERP status.',
               'parameters': {'type': 'object',
-                             'properties': {'doctype': {'type': 'string'}, 'name': {'type': 'string'}},
+                             'properties': {'doctype': {'type': 'string'}, 'name': {'type': 'string'},
+                                            'assess_due_date': {'type': 'boolean',
+                                                                'description': 'Default false. Enable only for invoice due-date/overdue questions; leave false for balance-only requests. No extra ERP read.'}},
                              'required': ['doctype', 'name']}}})
 def get_document(context, args):
     return context.agent.c.get(args['doctype'], args['name'])
@@ -125,9 +134,13 @@ def get_document(context, args):
                              'succeeded. Never use partial results as a complete total. Completeness '
                              'covers these names only, not all records matching a business question. '
                              'Read-only; no joins, writes or retries. This is NOT a server batch API: '
-                             'each uncached name requires its own upstream HTTP request. Shortlist first.',
+                             'each uncached name requires its own upstream HTTP request. Shortlist first. '
+                             'For invoice overdue questions set assess_due_date=true for separate '
+                             'program reference_date_evidence on successful records.',
               'parameters': {'type': 'object',
                              'properties': {'doctype': {'type': 'string', 'minLength': 1},
+                                            'assess_due_date': {'type': 'boolean',
+                                                                'description': 'Default false. Enable only for invoice due-date/overdue questions; leave false for balance-only requests. No extra ERP read.'},
                                             'names': {'type': 'array',
                                                       'minItems': 1,
                                                       'maxItems': 20,
