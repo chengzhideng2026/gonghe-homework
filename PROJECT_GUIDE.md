@@ -1,8 +1,10 @@
 # 项目接手与学习指南
 
-这份指南面向第一次接手项目的人：先自己运行，再把一次问答和一次采购预览沿代码走通，最后练习解释取舍。当前八工具、128项代码测试通过；已有REST及追加join/币种实测，模型真实回答仍有部分通过项。运行入口见 [README](README.md)，最新独立十题与定向分级见 [SCORING_REVIEW](evidence/SCORING_REVIEW.md)，早期复测与演进见 [FOLLOWUP_REVIEW](evidence/FOLLOWUP_REVIEW.md)、[AUDIT](AUDIT.md)。
+这份指南面向第一次接手项目的人：先自己运行，再把一次问答和一次采购预览沿代码走通，最后练习解释取舍。当前八工具、145项代码测试通过；已有REST及追加join/币种实测，模型真实回答仍有部分通过项。运行入口见 [README](README.md)，最新独立十题与定向分级见 [SCORING_REVIEW](evidence/SCORING_REVIEW.md)，早期复测与演进见 [FOLLOWUP_REVIEW](evidence/FOLLOWUP_REVIEW.md)、[AUDIT](AUDIT.md)。
 
 题目已经提供可恢复的 ERPNext 和业务数据，所以这份作业无需从零开发 ERP。我们实现的是 ERP 之上的问答与受控采购 Agent。代码规模可以比较小，但库存、账期、BOM、成本和不确定写入的业务边界需要仔细验证。
+
+面试追问“用户API不能频繁调用”时，结合[API_EFFICIENCY](API_EFFICIENCY.md)理解：先缩范围/字段，再复用有时间与覆盖范围的证据，本地计算派生值；用HTTP预算/节流控制真实调用。缓存不代表实时状态，完整汇总与采购校验/回读必须回源。面试追问“生产化/幂等/K8s”时，结合[DEPLOYMENT_AND_AUTOMATION](DEPLOYMENT_AND_AUTOMATION.md)：当前有客户端幂等键和恢复边界，但没有声称ERPNext原生服务端exactly-once；K8s只有在多副本、队列和持久化运维需求出现后才引入。
 
 ## 1. 建议阅读顺序
 
@@ -275,7 +277,7 @@ python -m unittest discover -s tests -v
 python verify_live.py
 ```
 
-前者检验代码机制，后者请求真实ERP；当前128项代码测试通过，既有19项REST又追加join/币种验证。两者均不能自动证明模型文字正确。后续数量看当次输出，不要把测试项数当正确率。想明确验证模型协议，可额外运行`--check-model`，它会消耗API额度。
+前者检验代码机制，后者请求真实ERP；当前145项代码测试通过，既有19项REST又追加join/币种验证。两者均不能自动证明模型文字正确。后续数量看当次输出，不要把测试项数当正确率。想明确验证模型协议，可额外运行`--check-model`，它会消耗API额度。
 
 ### 实验 B：铜线库存与证据
 

@@ -56,6 +56,7 @@ Show me overdue sales invoices.
 | 命令 | 作用 |
 |---|---|
 | `/trace` | 查看上一模型轮的实际工具收据、查询范围、分页与错误 |
+| `/refresh` | 清读缓存，下一问全程回源；请求限额仍有效 |
 | `/tools` | 查看当前进程的注册工具、启用状态、版本及effect |
 | `/tools enable 名称`、`/tools disable 名称` | 启停已注册的模型工具；不调用模型，重启恢复默认 |
 | `/pending` | 查看当前连接保存的采购预览及状态 |
@@ -66,11 +67,13 @@ Show me overdue sales invoices.
 
 采购先显示真实载荷与具体 ID，只有人工 `/confirm id` 才写入。模型不能直接确认、创建、提交或取消。报价必须明确 `currency`，与公司本位币不符即拒绝，不自动换汇或把外币报价改名为本位币。报价 JSON 小数先保留为 Decimal，再校验数值范围与 ERP 浮点可表示性；收据保留报价小数文本。当前支持单行、物料库存单位，税费/默认值差异在回读中标记复核。
 
-预览默认 15 分钟有效，绑定 ERP 端点与凭据配置；查询和修改均检查绑定，状态在被 Git 忽略的 `.local/proposals.sqlite3`。已知单号可 `/reconcile id`，没有收到单号则人工核查，禁止盲重发。它提供同日志、同预览防重复派发，没有 ERP 服务端全局幂等键，也没有 SaaS 租户鉴权。
+预览默认 15 分钟有效，绑定 ERP 端点与凭据配置；查询和修改均检查绑定，状态在被 Git 忽略的 `.local/proposals.sqlite3`。每个预览保存稳定 `idempotency_key`，原生客户端向支持该约定的网关发送 `X-Idempotency-Key`；题目 ERPNext 原生接口不承诺服务端去重，所以仍必须用已知单号对账，不能把请求头写成 exactly-once。已知单号可 `/reconcile id`，没有收到单号则人工核查，禁止盲重发。
 
 纯天气、吃饭问题由同一模型按业务范围规则引导返回；混合问题处理其中的ERP部分。这是软提示路由。恢复、记忆、检索、模型路由与租户的详细取舍见 [RECOVERY_AND_DESIGN](RECOVERY_AND_DESIGN.md)。
 
-`erp_tools.py`将Schema与handler一起注册到`ToolRegistry`，可信代码可运行时注册/移除；停用与同名替换后旧调用拒绝，新工具下一次模型请求可见。没有模型可调用的工具管理功能或任意脚本热加载。接入示例与边界见[TOOL_REGISTRY](TOOL_REGISTRY.md)。
+`erp_tools.py`将Schema与handler一起注册到`ToolRegistry`，可信代码可运行时注册/移除；停用与同名替换后旧调用拒绝，新工具下一次模型请求可见。没有模型可调用的工具管理功能或任意脚本热加载。接入示例与边界见[TOOL_REGISTRY](TOOL_REGISTRY.md)。自动化、长任务、幂等键和Docker/K8s升级路径见[DEPLOYMENT_AND_AUTOMATION](DEPLOYMENT_AND_AUTOMATION.md)。
+
+客户API不可改且不宜频繁调用时：先用精确对象/时间/组织过滤、必要字段和少量候选缩小范围；`include_total=false`可省略候选列表的额外计数，但不证明完整覆盖。问答内/跨问答复用相同成功GET，业务默认30秒、元数据600秒，显示原读取时间；本地计算无需再次查ERP。每问默认40次ERP HTTP尝试、滚动每分钟120次、间隔0.25秒，均可配置；这是演示默认而非客户SLA。汇总、采购校验和回读绕过缓存，POST尝试清缓存。`/trace`区分工具调用、HTTP尝试与缓存命中。详见[API_EFFICIENCY](API_EFFICIENCY.md)。
 
 ## 验证与已知边界
 
@@ -81,9 +84,9 @@ python -m unittest discover -s tests -v
 python verify_live.py
 ```
 
-128项代码测试通过；既有19项REST后，真实join计数/金额及外币拒绝也已验证，见 [SCORING_REVIEW.md](evidence/SCORING_REVIEW.md)。非项目目录按脚本路径启动检查通过。
+149项代码测试通过；既有19项REST后，真实join计数/金额及外币拒绝也已验证，见 [SCORING_REVIEW.md](evidence/SCORING_REVIEW.md)。非项目目录按脚本路径启动检查通过。
 
-最新128项输出为`evidence/unit_registry.txt`，含13项新增注册表/运行中变更测试。真实模型曾临时调用第9个工具得到Item18，随后移除回8、停用/恢复得到7→8，见`registry_live.json`。安全阶段115项输出为`unit_security.txt`，真实协议与回环端口见`model_security_check.json`、`security_live.json`；历史104/82项也保留。不将本地验证称为生产安全认证。
+最新149项输出为`evidence/unit_read_policy.txt`，新增17项API复用/限额/新鲜度测试及4项幂等/长任务测试。真实模型三轮ERP请求为1→0→0：查询18、本地计算36、再次计数命中约10秒缓存并标注时间，见`read_efficiency.json`。注册表阶段128项输出`unit_registry.txt`含13项注册变更测试；临时第9工具实测见`registry_live.json`。安全阶段115项及历史104/82项原记录保留，不将本地验证称为生产安全认证。
 
 按需运行模型案例会消耗API额度，使用新的输出文件保留审计：
 

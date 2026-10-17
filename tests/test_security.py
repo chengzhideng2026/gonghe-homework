@@ -68,6 +68,10 @@ class TestAPITransportSecurity(unittest.TestCase):
         with server(Sink) as sink:
             class Redirect(QuietHandler):
                 def do_GET(self):
+                    # Drain POST bodies before closing: unread large model
+                    # requests otherwise trigger a Windows TCP reset, hiding
+                    # the redirect response this fixture is meant to exercise.
+                    self.rfile.read(int(self.headers.get('Content-Length', '0')))
                     origin.append((self.command, self.headers.get('Authorization')))
                     self.send_response(state['code'])
                     self.send_header('Location', sink + '/credential-sink')

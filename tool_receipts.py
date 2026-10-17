@@ -65,5 +65,7 @@ def tool_receipts(messages, tool_metadata=None):
                 receipt['summary'] = {key: data.get(key) for key in ('proposal_id', 'estimated_total', 'requires_confirmation')}
             else:
                 receipt['summary'] = data
+        if 'io' in result:
+            receipt['io'] = result['io']
         receipts.append(receipt)
     return receipts

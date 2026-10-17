@@ -69,6 +69,8 @@ def count_documents(context, args):
                                                                   'items': {}}},
                                             'limit': {'type': 'integer'},
                                             'offset': {'type': 'integer'},
+                                            'include_total': {'type': 'boolean',
+                                                              'description': 'Default true. Set false for bounded candidate shortlisting to skip the extra count HTTP request. Total and has_more then remain unknown; never claim complete coverage.'},
                                             'order_by': {'type': 'string',
                                                          'description': 'At most three plain field '
                                                                         'names with optional asc/desc, '
@@ -83,15 +85,17 @@ def list_documents(context, args):
     if fields:
         fields = list(dict.fromkeys(['name'] + fields))
     rows = context.agent.c.list(args['doctype'], fields, args.get('filters'), limit, offset, args.get('order_by') or 'name asc')
-    total = context.agent.c.count(args['doctype'], args.get('filters'))
+    total = context.agent.c.count(args['doctype'], args.get('filters')) if args.get('include_total', True) else None
     joined = context.has_child_join(args['doctype'], args.get('filters'))
-    has_more = offset + len(rows) < total
+    has_more = offset + len(rows) < total if total is not None else None
     occurrences = {}
     for row in rows:
         if isinstance(row, dict) and isinstance(row.get('name'), str):
             occurrences[row['name']] = occurrences.get(row['name'], 0) + 1
     duplicate_names = [document for document, count in occurrences.items() if count > 1]
     warnings = []
+    if total is None:
+        warnings.append('Candidate page only: total count was deliberately not queried to save an HTTP request. has_more is unknown; no complete coverage or full-category total is established. next_offset is only a possible continuation.')
     if joined:
         warnings.append('Child-table join filters may repeat parent documents. pagination.total, offset, returned and next_offset refer to raw joined rows, not distinct documents. Use count_documents or aggregate_documents for distinct parent counts. Do not sum repeated parent amounts or silently drop matching child rows.')
     elif duplicate_names:
@@ -100,7 +104,7 @@ def list_documents(context, args):
         warnings.append('Requested fields are missing; child DocTypes may return only names. Read parent documents; do not assume missing values are zero.')
     if args['doctype'] == 'Bin':
         warnings.append('CURRENT SNAPSHOT ONLY: warehouse is a location label, not evidence of a completed issue/transfer/receipt. Do not describe material as already issued or transferred without Stock Entry/Stock Ledger event evidence. projected_qty is returned by ERP; its formula cannot be inferred from a subset of planning fields.')
-    return {'records': rows, 'pagination': {'offset': offset, 'limit': limit, 'returned': len(rows), 'total': total, 'total_basis': 'raw_join_rows' if joined else 'documents', 'unique_names_returned': len(occurrences), 'duplicate_names': duplicate_names, 'has_more': has_more, 'next_offset': offset + len(rows) if has_more else None}, 'query_scope': {'doctype': args['doctype'], 'filters': normalize_filters(args.get('filters')), 'fields': fields or ['name'], 'coverage': 'Coverage is limited to these exact filters. Name/keyword matches are search candidates, not proof of every member of a business category. Only returned field values are established; historical events and causes require separate evidence.'}, 'warnings': warnings}
+    return {'records': rows, 'pagination': {'offset': offset, 'limit': limit, 'returned': len(rows), 'total': total, 'total_basis': 'not_queried' if total is None else ('raw_join_rows' if joined else 'documents'), 'unique_names_returned': len(occurrences), 'duplicate_names': duplicate_names, 'has_more': has_more, 'next_offset': offset + len(rows) if rows and (has_more or total is None) else None}, 'query_scope': {'doctype': args['doctype'], 'filters': normalize_filters(args.get('filters')), 'fields': fields or ['name'], 'coverage': 'Coverage is limited to these exact filters. Name/keyword matches are search candidates, not proof of every member of a business category. Only returned field values are established; historical events and causes require separate evidence.'}, 'warnings': warnings}
 
 
 @BUILTIN_TOOLS.tool({'type': 'function',
@@ -120,7 +124,8 @@ def get_document(context, args):
                              'success or error; complete is true only when every requested document '
                              'succeeded. Never use partial results as a complete total. Completeness '
                              'covers these names only, not all records matching a business question. '
-                             'Read-only; no joins, writes or retries.',
+                             'Read-only; no joins, writes or retries. This is NOT a server batch API: '
+                             'each uncached name requires its own upstream HTTP request. Shortlist first.',
               'parameters': {'type': 'object',
                              'properties': {'doctype': {'type': 'string', 'minLength': 1},
                                             'names': {'type': 'array',

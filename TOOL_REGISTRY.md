@@ -88,7 +88,7 @@ runner.registry.unregister("count_items_extension")
 
 ## 验证
 
-本轮128项代码测试通过，新增13项覆盖注册发现、重复拒绝、Schema复制、停用、同名替换、会话隔离、Decimal解析、旧视图拒绝、空工具集合、收据和CLI控制；原采购与安全回归继续通过。见`evidence/unit_registry.txt`。
+注册表阶段128项代码测试通过，新增13项覆盖注册发现、重复拒绝、Schema复制、停用、同名替换、会话隔离、Decimal解析、旧视图拒绝、空工具集合、收据和CLI控制；见`evidence/unit_registry.txt`。API效率阶段当前145项，新增请求预算与新鲜度保护见[API_EFFICIENCY](API_EFFICIENCY.md)。工具数量与实际HTTP请求量需分开统计。
 
 `evidence/registry_live.json`实际临时注册了第9个工具，模型调用它从真实ERP读取Item=18；移除回到8个后旧名字不可调用，停用/恢复calculate得到7→8。该演示没有持久修改默认工具集，没有ERP写入，也不是新的业务质量评分。
 

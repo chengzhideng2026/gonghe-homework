@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-128项代码测试通过；既有19项REST复核后又追加了真实join/币种检查。从非项目目录按脚本路径启动检查通过；可选`--check-model`约5秒完成Item18真实工具回路。当前八工具增加有界批量父单读取，并强化子表join计数、报价币种和小数字面精度。
+149项代码测试通过；既有19项REST复核后又追加了真实join/币种、API效率、幂等键及长任务检查。从非项目目录按脚本路径启动检查通过；可选`--check-model`完成Item18真实工具回路。当前八工具支持有界批量、子表join计数、报价币种、小数字面精度及客户端读复用/调用预算。
 
 用户充值后模型API已恢复，完成完整八题复跑与定向改进：完整八题核心8/8，整段6通过、2部分；最新定向E07通过，E01不再有历史断言，但额外公式未调用calculate，保守部分。三轮“库存→缺口→采购预览”核心与载荷断言通过，第二轮额外情景公式仍部分。本轮采购单名称集合均29→29，没有新建ERP采购单；这是本地证据，不是fresh seed的运行条件。
 
@@ -33,7 +33,8 @@ flowchart TD
     CLI -->|人工输入 /confirm id| Confirm[重新校验、原子领取、创建、回读]
     Confirm --> Journal
     Confirm --> ERPAPI[ERPNext HTTP API localhost:8080]
-    Read --> ERPAPI
+    Read --> Policy[read_policy：精确缓存、来源时间、HTTP预算与节流]
+    Policy --> ERPAPI
     Agg --> Read
     ERPAPI --> Nginx[frontend：Nginx]
     Nginx --> Frappe[backend：Frappe/ERPNext]
@@ -46,6 +47,8 @@ flowchart TD
 代码采用逻辑分层，主体仍集中于 `agent.py`，持久化在 `proposal_store.py`，收据和受限回答检查分别在 `tool_receipts.py` 与 `answer_checks.py`；没有为六小时作业拆成微服务。
 
 工具定义与handler现集中于`erp_tools.py`，由`tool_registry.py`注册；Runner不再用if/elif按名字分发。每次模型请求取得Schema/handler一致视图，执行前检查工具仍启用且未被替换。默认8工具，可信代码可增删，CLI可启停；收据保留版本/effect/小数解析策略。详见[TOOL_REGISTRY](TOOL_REGISTRY.md)，注册表不提供插件沙箱或吞吐自动伸缩。
+
+`read_policy.py`无需修改客户API：提示先缩小范围，候选列表可省略count；相同成功GET按端点/请求头指纹/路径/参数短时复用，携带读取时间，HTTP尝试按问答与滚动分钟限额计数。汇总起止检查、采购校验/回读全程回源，写尝试清缓存。每个采购预览另存稳定幂等键；支持该约定的网关可用`X-Idempotency-Key`去重，原生ERPNext不支持时仍需SQLite状态与对账。真实三轮查询→本地计算→重复计数的ERP HTTP为1→0→0，详见[API_EFFICIENCY](API_EFFICIENCY.md)。缓存不证明实时状态，也不将候选页推断成全集。自动化和K8s边界见[DEPLOYMENT_AND_AUTOMATION](DEPLOYMENT_AND_AUTOMATION.md)。
 
 ## 2. Docker基础设施：原题提供，未重写
 
@@ -159,7 +162,7 @@ SQLite的BEGIN IMMEDIATE使同一本地journal的并发确认只有一个领取�
 
 加载、按ID查询、pending、confirm、discard和reconcile都限定当前连接绑定，SQLite修改事务内再次核对。修复前只有confirm防误写，共享journal仍可见/丢弃其他连接预览；该缺口已由14项作用域测试覆盖。它不是SaaS登录或文件级权限隔离。
 
-新增`/reconcile id`仅对creating/failed的已记录单号GET回读，失败保留状态与单号；成功通过状态/名称比较更新结果，差异要求复核。未知单号不重发、不自动搜索相似单据认定成功。完整断线分支、记忆/检索/路由/租户取舍见[RECOVERY_AND_DESIGN](RECOVERY_AND_DESIGN.md)。仍没有服务端业务幂等键和持久聊天检查点。
+新增`/reconcile id`仅对creating/failed的已记录单号GET回读，失败保留状态与单号；成功通过状态/名称比较更新结果，差异要求复核。未知单号不重发、不自动搜索相似单据认定成功。完整断线分支、记忆/检索/路由/租户取舍见[RECOVERY_AND_DESIGN](RECOVERY_AND_DESIGN.md)。仍没有 ERPNext 服务端业务幂等存储和持久聊天检查点；客户端预览幂等键与透传仅在对端支持该约定时具备服务端去重效果。
 
 ## 7. 2026-10-16检查发现的真实问题（历史）
 
@@ -230,7 +233,7 @@ SQLite的BEGIN IMMEDIATE使同一本地journal的并发确认只有一个领取�
 
 ## 11. 独立审查与后续真实复测
 
-开发检查由主审和3个独立审查子Agent协作，运行时仍是单模型工具循环。当前128项代码测试覆盖聚合参数、预览目标、收据、查询范围、回答检查、批量、币种与join边界；真实验证分阶段保留。
+早期开发检查由主审和3个独立审查子Agent协作，运行时仍是单模型工具循环。当前149项代码测试覆盖聚合参数、预览目标、收据、查询范围、回答检查、批量、币种、join及HTTP复用/限额、幂等键/长任务边界；真实验证分阶段保留。
 
 本轮两项实质修复：一是重复的`sum_fields`以前可能把一个金额加两次，现已校验并去重；二是本地持久预览以前没有绑定ERP环境，现已绑定端点和凭据配置指纹。`/trace`与列表`name`补充了审查证据，但没有把LLM文本变成完全确定的程序输出。
 

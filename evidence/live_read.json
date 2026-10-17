@@ -1,5 +1,5 @@
 {
-  "timestamp_utc": "2026-10-17T08:22:09.446892+00:00",
+  "timestamp_utc": "2026-10-17T08:40:06.462468+00:00",
   "reference_date": "2025-10-15",
   "scope": "Real ERPNext REST integration; no LLM involved",
   "checks": [
@@ -314,7 +314,7 @@
       }
     ],
     "preview": {
-      "proposal_id": "a188d481",
+      "proposal_id": "a61e6b3e",
       "doc": {
         "doctype": "Purchase Order",
         "supplier": "Tongling Magnet Wire Co.",

@@ -4,11 +4,11 @@
 
 **结论：当前适合保留“通用读工具 + 受控采购写入 + 本地 CLI”的架构。SQLite 和 Python 标准库没有构成本题的技术短板。最需要继续投入的是独立业务验收、证据展示和失败边界，而不是换一批更新的技术名词。** 本轮复核又找到了两类真实问题并修复，所以此前“主链完成”应理解为已经能够运行，不能理解为所有问题都已经找完。
 
-安全追加复核已补HTTP重定向拒绝、远端HTTPS、响应/错误限额、凭据遮蔽、查询语法校验与本机回环端口。当前128项回归通过，但没有生产最小权限账号、完整提示注入防护或网关/多副本部署。具体威胁边界和部署顺序见[SECURITY_AND_DEPLOYMENT](SECURITY_AND_DEPLOYMENT.md)，不能仅因使用HTTP API就宣称没有注入风险。
+安全追加复核已补HTTP重定向拒绝、远端HTTPS、响应/错误限额、凭据遮蔽、查询语法校验与本机回环端口。当前149项回归通过，但没有生产最小权限账号、完整提示注入防护或网关/多副本部署。具体威胁边界和部署顺序见[SECURITY_AND_DEPLOYMENT](SECURITY_AND_DEPLOYMENT.md)，不能仅因使用HTTP API就宣称没有注入风险。
 
 随后把静态定义/if分发改为真实注册表：同一记录提供Schema、handler、版本/effect和Decimal解析策略；支持可信代码注册/移除及会话启停，执行时拒绝旧视图调用已停用/替换的工具。128项包含13项注册变更测试，真实模型新增第9工具后读取Item18；见[TOOL_REGISTRY](TOOL_REGISTRY.md)。这不是任意插件自动加载、异步调度或ERP授权。
 
-当前八工具、128项代码测试通过；既有19项REST后追加了真实join/币种验证。新独立十题、批量增强与协议自检见 [SCORING_REVIEW](evidence/SCORING_REVIEW.md)，早期复测见 [FOLLOWUP_REVIEW](evidence/FOLLOWUP_REVIEW.md)，接手见 [PROJECT_GUIDE](PROJECT_GUIDE.md)。真实回答仍有部分通过项，历史额度失败不代表当前阻断。
+当前八工具、149项代码测试通过；既有19项REST后追加了真实join/币种及API效率验证。客户接口不能改时，先裁剪查询范围，精确请求短时复用、已有证据本地计算，并用真实HTTP预算/节流约束调用；新鲜度与完整性边界见[API_EFFICIENCY](API_EFFICIENCY.md)。新独立十题、批量增强与协议自检见 [SCORING_REVIEW](evidence/SCORING_REVIEW.md)，早期复测见 [FOLLOWUP_REVIEW](evidence/FOLLOWUP_REVIEW.md)，接手见 [PROJECT_GUIDE](PROJECT_GUIDE.md)。真实回答仍有部分通过项，历史额度失败不代表当前阻断。
 
 ## 1. “隐藏题”到底是什么意思
 
@@ -75,7 +75,7 @@ Python 标准库意味着需要自己维护错误处理和协议兼容，并不�
 
 ## 5. 本轮复核实际修复了什么
 
-代码回归从先前29项逐步增加到当前 **128项**，全部通过；既有19项REST外又验证了join及外币拒绝。从非项目目录启动检查通过，配置按脚本目录加载；可选`--check-model`约5秒完成Item18真实工具回路。以下区分确定性修复、明确增强和各阶段模型验收。
+代码回归从先前29项逐步增加到当前 **149项**，全部通过；既有19项REST外又验证了join、外币拒绝及幂等键。从非项目目录启动检查通过，配置按脚本目录加载；可选`--check-model`完成Item18真实工具回路。以下区分确定性修复、明确增强和各阶段模型验收。
 
 ### 5.1 聚合参数重复，可能导致金额被加两次
 

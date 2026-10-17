@@ -5,6 +5,7 @@ import ast
 import hashlib
 import time
 import os, sys, json, uuid
+import inspect
 from pathlib import Path
 from datetime import date
 from decimal import Decimal, InvalidOperation, DecimalException
@@ -17,6 +18,20 @@ from answer_checks import evidence_issues
 from http_transport import safe_urlopen as urlopen, validate_url, read_body, redact, http_error_detail, TransportError
 from query_policy import normalize_filters, validate_doctype, validate_fields, validate_order_by
 from erp_tools import BUILTIN_TOOLS, ToolContext
+from read_policy import ReadPolicy
+from contextlib import nullcontext
+from functools import wraps
+
+
+def fresh_reads(method):
+    """Keep scans and write validation/read-back independent of read reuse."""
+    @wraps(method)
+    def invoke(self, *args, **kwargs):
+        client = getattr(self, 'c', self)
+        policy = getattr(client, 'read_policy', None)
+        with policy.fresh() if isinstance(policy, ReadPolicy) else nullcontext():
+            return method(self, *args, **kwargs)
+    return invoke
 
 def load_local_env(path=None):
     """Small dotenv loader so the CLI has no third-party runtime dependency."""
@@ -99,8 +114,16 @@ class ERPNextClient:
         self.timeout = timeout
         self.headers = {"Authorization": f"token {key}:{secret}", "Accept": "application/json"}
         self._secrets = (key, secret, self.headers['Authorization'])
+        self.read_policy = ReadPolicy()
 
     def _req(self, method, path, **kwargs):
+        # Include trusted routing headers as well as credentials in isolation.
+        identity = hashlib.sha256(json.dumps(self.headers, sort_keys=True).encode()).hexdigest()
+        request_data = {'params': kwargs.get('params'), 'json': kwargs.get('json')}
+        return self.read_policy.request(method, path, request_data, [self.base, identity],
+                                        lambda: self._http_req(method, path, **kwargs))
+
+    def _http_req(self, method, path, **kwargs):
         params = kwargs.pop("params", None)
         url = self.base + path
         if params:
@@ -108,6 +131,7 @@ class ERPNextClient:
         body = kwargs.pop("json", None)
         data = json.dumps(body, allow_nan=False).encode("utf-8") if body is not None else None
         headers = dict(self.headers)
+        headers.update(kwargs.pop('headers', {}) or {})
         if data is not None:
             headers["Content-Type"] = "application/json"
         try:
@@ -208,6 +232,7 @@ class ERPNextClient:
                                'in the DocType or business category was covered. Partial failures must '
                                'not be treated as a complete total. No automatic joins or retries.'}
 
+    @fresh_reads
     def aggregate(self, doctype, filters=None, group_by=None, sum_fields=None, max_rows=10000):
         """Bounded complete scan, stable pagination, exact Decimal sums; no SQL tool."""
         group_by = [] if group_by is None else group_by
@@ -272,8 +297,14 @@ class ERPNextClient:
                                'are collapsed only when projected fields agree. Not a transactional database '
                                'snapshot. Use filters to avoid mixing currencies/UOMs.'}
 
-    def create(self, doctype, doc):
-        return self._req("POST", f"/api/resource/{quote(doctype, safe='')}", json=doc)
+    def create(self, doctype, doc, idempotency_key=None):
+        """Create a document; an optional key is understood only by a compliant gateway."""
+        if idempotency_key is not None:
+            if (not isinstance(idempotency_key, str) or not 8 <= len(idempotency_key) <= 128
+                    or any(ord(char) < 33 or ord(char) > 126 for char in idempotency_key)):
+                raise ValueError('idempotency_key must be bounded printable text')
+        headers = {'X-Idempotency-Key': idempotency_key} if idempotency_key else None
+        return self._req("POST", f"/api/resource/{quote(doctype, safe='')}", json=doc, headers=headers)
 
 def overdue(invoices, ref=REFERENCE_DATE):
     """Compute overdue independently of ERPNext status/system clock."""
@@ -323,6 +354,7 @@ class Agent:
         if suppliers[0].get('disabled'):
             raise ERPError(f'Supplier is disabled: {supplier}')
 
+    @fresh_reads
     def proposal_po(self, supplier, item, qty, uom, rate, transaction_date=REFERENCE_DATE, schedule_date=REFERENCE_DATE, company=None, currency=None):
         target_binding = self._target_binding()
         if not all([supplier, item, qty, uom, rate is not None]):
@@ -363,16 +395,20 @@ class Agent:
             "company": companies[0]['name'], "currency": companies[0]['default_currency'],
             "items": [{"item_code": item, "qty": qty_f, "uom": uom, "rate": rate_f}],
         }
+        idempotency_key = 'plantcore-po-' + hashlib.sha256(
+            json.dumps({'proposal_id': proposal_id, 'doc': doc, 'target': target_binding},
+                       sort_keys=True, ensure_ascii=False, allow_nan=False).encode()).hexdigest()[:32]
         # Keep an immutable snapshot: changing a displayed preview must never
         # silently alter the document that a later confirmation would write.
         self.proposals[proposal_id] = {"doc": copy.deepcopy(doc), "total": str(total), "state": "pending", 'created_at': time.time(),
-                                       'target_binding': target_binding}
+                                       'target_binding': target_binding, 'idempotency_key': idempotency_key}
         if self.store:
             self.store.put(proposal_id, self.proposals[proposal_id])
-        return {"proposal_id": proposal_id, "doc": doc, "estimated_total": str(total),
+        return {"proposal_id": proposal_id, "idempotency_key": idempotency_key, "doc": doc, "estimated_total": str(total),
                 "requires_confirmation": True, 'expires_in_seconds': self.proposal_ttl,
                 'total_basis': 'Line amount estimate; ERP taxes/rounding/defaults are checked on draft read-back'}
 
+    @fresh_reads
     def confirm(self, proposal_id):
         binding = self._target_binding()
         proposal = self._get_proposal(proposal_id, binding)
@@ -394,7 +430,14 @@ class Agent:
             self.proposals[proposal_id] = proposal
         proposal["state"] = "creating"
         try:
-            created = self.c.create("Purchase Order", proposal["doc"])
+            # Test doubles and legacy clients may not expose the optional key;
+            # only the native client can transmit it as X-Idempotency-Key.
+            create = self.c.create
+            if 'idempotency_key' in inspect.signature(create).parameters:
+                created = create("Purchase Order", proposal["doc"],
+                                 idempotency_key=proposal.get('idempotency_key'))
+            else:
+                created = create("Purchase Order", proposal["doc"])
         except Exception as exc:
             proposal["state"] = "failed"
             if self.store:
@@ -430,6 +473,7 @@ class Agent:
                               if value.get('target_binding') == binding and value['state'] != 'completed'}
         return self.proposals
 
+    @fresh_reads
     def reconcile(self, proposal_id):
         """Read a previously recorded remote name; never dispatch or retry a write."""
         binding = self._target_binding()
@@ -512,10 +556,14 @@ class LLMRunner:
         self.key = os.getenv("LLM_API_KEY", "")
         self.model = os.getenv("LLM_MODEL", "")
         self.timeout = float(os.getenv("LLM_TIMEOUT", "180"))
+        self.turn_timeout = float(os.getenv("LLM_TURN_TIMEOUT", "600"))
         self.max_rounds = int(os.getenv("LLM_MAX_ROUNDS", "16"))
         self.last_trace = []
         self.last_turn_start = 0
         self.last_tool_metadata = {}
+        self.last_io = {}
+        self.force_fresh_next = False
+        self._turn_deadline = None
 
     def receipts(self):
         """Actual tool activity for the most recent turn, excluding older history."""
@@ -525,12 +573,30 @@ class LLMRunner:
         return bool(self.key and self.model)
 
     def _tool(self, name, args):
+        if self._turn_deadline is not None and time.monotonic() >= self._turn_deadline:
+            raise RuntimeError('Model turn deadline exceeded; inspect /trace and retry with a narrower scope')
         return self.registry.snapshot().invoke(name, args, self.tool_context)
 
     def ask(self, question, history=None):
+        policy = getattr(self.agent.c, 'read_policy', None)
+        self.last_io = {}
+        if not isinstance(policy, ReadPolicy):
+            return self._ask(question, history)
+        fresh = self.force_fresh_next
+        self.force_fresh_next = False
+        with policy.turn():
+            try:
+                with policy.fresh() if fresh else nullcontext():
+                    return self._ask(question, history, fresh=fresh)
+            finally:
+                self.last_io = policy.report()
+                self._turn_deadline = None
+
+    def _ask(self, question, history=None, fresh=False):
         if not self.available():
             raise RuntimeError("LLM_API_KEY and LLM_MODEL must be set in .env before live chat")
         messages = copy.deepcopy(history) if history is not None else []
+        self._turn_deadline = time.monotonic() + self.turn_timeout
         self.last_trace = messages
         self.last_tool_metadata = {}
         if not messages or messages[0].get('role') != 'system':
@@ -553,10 +619,34 @@ class LLMRunner:
                 'Equal invoice total and outstanding balance do not prove no payment ever occurred. '
                 'Purchase Invoice due_date may be a seed/default value; verify payment terms before inferring supplier overdue obligations. '
                 'Avoid unrequested costs, dates and other ancillary claims; every extra factual claim also needs evidence.')
+        # Also upgrade older histories without adding repeated policy messages.
+        query_policy = (
+            ' [CLIENT QUERY POLICY] Plan the smallest sufficient query before calling tools: identify DocType, company, exact name/item, '
+            'date range and status from the request; clarify material ambiguity. Use exact IDs/equality filters first, '
+            'then a bounded candidate search only if needed. Project only required fields; read named parent details '
+            'only for shortlisted records. Do not enumerate unrelated tables. '
+            'For candidate shortlisting with no need for a full count, set list_documents include_total=false; '
+            'this saves the separate count HTTP call but establishes no complete coverage. '
+            'Reuse already verified observations and use calculate locally for derived values; '
+            'do not requery just to compute a difference or reformat. '
+            'A new/current-state question requires a read tool; the client may reuse exact recent reads within its TTL. '
+            'Tool io.sources contains fetched_at and cache age: disclose cached observation time when using cached '
+            'business values and never label them real-time. Partial pages and keyword matches remain partial; '
+            'never infer missing stock, payments, category completeness or zero values from absence. '
+            'get_documents may make one HTTP request per name; one tool call is not one HTTP request. '
+            'A budget error means stop expansion, explain missing evidence and request narrower scope; never fabricate '
+            'a complete answer. Complete aggregation deliberately uses fresh count/page checks and may cost more. ')
+        if '[CLIENT QUERY POLICY]' not in messages[0]['content']:
+            messages[0]['content'] += query_policy
         self.last_turn_start = len(messages)
+        if fresh:
+            question += '\n[CLIENT CONTROL] This turn requires fresh reads: re-read necessary business evidence instead of reusing earlier turns.'
         messages.append({"role": "user", "content": question})
         answer_repairs = 0
         for _ in range(self.max_rounds):
+            remaining = self._turn_deadline - time.monotonic()
+            if remaining <= 0:
+                raise RuntimeError('Model turn deadline exceeded; inspect /trace and retry with a narrower scope')
             view = self.registry.snapshot()
             definitions = view.definitions()
             payload = {"model": self.model, "messages": messages, "temperature": 0}
@@ -568,7 +658,7 @@ class LLMRunner:
                 payload['thinking_budget'] = int(os.environ['LLM_THINKING_BUDGET'])
             request = Request(self.base + "/chat/completions", data=json.dumps(payload).encode("utf-8"), headers={"Authorization": f"Bearer {self.key}", "Content-Type": "application/json"}, method="POST")
             try:
-                raw = read_body(urlopen(request, timeout=self.timeout), 4 * 1024 * 1024)
+                raw = read_body(urlopen(request, timeout=min(self.timeout, remaining)), 4 * 1024 * 1024)
             except HTTPError as exc:
                 detail = http_error_detail(exc, (self.key,), limit=500)
                 raise RuntimeError(f"LLM HTTP {exc.code}: {detail}") from None
@@ -597,6 +687,9 @@ class LLMRunner:
                     history[:] = messages
                 return msg.get("content", ""), messages
             for call in calls:
+                policy = getattr(self.agent.c, 'read_policy', None)
+                measured = isinstance(policy, ReadPolicy) and policy.active
+                mark = policy.mark() if measured else None
                 try:
                     raw_args = call["function"].get("arguments") or "{}"
                     name = call['function']['name']
@@ -607,6 +700,8 @@ class LLMRunner:
                     payload = {"ok": True, "data": result}
                 except Exception as exc:
                     payload = {"ok": False, "error": str(exc)}
+                if measured:
+                    payload['io'] = policy.report(mark)
                 messages.append({"role": "tool", "tool_call_id": call["id"], "content": json.dumps(payload, ensure_ascii=False, default=str)})
         raise RuntimeError(f"LLM tool loop exceeded {self.max_rounds} rounds")
 
@@ -670,6 +765,7 @@ def main():
     print('/reconcile <id> reads an already recorded PO name after an interrupted create; it never creates a document.')
     print('/trace shows actual tool receipts for the last model turn, including failures and pagination.')
     print('/tools lists registered tools; /tools enable <name> or /tools disable <name> changes this session only.')
+    print('/refresh clears read reuse and requires fresh reads for the next question; /trace includes HTTP counts and cache ages.')
     history = []
     while True:
         try:
@@ -693,11 +789,18 @@ def main():
             continue
         if question == '/trace':
             print(json.dumps({'tool_receipts': runner.receipts(),
+                              'erp_io': runner.last_io,
                               'scope': 'Actual tool activity, not automatic verification of every answer claim'},
                              ensure_ascii=False, indent=2, default=str))
             continue
+        if question == '/refresh':
+            agent.c.read_policy.clear()
+            runner.force_fresh_next = True
+            print('Read cache cleared. The next question requires fresh observations; request limits still apply.')
+            continue
         if question == '/reset':
             history.clear()
+            agent.c.read_policy.clear()
             print('Conversation reset. Local proposal states are retained; inspect /pending or use /discard <id>.')
             continue
         if question == '/pending':
@@ -732,6 +835,8 @@ def main():
             print(f"agent> {answer}")
             receipts = runner.receipts()
             print(f'Tool evidence: {len(receipts)} calls, {sum(r["status"] == "error" for r in receipts)} errors. /trace to inspect.')
+            if runner.last_io:
+                print(f'ERP HTTP attempts: {runner.last_io["http_attempts"]}; cache hits: {runner.last_io["cache_hits"]}.')
         except Exception as exc:
             print(f"ERROR: {exc}")
         finally:
