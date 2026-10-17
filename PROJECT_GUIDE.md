@@ -1,6 +1,6 @@
 # 项目接手与学习指南
 
-这份指南面向第一次接手项目的人：先自己运行，再把一次问答和一次采购预览沿代码走通，最后练习解释取舍。当前八工具、163项代码测试通过；已有REST及追加join/币种实测，模型真实回答仍有部分通过项。运行入口见 [README](README.md)，最新独立十题与定向分级见 [SCORING_REVIEW](evidence/SCORING_REVIEW.md)，早期复测与演进见 [FOLLOWUP_REVIEW](evidence/FOLLOWUP_REVIEW.md)、[AUDIT](AUDIT.md)。
+这份指南面向第一次接手项目的人：先自己运行，再把一次问答和一次采购预览沿代码走通，最后练习解释取舍。当前八工具、170项代码测试通过；已有REST及追加join/币种实测，模型真实回答仍有部分通过项。运行入口见 [README](README.md)，最新独立十题与定向分级见 [SCORING_REVIEW](evidence/SCORING_REVIEW.md)，早期复测与演进见 [FOLLOWUP_REVIEW](evidence/FOLLOWUP_REVIEW.md)、[AUDIT](AUDIT.md)。
 
 题目已经提供可恢复的 ERPNext 和业务数据，所以这份作业无需从零开发 ERP。我们实现的是 ERP 之上的问答与受控采购 Agent。代码规模可以比较小，但库存、账期、BOM、成本和不确定写入的业务边界需要仔细验证。
 
@@ -250,6 +250,8 @@ stateDiagram-v2
 
 系统没有持久聊天恢复、长期画像、向量库或多模型路由；现在每轮另有被忽略的脱敏执行轨迹，history按完整轮做低依赖预算和历史证据摘要。四类记忆、JSON规划、错误恢复顺序与生产化方案详见[RECOVERY_AND_DESIGN](RECOVERY_AND_DESIGN.md)，其中标明当前实现与后续设计。
 
+N05/N07追加记录见[复核](evidence/N05_N07_REVIEW.md)：`computed_rollups`提供小型完整分组的本地分区小计，`/trace`可看显式表格小计核算。缺字段后重复聚合会在HTTP前停止；查明细应先用父单上的子DocType条件收窄、再读去重父单。检查只覆盖可匹配的标准表格，不等于任意文字证明，ERP请求预算不变。
+
 ## 8. 日期与业务口径：这部分不能随便清理
 
 **作业参考日 `2025-10-15` 必须保留。** 清理打包文件名或本机路径，不意味着修改业务日期、真实审计时间或 Git 历史。
@@ -283,7 +285,7 @@ python -m unittest discover -s tests -v
 python verify_live.py
 ```
 
-前者检验代码机制，后者请求真实ERP；当前163项代码测试通过，既有19项REST又追加join/币种验证。两者均不能自动证明模型文字正确。后续数量看当次输出，不要把测试项数当正确率。想明确验证模型协议，可额外运行`--check-model`，它会消耗API额度。
+前者检验代码机制，后者请求真实ERP；当前170项代码测试通过，既有19项REST又追加join/币种验证。两者均不能自动证明模型文字正确。后续数量看当次输出，不要把测试项数当正确率。想明确验证模型协议，可额外运行`--check-model`，它会消耗API额度。
 
 ### 实验 B：铜线库存与证据
 

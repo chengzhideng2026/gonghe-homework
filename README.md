@@ -86,7 +86,9 @@ python -m unittest discover -s tests -v
 python verify_live.py
 ```
 
-163项代码测试通过，最新输出`evidence/unit_invoice_dates_scoped.txt`，新增5项程序日期及真实ask协议测试。日期比较与已有`overdue()`共用规则；问逾期时在读工具显式设置`assess_due_date=true`，返回独立`reference_date_evidence`，不改原始status、不增加HTTP。余额读取默认不附评估。见[日期复测](evidence/INVOICE_DATE_REVIEW.md)：19项REST及最终2次HTTP核对通过；真实模型共8轮，最终原R1与原题逾期查询的日期/余额目标通过，完整回答仍部分，本人操作尚未验证。
+170项代码测试通过，最新输出`evidence/unit_n05_n07_final.txt`。本轮仅修独立N05/N07：完整聚合附本地分区小计，逐表核算可匹配的显式小计；同轮已缺失字段不重复聚合，优先按子表条件筛父单。预算未提高。首次复测N05金额正确但附加张数缺计算来源；补本地rollups后通过。N07首次19次、最终17次ERP均完整给出统计。原始失败和两次复测见[N05/N07记录](evidence/N05_N07_REVIEW.md)，仍有一次可避免的子表查询错误，不代表任意回答都已验证。
+
+日期阶段163项代码测试通过，阶段输出`evidence/unit_invoice_dates_scoped.txt`，新增5项程序日期及真实ask协议测试。日期比较与已有`overdue()`共用规则；问逾期时在读工具显式设置`assess_due_date=true`，返回独立`reference_date_evidence`，不改原始status、不增加HTTP。余额读取默认不附评估。见[日期复测](evidence/INVOICE_DATE_REVIEW.md)：19项REST及最终2次HTTP核对通过；真实模型共8轮，最终原R1与原题逾期查询的日期/余额目标通过，完整回答仍部分，本人操作尚未验证。
 
 ce95390阶段158项输出`unit_answer_boundaries.txt`及[三类边界旧复测](evidence/ANSWER_BOUNDARIES_REVIEW.md)保留，其中R1日期失败原文未改；新复测不能替代全部历史模型验收。
 

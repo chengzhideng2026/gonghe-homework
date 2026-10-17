@@ -16,6 +16,8 @@ from urllib.error import HTTPError, URLError
 from proposal_store import ProposalStore
 from tool_receipts import tool_receipts
 from answer_checks import evidence_issues
+from aggregation_checks import subtotal_checks, subtotal_issues
+from query_recovery import projection_failure
 from http_transport import safe_urlopen as urlopen, validate_url, read_body, redact, http_error_detail, TransportError
 from query_policy import normalize_filters, validate_doctype, validate_fields, validate_order_by
 from erp_tools import BUILTIN_TOOLS, ToolContext
@@ -630,6 +632,7 @@ class LLMRunner:
         self.last_trace = []
         self.last_turn_start = 0
         self.last_tool_metadata = {}
+        self.last_subtotal_checks = []
         self.last_io = {}
         self.force_fresh_next = False
         self._turn_deadline = None
@@ -709,6 +712,7 @@ class LLMRunner:
             'usage_events': self._turn_usages,
             'context': self.last_context,
             'tool_calls': self._turn_calls,
+            'subtotal_checks': self.last_subtotal_checks,
             'erp_io': self.last_io,
         }
         try:
@@ -726,6 +730,7 @@ class LLMRunner:
         self._turn_usage = None
         self._turn_usages = []
         self._turn_calls = []
+        self.last_subtotal_checks = []
         self.last_trace_write_error = None
         policy = getattr(self.agent.c, 'read_policy', None)
         self.last_io = {}
@@ -886,9 +891,12 @@ class LLMRunner:
                 if not msg.get('content'):
                     raise RuntimeError('Model returned neither an answer nor tool calls')
                 issues = evidence_issues(msg['content'], messages)
+                checks = subtotal_checks(msg['content'], messages[self.last_turn_start:])
+                self.last_subtotal_checks.extend(checks)
+                issues.extend(subtotal_issues(checks))
                 if issues:
                     if answer_repairs:
-                        raise RuntimeError('Answer failed the stock evidence check after one repair. Inspect /trace; no final answer was accepted.')
+                        raise RuntimeError('Answer failed the evidence check after one repair. Inspect /trace; no final answer was accepted.')
                     answer_repairs += 1
                     messages.append({'role': 'user', 'content': '[PROGRAM EVIDENCE CHECK — not a new business request] '
                                      + ' '.join(issues) + ' Revise the previous draft using existing evidence.'})
@@ -914,6 +922,9 @@ class LLMRunner:
                         self.last_tool_metadata[call_id] = metadata
                     if not function.get('name'):
                         raise ValueError('Malformed model tool call: function name is missing')
+                    recovery = projection_failure(messages[self.last_turn_start:], name, self._trace_arguments(raw_args))
+                    if recovery:
+                        raise ERPError(recovery)
                     result = view.invoke_json(name, raw_args, self.tool_context)
                     payload = {"ok": True, "data": result}
                     date_evidence = invoice_read_evidence(name, self._trace_arguments(raw_args), result)
@@ -1020,6 +1031,7 @@ def main():
             continue
         if question == '/trace':
             print(json.dumps({'tool_receipts': runner.receipts(),
+                              'program_subtotal_checks': runner.last_subtotal_checks,
                               'erp_io': runner.last_io,
                               'scope': 'Actual tool activity, not automatic verification of every answer claim'},
                              ensure_ascii=False, indent=2, default=str))

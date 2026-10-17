@@ -1,0 +1,200 @@
+{
+  "filters": [
+    [
+      "docstatus",
+      "=",
+      1
+    ],
+    [
+      "transaction_date",
+      "<=",
+      "2025-10-15"
+    ],
+    [
+      "Sales Order Item",
+      "item_code",
+      "=",
+      "FG-COMP-1HP-R32"
+    ]
+  ],
+  "rows": [
+    {
+      "name": "SAL-ORD-2026-00001",
+      "transaction_date": "2025-03-10",
+      "docstatus": 1,
+      "currency": "USD"
+    },
+    {
+      "name": "SAL-ORD-2026-00002",
+      "transaction_date": "2025-03-20",
+      "docstatus": 1,
+      "currency": "USD"
+    },
+    {
+      "name": "SAL-ORD-2026-00004",
+      "transaction_date": "2025-04-22",
+      "docstatus": 1,
+      "currency": "USD"
+    },
+    {
+      "name": "SAL-ORD-2026-00005",
+      "transaction_date": "2025-05-15",
+      "docstatus": 1,
+      "currency": "USD"
+    },
+    {
+      "name": "SAL-ORD-2026-00006",
+      "transaction_date": "2025-05-20",
+      "docstatus": 1,
+      "currency": "USD"
+    },
+    {
+      "name": "SAL-ORD-2026-00008",
+      "transaction_date": "2025-06-02",
+      "docstatus": 1,
+      "currency": "USD"
+    },
+    {
+      "name": "SAL-ORD-2026-00010",
+      "transaction_date": "2025-06-30",
+      "docstatus": 1,
+      "currency": "USD"
+    },
+    {
+      "name": "SAL-ORD-2026-00011",
+      "transaction_date": "2025-07-18",
+      "docstatus": 1,
+      "currency": "USD"
+    },
+    {
+      "name": "SAL-ORD-2026-00013",
+      "transaction_date": "2025-08-01",
+      "docstatus": 1,
+      "currency": "USD"
+    },
+    {
+      "name": "SAL-ORD-2026-00014",
+      "transaction_date": "2025-08-12",
+      "docstatus": 1,
+      "currency": "USD"
+    },
+    {
+      "name": "SAL-ORD-2026-00017",
+      "transaction_date": "2025-09-16",
+      "docstatus": 1,
+      "currency": "USD"
+    },
+    {
+      "name": "SAL-ORD-2026-00019",
+      "transaction_date": "2025-09-24",
+      "docstatus": 1,
+      "currency": "USD"
+    },
+    {
+      "name": "SAL-ORD-2026-00021",
+      "transaction_date": "2025-10-02",
+      "docstatus": 1,
+      "currency": "USD"
+    },
+    {
+      "name": "SAL-ORD-2026-00024",
+      "transaction_date": "2025-10-12",
+      "docstatus": 1,
+      "currency": "USD"
+    }
+  ],
+  "raw_count": 14,
+  "unique_parent_names": [
+    "SAL-ORD-2026-00001",
+    "SAL-ORD-2026-00002",
+    "SAL-ORD-2026-00004",
+    "SAL-ORD-2026-00005",
+    "SAL-ORD-2026-00006",
+    "SAL-ORD-2026-00008",
+    "SAL-ORD-2026-00010",
+    "SAL-ORD-2026-00011",
+    "SAL-ORD-2026-00013",
+    "SAL-ORD-2026-00014",
+    "SAL-ORD-2026-00017",
+    "SAL-ORD-2026-00019",
+    "SAL-ORD-2026-00021",
+    "SAL-ORD-2026-00024"
+  ],
+  "table_fields": [
+    {
+      "fieldname": "items",
+      "fieldtype": "Table",
+      "label": "Items",
+      "options": "Sales Order Item",
+      "reqd": 1
+    },
+    {
+      "fieldname": "taxes",
+      "fieldtype": "Table",
+      "label": "Sales Taxes and Charges",
+      "options": "Sales Taxes and Charges"
+    },
+    {
+      "fieldname": "item_wise_tax_details",
+      "fieldtype": "Table",
+      "label": "Item Wise Tax Details",
+      "options": "Item Wise Tax Detail"
+    },
+    {
+      "fieldname": "packed_items",
+      "fieldtype": "Table",
+      "label": "Packed Items",
+      "options": "Packed Item"
+    },
+    {
+      "fieldname": "pricing_rules",
+      "fieldtype": "Table",
+      "label": "Pricing Rule Detail",
+      "options": "Pricing Rule Detail",
+      "read_only": 1
+    },
+    {
+      "fieldname": "payment_schedule",
+      "fieldtype": "Table",
+      "label": "Payment Schedule",
+      "options": "Payment Schedule"
+    },
+    {
+      "fieldname": "sales_team",
+      "fieldtype": "Table",
+      "label": "Sales Team",
+      "options": "Sales Team"
+    }
+  ],
+  "io": {
+    "http_attempts": 3,
+    "cache_hits": 0,
+    "rejected_requests": 0,
+    "sources": [
+      {
+        "source": "http",
+        "path": "/api/method/frappe.desk.form.load.getdoctype",
+        "fetched_at": "2026-10-17T17:00:43.313362+00:00",
+        "age_seconds": 0
+      },
+      {
+        "source": "http",
+        "path": "/api/resource/Sales%20Order",
+        "fetched_at": "2026-10-17T17:00:43.509285+00:00",
+        "age_seconds": 0
+      },
+      {
+        "source": "http",
+        "path": "/api/method/frappe.client.get_count",
+        "fetched_at": "2026-10-17T17:00:43.766940+00:00",
+        "age_seconds": 0
+      }
+    ],
+    "source_log_capped": false,
+    "limits": {
+      "requests_per_turn": 40,
+      "requests_per_minute": 120
+    },
+    "freshness": "Cache hits are prior observations at fetched_at, not proof of current state. Exact request reuse only; partial pages retain their original coverage."
+  }
+}

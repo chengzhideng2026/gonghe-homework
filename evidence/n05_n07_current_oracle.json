@@ -1,0 +1,751 @@
+{
+  "timestamp_utc": "2026-10-17T17:11:44.280605+00:00",
+  "reference_date": "2025-10-15",
+  "scope": "Independent current raw reads; expected results are not sent to the model",
+  "po_rows": [
+    {
+      "name": "PUR-ORD-2026-00001",
+      "supplier": "Tongling Magnet Wire Co.",
+      "status": "Completed",
+      "currency": "USD",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "docstatus": 1,
+      "transaction_date": "2025-01-08",
+      "grand_total": 12200.0
+    },
+    {
+      "name": "PUR-ORD-2026-00002",
+      "supplier": "Foshan Capacitor Works",
+      "status": "Completed",
+      "currency": "USD",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "docstatus": 1,
+      "transaction_date": "2025-01-15",
+      "grand_total": 320.0
+    },
+    {
+      "name": "PUR-ORD-2026-00003",
+      "supplier": "Suzhou Lamination Industries",
+      "status": "Completed",
+      "currency": "USD",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "docstatus": 1,
+      "transaction_date": "2025-01-22",
+      "grand_total": 14800.0
+    },
+    {
+      "name": "PUR-ORD-2026-00004",
+      "supplier": "Hangzhou Precision Bearings",
+      "status": "Completed",
+      "currency": "USD",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "docstatus": 1,
+      "transaction_date": "2025-02-03",
+      "grand_total": 1520.0
+    },
+    {
+      "name": "PUR-ORD-2026-00005",
+      "supplier": "Ningbo Copper Tube Co.",
+      "status": "Completed",
+      "currency": "USD",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "docstatus": 1,
+      "transaction_date": "2025-02-12",
+      "grand_total": 530.0
+    },
+    {
+      "name": "PUR-ORD-2026-00006",
+      "supplier": "Yantai Refrigerant Solutions",
+      "status": "Completed",
+      "currency": "USD",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "docstatus": 1,
+      "transaction_date": "2025-02-20",
+      "grand_total": 272.0
+    },
+    {
+      "name": "PUR-ORD-2026-00007",
+      "supplier": "Tongling Magnet Wire Co.",
+      "status": "Completed",
+      "currency": "USD",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "docstatus": 1,
+      "transaction_date": "2025-03-05",
+      "grand_total": 5640.0
+    },
+    {
+      "name": "PUR-ORD-2026-00008",
+      "supplier": "Hangzhou Precision Bearings",
+      "status": "Completed",
+      "currency": "USD",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "docstatus": 1,
+      "transaction_date": "2025-03-18",
+      "grand_total": 1610.0
+    },
+    {
+      "name": "PUR-ORD-2026-00009",
+      "supplier": "Foshan Capacitor Works",
+      "status": "Completed",
+      "currency": "USD",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "docstatus": 1,
+      "transaction_date": "2025-04-02",
+      "grand_total": 280.0
+    },
+    {
+      "name": "PUR-ORD-2026-00010",
+      "supplier": "Suzhou Lamination Industries",
+      "status": "Completed",
+      "currency": "USD",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "docstatus": 1,
+      "transaction_date": "2025-04-14",
+      "grand_total": 15000.0
+    },
+    {
+      "name": "PUR-ORD-2026-00011",
+      "supplier": "Hangzhou Precision Bearings",
+      "status": "Completed",
+      "currency": "USD",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "docstatus": 1,
+      "transaction_date": "2025-04-28",
+      "grand_total": 360.0
+    },
+    {
+      "name": "PUR-ORD-2026-00012",
+      "supplier": "Tongling Magnet Wire Co.",
+      "status": "Completed",
+      "currency": "USD",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "docstatus": 1,
+      "transaction_date": "2025-05-06",
+      "grand_total": 9540.0
+    },
+    {
+      "name": "PUR-ORD-2026-00013",
+      "supplier": "Ningbo Copper Tube Co.",
+      "status": "Completed",
+      "currency": "USD",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "docstatus": 1,
+      "transaction_date": "2025-05-19",
+      "grand_total": 535.0
+    },
+    {
+      "name": "PUR-ORD-2026-00014",
+      "supplier": "Hangzhou Precision Bearings",
+      "status": "Completed",
+      "currency": "USD",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "docstatus": 1,
+      "transaction_date": "2025-06-03",
+      "grand_total": 1253.0
+    },
+    {
+      "name": "PUR-ORD-2026-00015",
+      "supplier": "Yantai Refrigerant Solutions",
+      "status": "Completed",
+      "currency": "USD",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "docstatus": 1,
+      "transaction_date": "2025-06-17",
+      "grand_total": 137.0
+    },
+    {
+      "name": "PUR-ORD-2026-00016",
+      "supplier": "Foshan Capacitor Works",
+      "status": "Completed",
+      "currency": "USD",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "docstatus": 1,
+      "transaction_date": "2025-06-24",
+      "grand_total": 43.0
+    },
+    {
+      "name": "PUR-ORD-2026-00017",
+      "supplier": "Suzhou Lamination Industries",
+      "status": "Completed",
+      "currency": "USD",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "docstatus": 1,
+      "transaction_date": "2025-07-01",
+      "grand_total": 11400.0
+    },
+    {
+      "name": "PUR-ORD-2026-00018",
+      "supplier": "Foshan Capacitor Works",
+      "status": "Completed",
+      "currency": "USD",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "docstatus": 1,
+      "transaction_date": "2025-07-22",
+      "grand_total": 264.0
+    },
+    {
+      "name": "PUR-ORD-2026-00019",
+      "supplier": "Hangzhou Precision Bearings",
+      "status": "Completed",
+      "currency": "USD",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "docstatus": 1,
+      "transaction_date": "2025-08-05",
+      "grand_total": 1392.0
+    },
+    {
+      "name": "PUR-ORD-2026-00020",
+      "supplier": "Ningbo Copper Tube Co.",
+      "status": "Completed",
+      "currency": "USD",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "docstatus": 1,
+      "transaction_date": "2025-08-19",
+      "grand_total": 324.0
+    },
+    {
+      "name": "PUR-ORD-2026-00021",
+      "supplier": "Tongling Magnet Wire Co.",
+      "status": "Completed",
+      "currency": "USD",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "docstatus": 1,
+      "transaction_date": "2025-09-02",
+      "grand_total": 2925.0
+    },
+    {
+      "name": "PUR-ORD-2026-00022",
+      "supplier": "Tongling Magnet Wire Co.",
+      "status": "To Receive and Bill",
+      "currency": "USD",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "docstatus": 1,
+      "transaction_date": "2025-09-10",
+      "grand_total": 5800.0
+    },
+    {
+      "name": "PUR-ORD-2026-00023",
+      "supplier": "Foshan Capacitor Works",
+      "status": "To Receive and Bill",
+      "currency": "USD",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "docstatus": 1,
+      "transaction_date": "2025-09-22",
+      "grand_total": 165.0
+    },
+    {
+      "name": "PUR-ORD-2026-00024",
+      "supplier": "Suzhou Lamination Industries",
+      "status": "To Receive and Bill",
+      "currency": "USD",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "docstatus": 1,
+      "transaction_date": "2025-09-30",
+      "grand_total": 7700.0
+    },
+    {
+      "name": "PUR-ORD-2026-00025",
+      "supplier": "Hangzhou Precision Bearings",
+      "status": "To Receive and Bill",
+      "currency": "USD",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "docstatus": 1,
+      "transaction_date": "2025-10-01",
+      "grand_total": 990.0
+    },
+    {
+      "name": "PUR-ORD-2026-00026",
+      "supplier": "Yantai Refrigerant Solutions",
+      "status": "To Receive and Bill",
+      "currency": "USD",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "docstatus": 1,
+      "transaction_date": "2025-10-08",
+      "grand_total": 138.0
+    },
+    {
+      "name": "PUR-ORD-2026-00027",
+      "supplier": "Ningbo Copper Tube Co.",
+      "status": "To Receive and Bill",
+      "currency": "USD",
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "docstatus": 1,
+      "transaction_date": "2025-10-12",
+      "grand_total": 272.5
+    }
+  ],
+  "po_initial_final_counts": [
+    27,
+    27
+  ],
+  "po_groups": [
+    {
+      "supplier": "Tongling Magnet Wire Co.",
+      "status": "Completed",
+      "currency": "USD",
+      "count": 4,
+      "amount": "30305.0"
+    },
+    {
+      "supplier": "Foshan Capacitor Works",
+      "status": "Completed",
+      "currency": "USD",
+      "count": 4,
+      "amount": "907.0"
+    },
+    {
+      "supplier": "Suzhou Lamination Industries",
+      "status": "Completed",
+      "currency": "USD",
+      "count": 3,
+      "amount": "41200.0"
+    },
+    {
+      "supplier": "Hangzhou Precision Bearings",
+      "status": "Completed",
+      "currency": "USD",
+      "count": 5,
+      "amount": "6135.0"
+    },
+    {
+      "supplier": "Ningbo Copper Tube Co.",
+      "status": "Completed",
+      "currency": "USD",
+      "count": 3,
+      "amount": "1389.0"
+    },
+    {
+      "supplier": "Yantai Refrigerant Solutions",
+      "status": "Completed",
+      "currency": "USD",
+      "count": 2,
+      "amount": "409.0"
+    },
+    {
+      "supplier": "Tongling Magnet Wire Co.",
+      "status": "To Receive and Bill",
+      "currency": "USD",
+      "count": 1,
+      "amount": "5800.0"
+    },
+    {
+      "supplier": "Foshan Capacitor Works",
+      "status": "To Receive and Bill",
+      "currency": "USD",
+      "count": 1,
+      "amount": "165.0"
+    },
+    {
+      "supplier": "Suzhou Lamination Industries",
+      "status": "To Receive and Bill",
+      "currency": "USD",
+      "count": 1,
+      "amount": "7700.0"
+    },
+    {
+      "supplier": "Hangzhou Precision Bearings",
+      "status": "To Receive and Bill",
+      "currency": "USD",
+      "count": 1,
+      "amount": "990.0"
+    },
+    {
+      "supplier": "Yantai Refrigerant Solutions",
+      "status": "To Receive and Bill",
+      "currency": "USD",
+      "count": 1,
+      "amount": "138.0"
+    },
+    {
+      "supplier": "Ningbo Copper Tube Co.",
+      "status": "To Receive and Bill",
+      "currency": "USD",
+      "count": 1,
+      "amount": "272.5"
+    }
+  ],
+  "po_status_totals": [
+    {
+      "status": "Completed",
+      "currency": "USD",
+      "count": 21,
+      "amount": "80345.0"
+    },
+    {
+      "status": "To Receive and Bill",
+      "currency": "USD",
+      "count": 6,
+      "amount": "15065.5"
+    }
+  ],
+  "po_currency_totals": {
+    "USD": "95410.5"
+  },
+  "so_parent_names": [
+    "SAL-ORD-2026-00001",
+    "SAL-ORD-2026-00002",
+    "SAL-ORD-2026-00004",
+    "SAL-ORD-2026-00005",
+    "SAL-ORD-2026-00006",
+    "SAL-ORD-2026-00008",
+    "SAL-ORD-2026-00010",
+    "SAL-ORD-2026-00011",
+    "SAL-ORD-2026-00013",
+    "SAL-ORD-2026-00014",
+    "SAL-ORD-2026-00017",
+    "SAL-ORD-2026-00019",
+    "SAL-ORD-2026-00021",
+    "SAL-ORD-2026-00024"
+  ],
+  "so_target_lines": [
+    {
+      "parent": "SAL-ORD-2026-00001",
+      "transaction_date": "2025-03-10",
+      "docstatus": 1,
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "currency": "USD",
+      "name": "6tnhtus6np",
+      "idx": 1,
+      "item_code": "FG-COMP-1HP-R32",
+      "rate": 600.0,
+      "qty": 10.0,
+      "amount": 6000.0,
+      "uom": "Nos",
+      "stock_uom": "Nos",
+      "conversion_factor": 1.0
+    },
+    {
+      "parent": "SAL-ORD-2026-00002",
+      "transaction_date": "2025-03-20",
+      "docstatus": 1,
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "currency": "USD",
+      "name": "6u18jubksi",
+      "idx": 1,
+      "item_code": "FG-COMP-1HP-R32",
+      "rate": 590.0,
+      "qty": 6.0,
+      "amount": 3540.0,
+      "uom": "Nos",
+      "stock_uom": "Nos",
+      "conversion_factor": 1.0
+    },
+    {
+      "parent": "SAL-ORD-2026-00004",
+      "transaction_date": "2025-04-22",
+      "docstatus": 1,
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "currency": "USD",
+      "name": "6uvqhr90a4",
+      "idx": 1,
+      "item_code": "FG-COMP-1HP-R32",
+      "rate": 580.0,
+      "qty": 4.0,
+      "amount": 2320.0,
+      "uom": "Nos",
+      "stock_uom": "Nos",
+      "conversion_factor": 1.0
+    },
+    {
+      "parent": "SAL-ORD-2026-00005",
+      "transaction_date": "2025-05-15",
+      "docstatus": 1,
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "currency": "USD",
+      "name": "6vip2htf1j",
+      "idx": 1,
+      "item_code": "FG-COMP-1HP-R32",
+      "rate": 600.0,
+      "qty": 12.0,
+      "amount": 7200.0,
+      "uom": "Nos",
+      "stock_uom": "Nos",
+      "conversion_factor": 1.0
+    },
+    {
+      "parent": "SAL-ORD-2026-00006",
+      "transaction_date": "2025-05-20",
+      "docstatus": 1,
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "currency": "USD",
+      "name": "6vptiirf1i",
+      "idx": 1,
+      "item_code": "FG-COMP-1HP-R32",
+      "rate": 600.0,
+      "qty": 2.0,
+      "amount": 1200.0,
+      "uom": "Nos",
+      "stock_uom": "Nos",
+      "conversion_factor": 1.0
+    },
+    {
+      "parent": "SAL-ORD-2026-00008",
+      "transaction_date": "2025-06-02",
+      "docstatus": 1,
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "currency": "USD",
+      "name": "700kqak5r7",
+      "idx": 1,
+      "item_code": "FG-COMP-1HP-R32",
+      "rate": 605.0,
+      "qty": 6.0,
+      "amount": 3630.0,
+      "uom": "Nos",
+      "stock_uom": "Nos",
+      "conversion_factor": 1.0
+    },
+    {
+      "parent": "SAL-ORD-2026-00010",
+      "transaction_date": "2025-06-30",
+      "docstatus": 1,
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "currency": "USD",
+      "name": "70strqt119",
+      "idx": 1,
+      "item_code": "FG-COMP-1HP-R32",
+      "rate": 595.0,
+      "qty": 5.0,
+      "amount": 2975.0,
+      "uom": "Nos",
+      "stock_uom": "Nos",
+      "conversion_factor": 1.0
+    },
+    {
+      "parent": "SAL-ORD-2026-00011",
+      "transaction_date": "2025-07-18",
+      "docstatus": 1,
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "currency": "USD",
+      "name": "71bhqdirgr",
+      "idx": 1,
+      "item_code": "FG-COMP-1HP-R32",
+      "rate": 600.0,
+      "qty": 10.0,
+      "amount": 6000.0,
+      "uom": "Nos",
+      "stock_uom": "Nos",
+      "conversion_factor": 1.0
+    },
+    {
+      "parent": "SAL-ORD-2026-00013",
+      "transaction_date": "2025-08-01",
+      "docstatus": 1,
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "currency": "USD",
+      "name": "71oeflssto",
+      "idx": 1,
+      "item_code": "FG-COMP-1HP-R32",
+      "rate": 580.0,
+      "qty": 8.0,
+      "amount": 4640.0,
+      "uom": "Nos",
+      "stock_uom": "Nos",
+      "conversion_factor": 1.0
+    },
+    {
+      "parent": "SAL-ORD-2026-00014",
+      "transaction_date": "2025-08-12",
+      "docstatus": 1,
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "currency": "USD",
+      "name": "727gbtqok0",
+      "idx": 1,
+      "item_code": "FG-COMP-1HP-R32",
+      "rate": 590.0,
+      "qty": 4.0,
+      "amount": 2360.0,
+      "uom": "Nos",
+      "stock_uom": "Nos",
+      "conversion_factor": 1.0
+    },
+    {
+      "parent": "SAL-ORD-2026-00017",
+      "transaction_date": "2025-09-16",
+      "docstatus": 1,
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "currency": "USD",
+      "name": "733kjpokci",
+      "idx": 1,
+      "item_code": "FG-COMP-1HP-R32",
+      "rate": 610.0,
+      "qty": 10.0,
+      "amount": 6100.0,
+      "uom": "Nos",
+      "stock_uom": "Nos",
+      "conversion_factor": 1.0
+    },
+    {
+      "parent": "SAL-ORD-2026-00019",
+      "transaction_date": "2025-09-24",
+      "docstatus": 1,
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "currency": "USD",
+      "name": "738ba85dt9",
+      "idx": 1,
+      "item_code": "FG-COMP-1HP-R32",
+      "rate": 595.0,
+      "qty": 6.0,
+      "amount": 3570.0,
+      "uom": "Nos",
+      "stock_uom": "Nos",
+      "conversion_factor": 1.0
+    },
+    {
+      "parent": "SAL-ORD-2026-00021",
+      "transaction_date": "2025-10-02",
+      "docstatus": 1,
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "currency": "USD",
+      "name": "73etvc1gjh",
+      "idx": 1,
+      "item_code": "FG-COMP-1HP-R32",
+      "rate": 610.0,
+      "qty": 8.0,
+      "amount": 4880.0,
+      "uom": "Nos",
+      "stock_uom": "Nos",
+      "conversion_factor": 1.0
+    },
+    {
+      "parent": "SAL-ORD-2026-00024",
+      "transaction_date": "2025-10-12",
+      "docstatus": 1,
+      "company": "Crestwind Compressor Manufacturing Co.",
+      "currency": "USD",
+      "name": "73ofbkhtd2",
+      "idx": 1,
+      "item_code": "FG-COMP-1HP-R32",
+      "rate": 610.0,
+      "qty": 12.0,
+      "amount": 7320.0,
+      "uom": "Nos",
+      "stock_uom": "Nos",
+      "conversion_factor": 1.0
+    }
+  ],
+  "so_statistics": {
+    "line_count": 14,
+    "parent_count": 14,
+    "qty": "103.0",
+    "amount": "61735.0",
+    "min_rate": "580.0",
+    "max_rate": "610.0",
+    "weighted_rate": "599.3689320388349514563106796",
+    "weighted_rate_2dp": "599.37"
+  },
+  "io": {
+    "http_attempts": 16,
+    "cache_hits": 1,
+    "rejected_requests": 0,
+    "sources": [
+      {
+        "source": "http",
+        "path": "/api/method/frappe.client.get_count",
+        "fetched_at": "2026-10-17T17:11:40.539024+00:00",
+        "age_seconds": 0
+      },
+      {
+        "source": "http",
+        "path": "/api/resource/Purchase%20Order",
+        "fetched_at": "2026-10-17T17:11:40.801301+00:00",
+        "age_seconds": 0
+      },
+      {
+        "source": "cache",
+        "path": "/api/method/frappe.client.get_count",
+        "fetched_at": "2026-10-17T17:11:40.539024+00:00",
+        "age_seconds": 0.263
+      },
+      {
+        "source": "http",
+        "path": "/api/resource/Sales%20Order/SAL-ORD-2026-00001",
+        "fetched_at": "2026-10-17T17:11:41.029996+00:00",
+        "age_seconds": 0
+      },
+      {
+        "source": "http",
+        "path": "/api/resource/Sales%20Order/SAL-ORD-2026-00002",
+        "fetched_at": "2026-10-17T17:11:41.300809+00:00",
+        "age_seconds": 0
+      },
+      {
+        "source": "http",
+        "path": "/api/resource/Sales%20Order/SAL-ORD-2026-00004",
+        "fetched_at": "2026-10-17T17:11:41.526213+00:00",
+        "age_seconds": 0
+      },
+      {
+        "source": "http",
+        "path": "/api/resource/Sales%20Order/SAL-ORD-2026-00005",
+        "fetched_at": "2026-10-17T17:11:41.776581+00:00",
+        "age_seconds": 0
+      },
+      {
+        "source": "http",
+        "path": "/api/resource/Sales%20Order/SAL-ORD-2026-00006",
+        "fetched_at": "2026-10-17T17:11:42.025574+00:00",
+        "age_seconds": 0
+      },
+      {
+        "source": "http",
+        "path": "/api/resource/Sales%20Order/SAL-ORD-2026-00008",
+        "fetched_at": "2026-10-17T17:11:42.278198+00:00",
+        "age_seconds": 0
+      },
+      {
+        "source": "http",
+        "path": "/api/resource/Sales%20Order/SAL-ORD-2026-00010",
+        "fetched_at": "2026-10-17T17:11:42.543434+00:00",
+        "age_seconds": 0
+      },
+      {
+        "source": "http",
+        "path": "/api/resource/Sales%20Order/SAL-ORD-2026-00011",
+        "fetched_at": "2026-10-17T17:11:42.788766+00:00",
+        "age_seconds": 0
+      },
+      {
+        "source": "http",
+        "path": "/api/resource/Sales%20Order/SAL-ORD-2026-00013",
+        "fetched_at": "2026-10-17T17:11:43.039220+00:00",
+        "age_seconds": 0
+      },
+      {
+        "source": "http",
+        "path": "/api/resource/Sales%20Order/SAL-ORD-2026-00014",
+        "fetched_at": "2026-10-17T17:11:43.287395+00:00",
+        "age_seconds": 0
+      },
+      {
+        "source": "http",
+        "path": "/api/resource/Sales%20Order/SAL-ORD-2026-00017",
+        "fetched_at": "2026-10-17T17:11:43.528131+00:00",
+        "age_seconds": 0
+      },
+      {
+        "source": "http",
+        "path": "/api/resource/Sales%20Order/SAL-ORD-2026-00019",
+        "fetched_at": "2026-10-17T17:11:43.787035+00:00",
+        "age_seconds": 0
+      },
+      {
+        "source": "http",
+        "path": "/api/resource/Sales%20Order/SAL-ORD-2026-00021",
+        "fetched_at": "2026-10-17T17:11:44.028845+00:00",
+        "age_seconds": 0
+      },
+      {
+        "source": "http",
+        "path": "/api/resource/Sales%20Order/SAL-ORD-2026-00024",
+        "fetched_at": "2026-10-17T17:11:44.280144+00:00",
+        "age_seconds": 0
+      }
+    ],
+    "source_log_capped": false,
+    "limits": {
+      "requests_per_turn": 30,
+      "requests_per_minute": 120
+    },
+    "freshness": "Cache hits are prior observations at fetched_at, not proof of current state. Exact request reuse only; partial pages retain their original coverage."
+  }
+}

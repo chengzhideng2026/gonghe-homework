@@ -1,0 +1,288 @@
+{
+  "reviewed_at_utc": "2026-10-17T17:18:04.688994+00:00",
+  "baseline_commit": "b265ad8059930b3f364541bbc50300e12c8a4b63",
+  "scope": "Only independent N05/N07; no wider feature expansion or write tests",
+  "program_checks": {
+    "local_tests": 170,
+    "log": "evidence/unit_n05_n07_final.txt",
+    "first_unit_log": "evidence/unit_n05_n07.txt",
+    "original_n05_opposite_errors_detected": true,
+    "varied_amount_opposite_errors_tested": true,
+    "ask_protocol_repair_and_second_failure_rejection_tested": true,
+    "ask_metadata_reuse_and_parent_dedup_tested": true,
+    "current_po_groups_equal_independent_raw_oracle": true,
+    "current_final_runtime_source_hashes_match": true,
+    "external_first_failure_files_hashes_unchanged": true
+  },
+  "runtime_changes": [
+    "Small complete aggregate results now include local marginal counts/sums with currency/company/UOM partitions; no new ERP queries.",
+    "Each supported explicit Markdown subtotal is recomputed from uniquely matched complete aggregate groups; opposite errors cannot cancel in this check. One repair then reject.",
+    "An exact same-turn missing projection is rejected before re-running it as an aggregate; recovery guidance uses supported parent child-DocType filters.",
+    "Per-turn and rolling-minute budget rejection explanations are distinguished; limits were not raised."
+  ],
+  "real_runs": [
+    {
+      "file": "n05_n07_retest1.json",
+      "retry": null,
+      "cases": [
+        {
+          "id": "N05",
+          "http": 3,
+          "elapsed_seconds": 21.995,
+          "model_calls": 3,
+          "program_subtotal_checks": []
+        },
+        {
+          "id": "N07",
+          "http": 19,
+          "elapsed_seconds": 69.611,
+          "model_calls": 6,
+          "program_subtotal_checks": []
+        }
+      ],
+      "execution_checks": {
+        "erp_writes": 0,
+        "purchase_names_unchanged": true,
+        "before_names": [
+          "PUR-ORD-2026-00001",
+          "PUR-ORD-2026-00002",
+          "PUR-ORD-2026-00003",
+          "PUR-ORD-2026-00004",
+          "PUR-ORD-2026-00005",
+          "PUR-ORD-2026-00006",
+          "PUR-ORD-2026-00007",
+          "PUR-ORD-2026-00008",
+          "PUR-ORD-2026-00009",
+          "PUR-ORD-2026-00010",
+          "PUR-ORD-2026-00011",
+          "PUR-ORD-2026-00012",
+          "PUR-ORD-2026-00013",
+          "PUR-ORD-2026-00014",
+          "PUR-ORD-2026-00015",
+          "PUR-ORD-2026-00016",
+          "PUR-ORD-2026-00017",
+          "PUR-ORD-2026-00018",
+          "PUR-ORD-2026-00019",
+          "PUR-ORD-2026-00020",
+          "PUR-ORD-2026-00021",
+          "PUR-ORD-2026-00022",
+          "PUR-ORD-2026-00023",
+          "PUR-ORD-2026-00024",
+          "PUR-ORD-2026-00025",
+          "PUR-ORD-2026-00026",
+          "PUR-ORD-2026-00027",
+          "PUR-ORD-2026-00028",
+          "PUR-ORD-2026-00029"
+        ],
+        "after_names": [
+          "PUR-ORD-2026-00001",
+          "PUR-ORD-2026-00002",
+          "PUR-ORD-2026-00003",
+          "PUR-ORD-2026-00004",
+          "PUR-ORD-2026-00005",
+          "PUR-ORD-2026-00006",
+          "PUR-ORD-2026-00007",
+          "PUR-ORD-2026-00008",
+          "PUR-ORD-2026-00009",
+          "PUR-ORD-2026-00010",
+          "PUR-ORD-2026-00011",
+          "PUR-ORD-2026-00012",
+          "PUR-ORD-2026-00013",
+          "PUR-ORD-2026-00014",
+          "PUR-ORD-2026-00015",
+          "PUR-ORD-2026-00016",
+          "PUR-ORD-2026-00017",
+          "PUR-ORD-2026-00018",
+          "PUR-ORD-2026-00019",
+          "PUR-ORD-2026-00020",
+          "PUR-ORD-2026-00021",
+          "PUR-ORD-2026-00022",
+          "PUR-ORD-2026-00023",
+          "PUR-ORD-2026-00024",
+          "PUR-ORD-2026-00025",
+          "PUR-ORD-2026-00026",
+          "PUR-ORD-2026-00027",
+          "PUR-ORD-2026-00028",
+          "PUR-ORD-2026-00029"
+        ],
+        "agent_erp_http": 22,
+        "audit_erp_http": 6
+      }
+    },
+    {
+      "file": "n05_n07_retest2.json",
+      "retry": {
+        "file": "n05_n07_retest1.json",
+        "sha256": "3020571ac7dbae67f68b6572a3cf1ec69902e03259c1f3644e9b3a3f6202c9d2",
+        "reason": "Add source-derived local rollups for status counts and amounts; rerun both original questions on final code under the same 30-request limit."
+      },
+      "cases": [
+        {
+          "id": "N05",
+          "http": 3,
+          "elapsed_seconds": 17.475,
+          "model_calls": 2,
+          "program_subtotal_checks": []
+        },
+        {
+          "id": "N07",
+          "http": 17,
+          "elapsed_seconds": 76.482,
+          "model_calls": 6,
+          "program_subtotal_checks": []
+        }
+      ],
+      "execution_checks": {
+        "erp_writes": 0,
+        "purchase_names_unchanged": true,
+        "before_names": [
+          "PUR-ORD-2026-00001",
+          "PUR-ORD-2026-00002",
+          "PUR-ORD-2026-00003",
+          "PUR-ORD-2026-00004",
+          "PUR-ORD-2026-00005",
+          "PUR-ORD-2026-00006",
+          "PUR-ORD-2026-00007",
+          "PUR-ORD-2026-00008",
+          "PUR-ORD-2026-00009",
+          "PUR-ORD-2026-00010",
+          "PUR-ORD-2026-00011",
+          "PUR-ORD-2026-00012",
+          "PUR-ORD-2026-00013",
+          "PUR-ORD-2026-00014",
+          "PUR-ORD-2026-00015",
+          "PUR-ORD-2026-00016",
+          "PUR-ORD-2026-00017",
+          "PUR-ORD-2026-00018",
+          "PUR-ORD-2026-00019",
+          "PUR-ORD-2026-00020",
+          "PUR-ORD-2026-00021",
+          "PUR-ORD-2026-00022",
+          "PUR-ORD-2026-00023",
+          "PUR-ORD-2026-00024",
+          "PUR-ORD-2026-00025",
+          "PUR-ORD-2026-00026",
+          "PUR-ORD-2026-00027",
+          "PUR-ORD-2026-00028",
+          "PUR-ORD-2026-00029"
+        ],
+        "after_names": [
+          "PUR-ORD-2026-00001",
+          "PUR-ORD-2026-00002",
+          "PUR-ORD-2026-00003",
+          "PUR-ORD-2026-00004",
+          "PUR-ORD-2026-00005",
+          "PUR-ORD-2026-00006",
+          "PUR-ORD-2026-00007",
+          "PUR-ORD-2026-00008",
+          "PUR-ORD-2026-00009",
+          "PUR-ORD-2026-00010",
+          "PUR-ORD-2026-00011",
+          "PUR-ORD-2026-00012",
+          "PUR-ORD-2026-00013",
+          "PUR-ORD-2026-00014",
+          "PUR-ORD-2026-00015",
+          "PUR-ORD-2026-00016",
+          "PUR-ORD-2026-00017",
+          "PUR-ORD-2026-00018",
+          "PUR-ORD-2026-00019",
+          "PUR-ORD-2026-00020",
+          "PUR-ORD-2026-00021",
+          "PUR-ORD-2026-00022",
+          "PUR-ORD-2026-00023",
+          "PUR-ORD-2026-00024",
+          "PUR-ORD-2026-00025",
+          "PUR-ORD-2026-00026",
+          "PUR-ORD-2026-00027",
+          "PUR-ORD-2026-00028",
+          "PUR-ORD-2026-00029"
+        ],
+        "agent_erp_http": 20,
+        "audit_erp_http": 6
+      }
+    }
+  ],
+  "ai_review": {
+    "reviewer": "Codex primary agent, full prose and source/tool/calculation comparison; no model judge",
+    "N05_first_retest": {
+      "numbers": "pass",
+      "complete": "partial_calculation_basis",
+      "notes": "12 groups and 27/95410.50 correct; no unsolicited money subtotal. Added 21+6 status counts lacked a separate computation; this caused the explicit source-rollup change, not a resampling-only rerun."
+    },
+    "N05_final_retest": {
+      "business_result": "pass",
+      "notes": "12 detailed groups match independent raw records. Currency rollup gives 27/95410.50; status rollups give 21/80345 and 6/15065.50; prose matches these results. No live repair was triggered."
+    },
+    "N07_first_retest": {
+      "business_result": "pass",
+      "notes": "19 HTTP: failed child aggregate 2, metadata 1, filtered parent list/count 2, 14 unique parent reads. Correct 14 lines/103 Nos/61735 USD/580 min/610 max/599.37 weighted. All derived totals and weighted rate have calculate results."
+    },
+    "N07_final_retest": {
+      "business_result": "pass",
+      "notes": "17 HTTP: failed child list 1, filtered parent list/count 2, 14 unique parent reads. Same correct values, completeness/currency/UOM/date/docstatus supported; no delivery-status filter."
+    }
+  },
+  "budget_and_request_accounting": {
+    "original_N07": {
+      "errored_child_list": 1,
+      "broad_parent_list_and_count": 2,
+      "name_only_child_list_and_count": 2,
+      "failed_child_aggregate": 2,
+      "parent_detail_reads": 23,
+      "sent_total": 30,
+      "budget_rejected_not_sent": 2,
+      "metadata": 0,
+      "duplicate_parent_reads": 0
+    },
+    "per_turn_erp_limit_in_both_retests": 30,
+    "per_turn_seconds": 180,
+    "max_model_rounds": 12,
+    "output_token_cap": 4096,
+    "two_runs_agent_erp_http": 42,
+    "two_runs_po_audit_erp_http": 12,
+    "separate_probe_and_oracle_http": 20,
+    "oracle_note": "3 probe HTTP +16 raw oracle HTTP (includes one cached final count) +1 forced-fresh final count. Source initial/fresh final counts agree. These are separate from Agent per-turn usage."
+  },
+  "contexts": {
+    "n05_n07_retest1.json:N05": {
+      "trimmed": false,
+      "bytes": 13733,
+      "over_budget": false
+    },
+    "n05_n07_retest1.json:N07": {
+      "trimmed": false,
+      "bytes": 133576,
+      "over_budget": true,
+      "removed_turns": 0,
+      "preserved_turns": 1
+    },
+    "n05_n07_retest2.json:N05": {
+      "trimmed": false,
+      "bytes": 14194,
+      "over_budget": false
+    },
+    "n05_n07_retest2.json:N07": {
+      "trimmed": false,
+      "bytes": 99429,
+      "over_budget": true,
+      "removed_turns": 0,
+      "preserved_turns": 1
+    }
+  },
+  "human_operator_validation": "not_performed",
+  "limitations": [
+    "Arithmetic guard covers explicit standard Markdown subtotal tables with uniquely matching complete aggregate detail rows; arbitrary prose, unsupported formatting or unmatched rows are not certified.",
+    "Local rollups are bounded to <=100 source groups and <=6 group axes with explicit currency/company/UOM partitions; other subtotal needs still require calculate/aggregate.",
+    "No real subtotal-repair or missing-projection preflight was triggered in these live reruns; replay/unit ask fixtures validate these mechanisms.",
+    "One avoidable child query error remains in the final N07 trajectory; parent filtering is still model-planned, not a forced deterministic planner.",
+    "Large current-turn detail contexts can still exceed the context byte target; this round does not establish long-conversation trimming or F01/F02 coverage.",
+    "No other original business cases were rerun; no hidden-test/general-truth or stable-performance guarantee."
+  ],
+  "evidence_sha256": {
+    "evidence\\n05_n07_current_oracle.json": "5118ed8758975cfa6e70aa7c4223f21c2d4e44efab9bb2c645dbec72f0baa991",
+    "evidence\\n05_n07_oracle_fresh_final.json": "50235bf9803ab6b13925b5dc317bac2e2c7ff01b2bdfdc198bbf50e37d2c7db6",
+    "evidence\\n05_n07_original.json": "9080472d3325abd549826e1d0d06733c71966c66c3204727ece30ae6e0b5a596",
+    "evidence\\n05_n07_retest1.json": "3020571ac7dbae67f68b6572a3cf1ec69902e03259c1f3644e9b3a3f6202c9d2",
+    "evidence\\n05_n07_retest2.json": "a8ef99b2d9b1caa37189e2b3e4c04b6f2ce5fcd643a6173e5844c23ea2560170"
+  }
+}

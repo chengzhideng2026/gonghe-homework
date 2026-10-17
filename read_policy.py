@@ -117,9 +117,11 @@ class ReadPolicy:
             if self.active:
                 self.stats['rejected_requests'] += 1
             self._event('budget_rejected', path)
-            raise RequestLimitError('ERP request budget exhausted; narrow the filters or reuse verified evidence. '
+            reason = ('Per-turn request limit reached; waiting does not reset this turn. '
+                      if exhausted else 'Rolling-minute request limit reached; wait before a later request. ')
+            raise RequestLimitError('ERP request budget exhausted; ' + reason + 'narrow the filters or reuse verified evidence. '
                                     'No additional HTTP request was sent; incomplete data cannot establish a total. '
-                                    'The rolling minute limit requires waiting before a later request.')
+                                    'Do not automatically retry or claim a complete result.')
         if self.last_attempt is not None:
             delay = self.interval - (now-self.last_attempt)
             if delay > 0:

@@ -2,6 +2,7 @@
 from dataclasses import dataclass
 from tool_registry import ToolRegistry
 from query_policy import normalize_filters, validate_fields
+from aggregation_checks import aggregate_rollups
 
 
 @dataclass(frozen=True)
@@ -54,7 +55,11 @@ def count_documents(context, args):
                              'aggregate_documents for sums and get_document for full named details. '
                              'For invoice overdue questions set assess_due_date=true for program '
                              'reference_date_evidence; include '
-                             'due_date and outstanding_amount to assess overdue, keeping raw status separate.',
+                             'due_date and outstanding_amount to assess overdue, keeping raw status separate. '
+                             'For child-line analysis, discover the parent Table relationship, filter '
+                             'the parent endpoint with [Child DocType, child_field, operator, value] '
+                             'plus parent date/docstatus filters, then read only matching parents. '
+                             'Do not enumerate every parent or retry a name-only child projection as an aggregate.',
               'parameters': {'type': 'object',
                              'properties': {'doctype': {'type': 'string'},
                                             'fields': {'type': 'array',
@@ -106,7 +111,7 @@ def list_documents(context, args):
     elif duplicate_names:
         warnings.append('Duplicate document names appeared without an explicit child-join filter; the page may overlap or be unstable. Do not use it as a complete total.')
     if rows and args.get('fields') and any((field not in rows[0] for field in args['fields'])):
-        warnings.append('Requested fields are missing; child DocTypes may return only names. Read parent documents; do not assume missing values are zero.')
+        warnings.append('Requested fields are missing; child DocTypes may return only names. Do not retry the same unavailable fields via aggregation. Discover the parent Table relationship, query matching parents using [Child DocType, child_field, operator, value] plus parent date/docstatus filters, deduplicate parent names and read only those parents. Missing values are not zero.')
     if args['doctype'] == 'Bin':
         warnings.append('CURRENT SNAPSHOT ONLY: warehouse is a location label, not evidence of a completed issue/transfer/receipt. Do not describe material as already issued or transferred without Stock Entry/Stock Ledger event evidence. projected_qty is returned by ERP; its formula cannot be inferred from a subset of planning fields.')
     return {'records': rows, 'pagination': {'offset': offset, 'limit': limit, 'returned': len(rows), 'total': total, 'total_basis': 'not_queried' if total is None else ('raw_join_rows' if joined else 'documents'), 'unique_names_returned': len(occurrences), 'duplicate_names': duplicate_names, 'has_more': has_more, 'next_offset': offset + len(rows) if rows and (has_more or total is None) else None}, 'query_scope': {'doctype': args['doctype'], 'filters': normalize_filters(args.get('filters')), 'fields': fields or ['name'], 'coverage': 'Coverage is limited to these exact filters. Name/keyword matches are search candidates, not proof of every member of a business category. Only returned field values are established; historical events and causes require separate evidence.'}, 'warnings': warnings}
@@ -189,7 +194,10 @@ def prepare_purchase_order(context, args):
                              'folded only when parent projections agree; count differs from '
                              'matched_rows. Use for totals and rankings; incomplete/conflicting scans '
                              'fail. Group money by currency/company; do not mix units. Read parent '
-                             'details for child-row amounts.',
+                             'details for child-row amounts. computed_rollups supplies local marginal '
+                             'totals for small complete grouped results, retaining currency/company/UOM '
+                             'partitions. Cite those or calculate for needed subtotals; omit unrequested '
+                             'subtotals with no calculation evidence.',
               'parameters': {'type': 'object',
                              'properties': {'doctype': {'type': 'string'},
                                             'filters': {'type': 'array',
@@ -202,7 +210,9 @@ def prepare_purchase_order(context, args):
                                                            'items': {'type': 'string'}}},
                              'required': ['doctype']}}})
 def aggregate_documents(context, args):
-    return context.agent.c.aggregate(args['doctype'], args.get('filters'), args.get('group_by'), args.get('sum_fields'))
+    result = context.agent.c.aggregate(args['doctype'], args.get('filters'), args.get('group_by'), args.get('sum_fields'))
+    result['computed_rollups'] = aggregate_rollups(result)
+    return result
 
 
 @BUILTIN_TOOLS.tool({'type': 'function',

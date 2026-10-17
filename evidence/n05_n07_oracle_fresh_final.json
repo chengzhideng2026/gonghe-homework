@@ -1,0 +1,25 @@
+{
+  "timestamp_utc": "2026-10-17T17:13:56.343142+00:00",
+  "fresh_count": 27,
+  "initial_count": 27,
+  "io": {
+    "http_attempts": 1,
+    "cache_hits": 0,
+    "rejected_requests": 0,
+    "sources": [
+      {
+        "source": "http",
+        "path": "/api/method/frappe.client.get_count",
+        "fetched_at": "2026-10-17T17:13:56.342555+00:00",
+        "age_seconds": 0
+      }
+    ],
+    "source_log_capped": false,
+    "limits": {
+      "requests_per_turn": 40,
+      "requests_per_minute": 120
+    },
+    "freshness": "Cache hits are prior observations at fetched_at, not proof of current state. Exact request reuse only; partial pages retain their original coverage."
+  },
+  "note": "Earlier oracle final count was a cache hit; this additional count is forced fresh."
+}

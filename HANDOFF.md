@@ -5,7 +5,7 @@
 ## 当前状态
 
 - 用户充值后模型 API 已恢复，E07 探测在 10.67 秒内正常返回澄清。此前免费额度 HTTP403 是已保留的历史失败，不是当前阻断。
-- 当前默认八工具，163项代码测试通过，最新输出为`unit_invoice_dates_scoped.txt`；本轮19项REST初版回归及最终只读日期核对记录分别为`invoice_dates_rest.json`、`invoice_dates_readback.json`。历史149项`unit_read_policy.txt`、156项`unit_turn_controls.txt`、注册表阶段128项`unit_registry.txt`及安全阶段115项`unit_security.txt`保留。
+- 当前默认八工具，170项代码测试通过，最新输出为`unit_n05_n07_final.txt`；日期阶段19项REST初版回归及只读核对记录分别为`invoice_dates_rest.json`、`invoice_dates_readback.json`。历史149项`unit_read_policy.txt`、156项`unit_turn_controls.txt`、注册表阶段128项`unit_registry.txt`及安全阶段115项`unit_security.txt`保留。
 - 客户API效率已补：精确GET短时复用、候选可省略count、真实HTTP预算/节流和时间收据；采购校验/回读与完整聚合回源。真实模型三轮HTTP1→0→0，见`read_efficiency.json`和[API_EFFICIENCY](API_EFFICIENCY.md)。演示限额需按客户约定配置，没有ERP改造或离线全库同步。
 - 业务正确性复核见[BUSINESS_ACCEPTANCE](BUSINESS_ACCEPTANCE.md)和`evidence/closeout_review.json`：C01/C05核心通过但完整部分，C02修正记录完整通过。不要把工具成功或脚本正常退出当作所有自然语言答案正确。
 - ce95390阶段158项程序检查输出`unit_answer_boundaries.txt`；修改前后定向复测及AI复核见[ANSWER_BOUNDARIES_REVIEW](evidence/ANSWER_BOUNDARIES_REVIEW.md)。R1完整失败、R2通过、R3部分；三类核心边界在本组修改前后均成立，没有把未复现问题标成修复成功。本人操作验证尚未执行。
@@ -24,10 +24,13 @@
 
 最新日期修复：读工具的`assess_due_date`默认false；问逾期时显式启用，程序日期关系与原始ERP状态分开，真实调用路径、收据及历史摘要都保留证据。原R1最终不再主动解释日期、未收余额仍USD5760；原题四张/合计USD25380正确。AI按完整回答仍评部分（R1附加假设、逾期题公司范围未明确），不宣称文字全过；详见[日期复测](evidence/INVOICE_DATE_REVIEW.md)。本轮共8个真实模型用户轮，无POST，采购名集合29→29；本人操作未验收。
 
+本轮只修N05/N07：新增有限格式聚合小计核算、完整分组本地rollups、同轮缺字段投影拒绝和父单筛选指引，未加工具或提高请求预算。首次复测N05金额通过/附加张数来源部分，N07以19次HTTP完整通过；最终代码两题通过，N07为17次HTTP，仍有1次错误子表查询。详见[N05_N07_REVIEW](evidence/N05_N07_REVIEW.md)。旧失败和首次复测均保留，本人尚未验收。
+
 ## 最新证据入口
 
 | 文件 | 内容 |
 |---|---|
+| `evidence/N05_N07_REVIEW.md`、`evidence/n05_n07_review.json` | 最新独立N05/N07修复，原失败、首次及最终复测分开记录 |
 | `evidence/INVOICE_DATE_REVIEW.md`、`evidence/invoice_dates_review.json` | 最新日期修复；程序检查、AI复核、本人操作未验证分别记录，旧失败和中间复测保留 |
 | `evidence/ANSWER_BOUNDARIES_REVIEW.md`、`evidence/answer_boundaries_review.json` | ce95390三类回答边界复测，含原R1日期失败 |
 | `evidence/recharge_check.json` | 充值后 E07 可用性与澄清探测 |

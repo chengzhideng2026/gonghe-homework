@@ -4,6 +4,8 @@
 
 验收主体须区分：**程序检查**验证执行和状态契约；**AI复核**逐项对照正文与工具证据；**本人操作验证**需要用户亲自运行。历史`manual review`或“人工判分”描述的是逐项审阅方式，实际由AI完成，不代表用户已经验收。最新三类边界复测见[ANSWER_BOUNDARIES_REVIEW](evidence/ANSWER_BOUNDARIES_REVIEW.md)：R1完整回答失败、R3部分，原始失败保留。
 
+N05/N07独立问题及修复见[专门复核](evidence/N05_N07_REVIEW.md)。逐分组、逐小计核验，不能用总额恰好相等代替；派生值可引用calculate、aggregate或明确的本地`computed_rollups`。有限表格检查未匹配的文字不算程序认证。首次与最终成绩分开，不能用重跑覆盖失败。
+
 ## 未知 DocType 的完整过程
 
 一个未知或未在题目中列出的 DocType，至少要经过：

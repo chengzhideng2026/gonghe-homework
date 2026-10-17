@@ -73,6 +73,8 @@ def _tool_summary(call, result):
     elif name == 'aggregate_documents' and isinstance(data, dict):
         summary['data'] = {key: data.get(key) for key in
                            ('doctype', 'count', 'matched_rows', 'duplicates_collapsed', 'complete', 'groups')}
+        if 'computed_rollups' in data:
+            summary['data']['computed_rollups'] = data['computed_rollups']
     elif name == 'prepare_purchase_order' and isinstance(data, dict):
         summary['data'] = {key: data.get(key) for key in
                            ('proposal_id', 'idempotency_key', 'estimated_total', 'requires_confirmation',

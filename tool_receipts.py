@@ -47,6 +47,8 @@ def tool_receipts(messages, tool_metadata=None):
             elif name == 'aggregate_documents' and isinstance(data, dict):
                 receipt['summary'] = {key: data.get(key) for key in
                                       ('doctype', 'count', 'matched_rows', 'duplicates_collapsed', 'complete', 'groups', 'consistency')}
+                if 'computed_rollups' in data:
+                    receipt['summary']['computed_rollups'] = data['computed_rollups']
             elif name == 'get_document' and isinstance(data, dict):
                 receipt['summary'] = {key: data[key] for key in ('doctype', 'name', 'docstatus') if key in data}
             elif name == 'get_documents' and isinstance(data, dict):
