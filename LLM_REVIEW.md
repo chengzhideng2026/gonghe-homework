@@ -47,4 +47,4 @@
 
 initial、probe和pre_explanation文件是诊断阶段记录，包含当时的遗漏与误判；最终验收以本文件说明和最终llm_acceptance.json为准。当前没有观察到防火墙弹窗，localhost服务和百炼请求均成功，不需要更改防火墙。
 
-现在可在 `D:\work\工核homework` 执行 `python agent.py` 直接中文交互。后续尚未上传GitHub或向招聘方提交。
+在项目根目录执行 `python agent.py` 可启动中文交互。后续尚未上传GitHub或向招聘方提交。

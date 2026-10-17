@@ -4,6 +4,15 @@ test_mutating_preview_does_not_mutate_write_snapshot (test_agent.TestPurchaseOrd
 test_preview_does_not_write_until_confirm (test_agent.TestPurchaseOrderFlow.test_preview_does_not_write_until_confirm) ... ok
 test_unknown_proposal_is_rejected_without_write (test_agent.TestPurchaseOrderFlow.test_unknown_proposal_is_rejected_without_write) ... ok
 test_uom_and_schedule_date_are_validated (test_agent.TestPurchaseOrderFlow.test_uom_and_schedule_date_are_validated) ... ok
+test_empty_or_failed_event_reads_do_not_relax_snapshot_check (test_answer_checks.TestEvidenceChecks.test_empty_or_failed_event_reads_do_not_relax_snapshot_check) ... ok
+test_event_detail_and_aggregate_require_nonempty_records (test_answer_checks.TestEvidenceChecks.test_event_detail_and_aggregate_require_nonempty_records) ... ok
+test_event_evidence_leaves_semantic_review_to_model_and_reviewer (test_answer_checks.TestEvidenceChecks.test_event_evidence_leaves_semantic_review_to_model_and_reviewer) ... ok
+test_postposed_uncertainty_and_questions_are_not_movement_assertions (test_answer_checks.TestEvidenceChecks.test_postposed_uncertainty_and_questions_are_not_movement_assertions) ... ok
+test_repair_feedback_distinguishes_snapshot_and_history_requests (test_answer_checks.TestEvidenceChecks.test_repair_feedback_distinguishes_snapshot_and_history_requests) ... ok
+test_runner_checks_prior_turn_snapshot_when_followup_reuses_it (test_answer_checks.TestEvidenceChecks.test_runner_checks_prior_turn_snapshot_when_followup_reuses_it) ... ok
+test_runner_fails_closed_if_repair_still_asserts_history (test_answer_checks.TestEvidenceChecks.test_runner_fails_closed_if_repair_still_asserts_history) ... ok
+test_runner_repairs_once_before_accepting_final_answer (test_answer_checks.TestEvidenceChecks.test_runner_repairs_once_before_accepting_final_answer) ... ok
+test_snapshot_rejects_movement_assertion_but_allows_location_and_uncertainty (test_answer_checks.TestEvidenceChecks.test_snapshot_rejects_movement_assertion_but_allows_location_and_uncertainty) ... ok
 test_duplicate_partial_missing_field_and_changed_count_fail_loudly (test_audit.TestCompleteAggregation.test_duplicate_partial_missing_field_and_changed_count_fail_loudly) ... ok
 test_more_than_one_page_and_decimal_sums (test_audit.TestCompleteAggregation.test_more_than_one_page_and_decimal_sums) ... ok
 test_page_metadata_makes_truncation_explicit (test_audit.TestCompleteAggregation.test_page_metadata_makes_truncation_explicit) ... ok
@@ -45,6 +54,6 @@ test_same_target_and_credentials_restart_with_complete_readback (test_review_tar
 test_pinned_date (test_rules.TestRules.test_pinned_date) ... ok
 
 ----------------------------------------------------------------------
-Ran 45 tests in 0.832s
+Ran 54 tests in 0.787s
 
 OK

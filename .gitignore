@@ -5,4 +5,4 @@ __pycache__/
 .local/
 
 seed_extracted/
-plantcore_erp_agent_handoff_20261016.zip
+plantcore_erp_agent_handoff_*.zip

@@ -1,80 +1,85 @@
 # Plantcore ERPNext Agent
 
-一个Python标准库CLI Agent：用阿里百炼/兼容Chat Completions的模型选择工具，通过ERPNext实时HTTP API读业务数据。包含原题ERP seed与连续Git历史，原题全文见 ORIGINAL_README.md。
+通过实时 ERPNext API 回答库存、采购、工单、BOM 和财务问题，并在人工确认后创建采购草稿。使用 Python 标准库 CLI、七个模型工具和本地 SQLite 确认日志；题目提供的 ERPNext 环境保留在 `erpnext/`。
 
-**最新状态（2026-10-17）：45项代码测试、19项真实REST复核通过，但当前百炼免费额度已耗尽，真实模型请求返回HTTP 403 `AllocationQuota.FreeTierOnly`。因此目前不能开箱演示真实模型问答；需要恢复可用额度或配置有额度的密钥。不自动切换付费。** `--check`只检查ERP和配置是否存在，不能判断模型额度可用。
+第一次接手请读 [项目指南](PROJECT_GUIDE.md)；原题与评分要求见 [ORIGINAL_README.md](ORIGINAL_README.md)。
 
-本轮另测8个变式：7题正常返回，核心结果正确，但完整回答仅3题通过、4题因无证据额外断言部分通过；1题因额度耗尽未完成。已调整通用提示规则，受额度限制尚未真实复测。详见AUDIT.md与[技术方案复核](TECH_REVIEW.md)。
+## 启动
 
-## 五分钟启动流程
-
-前提：Python 3.10+、Docker Desktop/Engine及Compose可用。首次镜像下载和站点恢复可能超过五分钟；本机已缓存并恢复完毕。无需pip安装。先进入解压/clone后的项目根目录（本机是 `D:\work\工核homework`）。
+需要 Python 3.10+、Docker Desktop/Engine 与 Compose，以及可用的模型 API 配置。命令均在项目根目录运行；Linux/macOS 可将 `python` 换成 `python3`。无需安装第三方 Python 运行库。
 
 ```text
 docker compose -f erpnext/compose.yml up -d
 docker compose -f erpnext/compose.yml logs -f restore-site
 ```
 
-首次等待 `Restore complete.`；后续启动可能显示站点已存在并跳过恢复。Ctrl+C只退出日志查看。
+首次等待 `Restore complete.`；已有站点可能跳过恢复。`Ctrl+C` 退出日志查看。首次镜像下载与恢复所需时间取决于网络。
 
-第一次复制配置：Windows PowerShell使用 `Copy-Item .env.example .env`；Linux/macOS使用 `cp .env.example .env`。在本机.env填写模型API密钥；样例已默认qwen3.8-max与百炼北京地域地址。如果换服务商，同时调整模型、地址与思考参数。不要覆盖已有.env。
+仅在根目录没有 `.env` 时复制样例：
+
+```powershell
+# Windows PowerShell
+Copy-Item .env.example .env
+```
+
+```bash
+# Linux/macOS
+cp .env.example .env
+```
+
+在本机 `.env` 填写 `LLM_API_KEY`，核对 `LLM_BASE_URL`、`LLM_MODEL`；样例提供百炼配置。ERP 配置为 `ERPNEXT_URL`、`ERPNEXT_API_KEY`、`ERPNEXT_API_SECRET`。不覆盖已有配置，不提交密钥。
 
 ```text
 python agent.py --check
 python agent.py
 ```
 
-Linux上若命令名为python3，替换为python3。ERPNEXT Item数量应为18；--check只检查ERP连接和配置是否存在，不宣称验证模型质量或额度。本机已有配置，但2026-10-17使用的免费额度已经耗尽；恢复可用模型配置后再做真实问答。
+`--check`检查 ERP 连接与模型配置是否存在，不调用模型，不能证明模型权限或余额可用。模型 API 在充值后已恢复真实问答；最新状态与逐题记录见 [AUDIT.md](AUDIT.md)。ERP 页面为 [localhost:8080](http://localhost:8080)，本地 seed 登录为 `Administrator` / `admin`。
 
-Docker命令在旧Windows终端未进入PATH时，可重新打开终端或执行 `powershell -File .\start_erp.ps1`。ERP网页：http://localhost:8080 ，seed本地账户 Administrator / admin。
+作业业务参考日保持 **2025-10-15**。机器日期和单号年份不能替代它；写入也显式传入交易日与需求日。
 
 ## 使用
 
-直接用中文或英文提问，例如：
+可以先问：
 
-- What's the current stock of copper coil?
-- Show me overdue sales invoices.
-- 请按客户汇总未收回发票余额，不要只看逾期。
-- Create a new purchase order for 100 m of RM-COIL-CU-2.0 from Tongling Magnet Wire Co. at $29 per meter.
+```text
+铜线的现货、在途和生产预留分别有多少？请列出单位和仓库。
+Show me overdue sales invoices.
+按供应商和币种汇总已提交采购发票的未付余额。
+```
 
-采购工具生成预览，CLI独立打印实际载荷。只有人工输入 `/confirm <proposal-id>` 才创建并回读草稿；模型不具备直接创建、确认或取消工具。只支持单行采购、公司本位币、物料stock_uom；多公司要求明确公司。不自动提交订单。
-
-| 命令 | 用途 |
+| 命令 | 作用 |
 |---|---|
-| /pending | 查看本机保存的采购proposal及状态/是否过期 |
-| /confirm id | 确认未过期预览，重新校验后创建草稿 |
-| /discard id | 撤销pending预览，不改ERP单据 |
-| /trace | 查看上一模型轮的实际工具收据、查询参数、记录名称、分页和错误 |
-| /reset | 清除模型对话，保留本地采购journal |
-| /quit | 退出 |
+| `/trace` | 查看上一模型轮的实际工具收据、查询范围、分页与错误 |
+| `/pending` | 查看本机保存的采购预览及状态 |
+| `/confirm id` | 明确确认该预览，重新校验后创建并回读草稿 |
+| `/discard id` | 撤销本地待确认预览，不改变 ERP 单据 |
+| `/reset`、`/quit` | 清对话、退出；重置对话不删除采购状态 |
 
-交互CLI的状态存放 `.local/proposals.sqlite3`，Git与交接ZIP均排除该目录。预览15分钟过期。创建超时、进程中断或回读异常后，保留状态/已知单号以便人工核对，不自动重复POST。金额是行金额估算，税费和默认值差异在回读时显示review_required；单据仍为草稿。
+采购先显示真实载荷与具体 ID，只有人工 `/confirm id` 才写入。模型不能直接确认、创建、提交或取消。预览默认 15 分钟有效，绑定 ERP 端点与凭据配置；状态保存在被 Git 忽略的 `.local/proposals.sqlite3`。创建超时或回读异常后先对账，不盲目重试。当前支持单行、公司本位币、物料库存单位，税费/默认值差异在回读中标记人工复核。
 
-预览现在绑定生成时的ERP端点及凭据配置指纹；更换配置或使用未绑定的旧预览时必须重新准备。`/trace`从程序实际收发的工具消息提取，不依赖模型自述；它证明查过什么，不证明最终每句话都成立。列表工具始终包含`name`，便于追溯记录。
+## 验证与已知边界
 
-## 验证
+本地代码测试和真实 REST 检查：
 
 ```text
 python -m unittest discover -s tests -v
 python verify_live.py
-python verify_llm.py
-python verify_extended.py
-python verify_variants.py --output variants_rerun.json
 ```
 
-- 45项代码测试覆盖HTTP、确认、重启、并发、异常、完整分页、Decimal计算、重复聚合参数、ERP目标绑定、实际工具收据与对话恢复。
-- verify_live.py默认只读，原题真实REST检查19项。
-- verify_llm.py真实调用模型，保存十个原题的工具轨迹；答案须人工核对，脚本不把“有回复”当作答对。
-- verify_extended.py检查未结应收/应付完整汇总，并真实询问新问题。模型调用可能消耗账户额度。
-- verify_variants.py读取review_cases.json，运行8个独立设计的变式并保存工具轨迹与采购单名称集合；它们不是招聘方保密题。复跑用`--output`指定新文件，保留原人工分级。真实模型脚本需要可用额度；当前免费额度耗尽时不会成功完成，切勿把接口403算成业务通过。
-- 仅对本地seed显式执行 `python verify_extended.py --create-test-po` 会测试一次真实模型预览、持久化、确认与回读；已有audit_write.json收据时拒绝再建。当前已执行，勿再次写入或删除收据来重跑。
+54 项代码测试、19 项真实 REST 复核通过；从非项目目录按脚本路径启动 `--check` 也通过。按需运行模型案例会消耗 API 额度，使用新的输出文件保留审计：
 
-2026-10-16及此前真实测试草稿00028、00029均未提交；采购单总数29。2026-10-17的8个变式运行前后采购单名称集合完全相同（29→29），未创建新采购单。原有已提交开放采购单仍6张、$15,065.50，库存未因草稿变化。不要为重启删除数据库卷。
+```text
+python verify_variants.py --output variants_my_run.json
+python verify_conversation.py --output conversation_my_run.json
+```
 
-## 设计与交付状态
+充值后完整八题复跑的核心要求 8/8 符合，完整回答为 6 通过、2 部分通过；随后定向修复了歧义采购的查询范围表述，库存题仍有额外公式未调用 `calculate`。三轮“库存→缺口→采购预览”核心和预览断言通过，第二轮附加情景公式仍需改进。细节见 [真实复测人工分级](evidence/FOLLOWUP_REVIEW.md)，历史失败保留在审计中，不宣称所有文字都正确。
 
-七个模型工具：元数据、计数、带完整性标记的分页列表、详情、完整聚合、受限Decimal算术、采购预览。新增只读DocType可复用工具；新增写入需专用验证/确认适配。
+`query_scope`、Bin 快照警告和 `/trace`帮助核证；`answer_checks.py`只对已知库存历史措辞做受限检查，不是通用真值验证器。完整聚合不是事务快照；本地 SQLite 防重不是多机器全局幂等。未实现多行/外币采购、自动取消、生产权限隔离与高并发服务。模型答案仍须核对证据。
 
-完整架构、流程、业务坑和限制见 **ARCHITECTURE.md**；当前审计结论见 **AUDIT.md**；选型与隐藏题解释见 **TECH_REVIEW.md**；设计取舍见 WRITEUP.md；实测证据在 evidence/，本轮变式轨迹为independent_variants_20261017.json。原始ERP文件保持不变。
+真实测试草稿及本地记录数量见审计，不是评审者 fresh seed 的启动条件。不要为普通重启删除数据库卷或确认日志。
 
-代码尚未上传GitHub，尚未向招聘方提交链接。后续提交应保留现有多次Git提交，排除.env、.local及其他本机配置。样例与新增问题通过不构成对所有隐藏题的准确率保证。
+## 阅读入口
+
+[项目指南](PROJECT_GUIDE.md) · [架构](ARCHITECTURE.md) · [设计与 AI 工作流程](WRITEUP.md) · [技术选型复核](TECH_REVIEW.md) · [审计与交付状态](AUDIT.md) · [交接记录](HANDOFF.md)

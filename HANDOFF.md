@@ -1,49 +1,49 @@
-# 当前交接（2026-10-17）
+# 项目交接
 
-活动工程：D:\work\工核homework。Docker数据在D盘，ERPNext运行于http://localhost:8080。Python标准库Agent在Windows主机运行，百炼qwen3.8-max已有本机配置，密钥未提交Git。**当前免费额度已耗尽，模型请求返回HTTP403 `AllocationQuota.FreeTierOnly`；需要可用额度或有额度的密钥才能真实问答，不自动切付费。**
+活动工程是解压或 clone 后的项目根目录。ERPNext 默认入口为 [localhost:8080](http://localhost:8080)，Agent 在主机 Python 进程运行，模型经云端 API 调用。私有配置保留在本机 `.env`，不提交 Git。接手操作请先读 [PROJECT_GUIDE.md](PROJECT_GUIDE.md)，当前运行入口见 [README](README.md)。
 
-## 2026-10-17最新验证与待办
+## 当前状态
 
-- 45项代码测试、19项真实REST复核通过。
-- 修复重复聚合字段导致双计、非数组/非数值误处理，以及旧采购预览在ERP端点/凭据变化后仍可确认的问题；旧未绑定预览须重新准备。
-- 新增`tool_receipts.py`、CLI `/trace`及列表强制`name`；实际工具收据可看查询、分页、错误和记录来源，但不是对最终回答的完整正确性证明。
-- 八个新变式：7题正常返回且核心业务结果正确；完整回答E02/E05/E08通过，E01/E03/E04/E06部分通过，存在无证据额外断言；E07在19次工具调用后因免费额度耗尽未完成，不算通过。
-- 8题采购单名称集合29→29，未创建新采购单。轨迹：`evidence/independent_variants_20261017.json`，案例与运行器：`review_cases.json`、`verify_variants.py`。
-- 通用提示已调整为歧义先澄清、禁止无证据额外推断等，**额度耗尽后尚未真实复测**。恢复额度后优先复测部分通过题和E07；不把代码测试通过替代模型验收。
-- 尚未上传GitHub或向招聘方提交链接；需本人理解并演示方案，不能保证面试结果。
+- 用户充值后模型 API 已恢复，E07 探测在 10.67 秒内正常返回澄清。此前免费额度 HTTP403 是已保留的历史失败，不是当前阻断。
+- 54 项代码测试、19 项真实 REST 再次复核通过；从非项目目录使用脚本绝对路径运行 `--check` 也通过。已修复重复聚合/参数类型、预览 ERP 端点与凭据绑定，并新增 `/trace`、列表 name、query_scope、Bin 快照警告和受限回答检查。
+- 充值后完整八题复跑：核心 8/8，完整回答 6 通过、2 部分。E01 附带无凭证历史与额外公式，E07 把关键词候选当成业务类别全集，均未按完整正确处理。
+- 补充查询范围与快照警告后，定向复测 E07 通过，E01 仍部分。再加入 `answer_checks.py` 后，E01 不再有历史断言，但附加 130+100 公式未调用 calculate，保守仍部分；E07 通过。该实模运行未触发门禁修正，不能说真实修正链路已经触发过；机制由 mock 测试验证。
+- 三轮真实对话完成：Stores 实物 130 Nos、在途 100 → 目标 180、现货缺口 50（调用 calculate）→ 引用上轮 50 Nos 按 USD4.20 生成 USD210 预览。核心与载荷断言通过；第二轮额外在途情景公式未调用工具，整段部分。
+- 本轮所有复测前后采购单名称集合均为本地 29→29，没有新建 ERP 采购单。该数量不是 fresh seed 的运行前提。
+- 尚未上传 GitHub 或提交招聘方链接；仍需本人跑通并解释方案，不保证隐藏题或面试结果。
 
-## 2026-10-16验证（保留历史证据）
+## 最新证据入口
 
-- 29项代码测试通过，含跨页205行、并发领取、状态恢复、丢失写入回复、数值范围、受限算术、对话失败恢复等。
-- 19项真实REST检查通过，Item=18、库存、采购、工单、发票等结果符合seed。
-- 原题10问在七工具的新接口下重新运行，核心答案人工核对。
-- 新增真实问答：应收余额$37,720、GreenAir $16,980；收款$58,990/付款$57,561/净流入$1,429；Nordic待交12/现货9/缺3。
-- 完整应付聚合$22,784也由真实REST验证。
-- 真实模型采购预览→SQLite保存→重建Agent后确认→POST→GET回读通过，单据PUR-ORD-2026-00029，Draft，$2,900，未提交。
-- 真正的新Python进程重放同一确认被阻止，采购数量未再次增加。
+| 文件 | 内容 |
+|---|---|
+| `evidence/recharge_check.json` | 充值后 E07 可用性与澄清探测 |
+| `evidence/variants_followup.json` | 充值后完整八题复跑，需结合人工分级 |
+| `evidence/variants_refined.json` | 加 query_scope 与 Bin 警告后的定向复测 |
+| `evidence/variants_checked.json` | 加受限回答检查后的定向复测；实际没有触发修正 |
+| `evidence/conversation_check.json` | 三轮库存→缺口→采购预览与未写检查 |
+| `evidence/VARIANT_REVIEW.md`、`AUDIT.md` | 主审人工分级与完整演进记录 |
+| [evidence/FOLLOWUP_REVIEW.md](evidence/FOLLOWUP_REVIEW.md) | 充值后完整复跑、定向与三轮会话的最新人工总判分 |
 
-## 数据库变化
+`variants_initial.json` 保留最初 3 通过、4 部分、1 额度阻断的运行，不能作为当前 API 不可用的依据。后续改进没有覆盖全部新问法，也未把所有额外公式检查变成硬约束。
 
-保留两张测试草稿：00028为先前联调，00029为2026-10-16审计。Purchase Order总数29；2026-10-17变式没有新增采购单。已提交开放采购单仍6张、$15,065.50。草稿没有改变库存。没有取消、删除、提交工单或采购单，没有重置数据库。
+## 已有真实写入证据与本地数据
 
-创建收据：evidence/test_po_receipt.json（00028），evidence/audit_write.json（00029）。后者存在时审计写入脚本拒绝重建；遇超时先对账，不删收据盲重跑。
+2026-10-16 及此前的审计创建了两张本地测试草稿：00028、00029；其中 `PUR-ORD-2026-00029` 为 USD2,900、Draft、未提交。相关收据为 `test_po_receipt.json`、`audit_write.json`；`audit_restart_replay.json` 记录新 Python 进程重复确认被阻止。
 
-## 文件入口
+本地采购单总数 29，已提交开放采购仍 6 张、USD15,065.50。草稿没有改变库存；本轮没有取消、删除、提交采购或工单，也没有重置数据卷。不要删除写入收据或日志来重复测试创建。
 
-- ARCHITECTURE.md：完整架构、七工具、Docker职责、读写流程、业务陷阱、扩展与限制。
-- AUDIT.md：本轮发现、修复、验证与交付清单。
-- README.md：跨平台启动及CLI命令。
-- WRITEUP.md：约一页设计/取舍/AI工作流程。
-- TECH_REVIEW.md：隐藏题依据、SQLite与各层选型、替换条件、独立审查和面试讲解要点；[打开技术复核](TECH_REVIEW.md)。
-- evidence/llm_acceptance.json：2026-10-16原题十问真实轨迹；extended_audit.json为当日新增题；audit_restart_replay.json为新进程防重复证据。
-- evidence/independent_variants_20261017.json：2026-10-17八个独立变式轨迹及主审人工分级；包含HTTP403失败，不是八题全部通过的报告。
+当日历史验证包含 29 项代码测试、19 项 REST、原题十问和应收/净额/缺货新增题；这些历史数字与记录保留，当前代码测试数量以最新输出为准。
 
-## 使用与状态
+## 操作与恢复
 
-在活动工程执行python agent.py可启动CLI，但真实问答当前受免费额度耗尽阻断。/pending查看保存预览，/confirm id确认，/discard id撤销本地预览，/trace查看上一模型轮实际工具收据，/reset清对话，/quit退出。交互状态在.local/proposals.sqlite3（Git与ZIP排除），API密钥只在.env。`python agent.py --check`检查ERP和配置存在，不证明模型额度可用。
+`python agent.py` 启动 CLI。`/trace` 看上一模型轮实际工具收据；`/pending` 看预览；`/confirm id` 对具体载荷确认并创建草稿；`/discard id` 只撤销本地预览；`/reset` 只清会话；`/quit` 退出。`--check`只证明 ERP 与配置存在，不验证 API 额度或回答质量。
 
-API和CLI验证脚本有意分离：普通Agent(client)可用内存状态做隔离测试，交互CLI明确注入SQLite；verify_extended --create-test-po使用单独.local/audit-proposals.sqlite3，避免污染用户交互proposal。
+交互状态在 `.local/proposals.sqlite3`。普通 `Agent(client)` 可使用内存状态隔离测试；历史可选写入验证使用独立 journal。预览过期、目标配置变化须重新准备；creating/failed 或回读失败先按单号对账，不能盲重发。
 
-原始ERP文件及备份未修改。此前2026-10-16 Docker与百炼联调正常、未观察到防火墙弹窗；2026-10-17 ERP复核正常，但百炼因免费额度耗尽拒绝请求。代码尚未上传GitHub，也没有向招聘方代发。后续仍需恢复可用模型配置、真实复测、仓库上传、本人复核运行流程及提交链接。
+`/trace` 和 `query_scope` 显示查过什么、按什么过滤；关键词候选不证明类别全集，Bin 位置不证明历史转料。受限门禁只覆盖已知措辞，可请求改写一次或拒绝，不能保证所有最终文字正确。
 
-当前限制包括单行采购、本位币/stock_uom、无自动取消、不做税费事前试算、扫描非事务快照、无服务端全局幂等、模型解释仍需复核。详见架构文档。
+## 后续优先级
+
+先由本人按接手指南完成查询、证据核对、预览与状态恢复练习，再整理提交仓库和链接。继续改进时优先解决无必要额外公式和算术工具使用的一致性，并保留新案例证据；不为技术名词而更换 SQLite 或堆叠框架。
+
+详细架构见 [ARCHITECTURE.md](ARCHITECTURE.md)，选型与隐藏题说明见 [TECH_REVIEW.md](TECH_REVIEW.md)。单行/本位币/stock_uom、无自动取消、非事务扫描、无服务端全局幂等与生产权限隔离等边界仍保留。

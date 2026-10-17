@@ -1,18 +1,18 @@
 # 工核作业架构与审计说明
 
-## 2026-10-17最新状态
+## 当前状态
 
-当前45项代码测试、19项真实REST复核通过；本轮修复重复聚合字段导致双计、采购预览未绑定ERP目标的问题，新增CLI `/trace`实际工具收据及列表强制返回`name`。
+54项代码测试、19项真实REST复核通过；从非项目目录按脚本绝对路径运行`--check`也通过，配置按脚本位置加载。已修复重复聚合字段导致双计、采购预览未绑定ERP目标的问题，并新增CLI `/trace`实际工具收据、列表`name/query_scope`、Bin快照警告及受限回答检查。
 
-独立设计的8个新变式中，7题正常返回且核心结果正确；完整回答仅E02/E05/E08通过，E01/E03/E04/E06因无证据额外断言部分通过。E07在19次工具调用后免费额度耗尽，HTTP403 `AllocationQuota.FreeTierOnly`，未完成，不算通过。8题采购单名称集合29→29。已调整通用提示，但受额度限制未真实复测，当前需要可用额度或有额度的密钥才能演示真实问答，不自动切付费。
+用户充值后模型API已恢复，完成完整八题复跑与定向改进：完整八题核心8/8，整段6通过、2部分；最新定向E07通过，E01不再有历史断言，但额外公式未调用calculate，保守部分。三轮“库存→缺口→采购预览”核心与载荷断言通过，第二轮额外情景公式仍部分。本轮采购单名称集合均29→29，没有新建ERP采购单；这是本地证据，不是fresh seed的运行条件。
 
-本文其余章节保留2026-10-16架构和验收语境，并补充本轮变更。技术选型、隐藏题原文依据与替换条件见[TECH_REVIEW.md](TECH_REVIEW.md)；最新逐题分级见AUDIT.md。
+技术选型、隐藏题原文依据与替换条件见[TECH_REVIEW.md](TECH_REVIEW.md)，接手操作见[PROJECT_GUIDE.md](PROJECT_GUIDE.md)；最新总判分见[FOLLOWUP_REVIEW.md](evidence/FOLLOWUP_REVIEW.md)，完整逐阶段记录见AUDIT.md，历史失败保留原有语境。
 
 ## 先回答：现在算不算全部做完
 
 当前已具备可运行的本地 Agent、真实 ERPNext 环境、真实模型调用、原题问答、采购预览/确认/创建/回读、连续 Git 历史、运行说明和 write-up。CLI 符合原题 UI 要求；Pi 是推荐项，原题允许自选框架，未要求网页、多Agent、向量库或云部署。
 
-以上真实模型链路在2026-10-16已验证；当前免费额度耗尽，不能据此宣称现在开箱可问答。仍需恢复模型额度后复测完整回答、完成GitHub新仓库上传与提交链接。本地验收不等于所有隐藏题和生产场景正确。
+真实模型链路当前可用；原题与新增变式已实跑，但额外断言、公式和业务口径仍需核证。仓库上传与提交链接尚待完成；本地验收不等于所有隐藏题和生产场景正确。
 
 ## 1. 总体结构
 
@@ -23,6 +23,8 @@ flowchart TD
     Runner <--> Qwen[阿里百炼 Qwen3.8-Max]
     Runner --> Dispatch[工具白名单分发]
     Runner --> Receipt[程序提取工具收据：CLI /trace]
+    Runner --> Check[answer_checks：已知措辞证据检查]
+    Check -->|要求改写一次| Runner
     Dispatch --> Read[ERPNextClient：元数据、计数、分页、详情]
     Dispatch --> Agg[完整扫描、Decimal汇总]
     Dispatch --> Calc[受限Decimal算术]
@@ -41,7 +43,7 @@ flowchart TD
 
 运行时分三处：Agent Python进程在Windows主机；ERPNext/MariaDB/Redis在Docker Linux容器；模型推理在阿里云。电脑不做本地大模型推理。computer use用于最初查看Docker配置，Agent日常运行走HTTP API。
 
-代码采用逻辑分层，主体仍集中于 `agent.py`，持久化另在 `proposal_store.py`；没有为六小时作业拆成微服务。
+代码采用逻辑分层，主体仍集中于 `agent.py`，持久化在 `proposal_store.py`，收据和受限回答检查分别在 `tool_receipts.py` 与 `answer_checks.py`；没有为六小时作业拆成微服务。
 
 ## 2. Docker基础设施：原题提供，未重写
 
@@ -58,7 +60,7 @@ flowchart TD
 | configurator | 一次性写公共连接配置，成功后退出 |
 | restore-site | 一次性建站、恢复seed、迁移、配置API凭据，成功后退出 |
 
-容器通过frappe_network通信；db-data、sites、logs、redis-queue-data保存在Docker卷。Docker磁盘位于D盘；项目 `erpnext/backup` 以只读方式挂载给恢复服务。configurator和restore-site的Exited(0)是正常完成。
+容器通过frappe_network通信；db-data、sites、logs、redis-queue-data保存在Docker卷。项目 `erpnext/backup` 以只读方式挂载给恢复服务。configurator和restore-site的Exited(0)是正常完成。
 
 原始compose、备份、DATASET、原题文档保持不变。MariaDB内部读写由ERPNext完成；Agent只访问ERP HTTP API。
 
@@ -87,7 +89,7 @@ ERPNext以DocType描述业务对象。一个DocType可理解为“带字段定�
 |---|---|
 | get_doctype_meta | 发现字段、Link/Table关系；去掉Frappe界面脚本与布局，保留真实主子表schema |
 | count_documents | 按DocType/过滤计数 |
-| list_documents | 指定字段、过滤、排序、分页；强制包含name；返回records与total/has_more/next_offset，不再只给容易误判为全量的裸列表 |
+| list_documents | 指定字段、过滤、排序、分页；包含name与query_scope；返回records与total/has_more/next_offset；Bin另带当前快照警告 |
 | get_document | 读取指定单据及子表 |
 | aggregate_documents | 完整有界扫描，按字段分组计数、Decimal金额求和；分组/求和字段校验并去重；最多10000行，重复/提前结束/缺字段/计数变化时拒绝给完整总额 |
 | calculate | Decimal的加减乘除和括号；用于净额、占比、毛利。AST仅接受数字与算术，不提供eval、函数调用、变量或系统访问 |
@@ -106,7 +108,7 @@ ERPNext以DocType描述业务对象。一个DocType可理解为“带字段定�
 3. 模型返回函数名和JSON参数，例如先查Item，再查Bin。
 4. 白名单分发器调用ERPNextClient；客户端编码路径、规范过滤，并带本地ERP token请求API。
 5. 工具结果以对应tool_call_id加入对话，再发给模型。模型需要多张表时可继续调用。
-6. 足够证据后返回自然语言。差额/比率由calculate计算，分组汇总优先aggregate_documents。
+6. 模型生成最终正文后经过受限证据检查；识别到已知无证据库存历史措辞时要求改写一次，再失败则报错，不接受该答案。其余正文仍需人工核证；差额/比率应调用calculate，分组汇总优先aggregate_documents。
 
 模型不会读取本地DATASET作为答案数据。DATASET及原题只用于验收脚本的预期值。测试脚本中的固定期望数字与运行时Agent逻辑分开。
 
@@ -114,7 +116,9 @@ ERPNext以DocType描述业务对象。一个DocType可理解为“带字段定�
 
 CLI支持`/reset`清对话，不会删除采购状态。长对话没有自动摘要和无限上下文管理。
 
-2026-10-17新增`tool_receipts.py`，从真正的模型tool_calls和程序tool消息提取本轮收据，CLI `/trace`可查看调用参数、记录名称、完整聚合结果、分页和错误。每轮结束会显示调用/错误计数，失败轮也保留收据；它不依赖模型声称“我查过了”。该功能提升可核查性，不验证自然语言每句话都由证据推出。
+`tool_receipts.py`从真正的模型tool_calls和程序tool消息提取本轮收据，CLI `/trace`可查看调用参数、query_scope、记录名称、完整聚合结果、分页和错误。每轮结束显示调用/错误计数，失败轮也保留收据。查询范围只覆盖实际过滤条件；关键词命中是候选集合，不能推出整个业务类别。Bin返回值证明当前数量和位置，不能单凭仓库标签证明已经发料或转移。
+
+`answer_checks.py`检查全对话中的已知库存历史措辞：在当前或历史Bin快照语境缺少非空事件查询证据，却声称“已发/已转”等时，要求模型修正一次；仍违规，则拒绝最终答案。空事件查询不能解除限制，规则兼顾前后置不确定表达和问句，反馈按当前库存/明确历史请求区分。它不证明非空事件的相关性，也不检查任意事实或所有算术。机制通过mock验证；最新真实定向运行没有触发修正，能说的是回答不再含该历史断言，不能说已实测触发过纠错链路。
 
 ## 6. 写入路径为什么要单独处理
 
@@ -180,7 +184,7 @@ SQLite的BEGIN IMMEDIATE使同一本地journal的并发确认只有一个领取�
 - 汇总扫描有count/重复检查，不是事务快照；扫描期间同数量记录改值仍可能影响一致性。
 - 新增三道非原题检查不构成独立隐藏测试集，样例正确不代表所有自然语言都正确。
 - 模型仍可能忽略工具建议或加未经验证的解释；没有对所有最终文字做形式化证明。
-- 当前免费额度已耗尽，真实模型演示与调整后提示的复测待恢复可用额度/密钥；不会自动切换付费。
+- 当前模型API可用，但查询范围提示与受限措辞门禁不保证一般事实正确；额外公式未按要求调用calculate仍是已知边界。
 - 未实现生产RBAC、多租户审计、自动历史摘要和高并发服务化。当前ERP凭据遵循原题本地seed配置。
 
 ## 10. 文件与后续开发入口
@@ -190,6 +194,7 @@ SQLite的BEGIN IMMEDIATE使同一本地journal的并发确认只有一个领取�
 | agent.py | CLI、模型循环、七工具、ERP HTTP客户端、采购规则 |
 | proposal_store.py | SQLite确认journal与原子状态更新 |
 | tool_receipts.py | 从实际工具调用/结果生成可检查收据，不把模型自述当证据 |
+| answer_checks.py | 已知库存历史措辞门禁：一次修正，再失败拒绝；非通用真值验证 |
 | erpnext/ | 原题Docker与备份 |
 | .env.example | 可复制的百炼默认配置，真实密钥留在被忽略的.env |
 | tests/ | 单元/协议/恢复/分页/算术/并发测试 |
@@ -197,17 +202,20 @@ SQLite的BEGIN IMMEDIATE使同一本地journal的并发确认只有一个领取�
 | verify_llm.py | 十个真实模型样例轨迹，答案仍需人工核对 |
 | verify_extended.py | 新问题、完整汇总和可选单张本地草稿写入 |
 | verify_variants.py / review_cases.json | 8个独立业务变式、预期与运行轨迹；不是招聘方官方保密题 |
+| verify_conversation.py | 三轮真实会话、引用上轮缺口生成预览、载荷断言与未写检查 |
 | evidence/ | 分阶段原始证据 |
-| README.md / WRITEUP.md / TECH_REVIEW.md | 运行说明、设计取舍、选型与隐藏题复核 |
+| README.md / WRITEUP.md / TECH_REVIEW.md / PROJECT_GUIDE.md | 运行、设计取舍、技术复核与接手学习 |
 
 增加新只读DocType：先meta发现字段，用列表/详情/汇总复用工具，再补一个独立问题验证。增加新写入：添加专用validator/preview/confirm适配，沿用journal，不直接把通用create暴露给模型。
 
-## 11. 2026-10-17独立审查补充
+## 11. 独立审查与后续真实复测
 
-本轮开发检查由主审和3个独立审查子Agent协作，运行时Agent架构仍是单模型工具循环。新增代码回归覆盖聚合字段重复/类型错误/非数值、预览目标/凭据变更、工具收据与记录追溯，当前45项通过；真实REST19项复核通过。
+开发检查由主审和3个独立审查子Agent协作，运行时仍是单模型工具循环。54项代码测试覆盖聚合参数、预览目标、工具收据、查询范围和受限回答检查等边界；真实REST19项复核通过。
 
 本轮两项实质修复：一是重复的`sum_fields`以前可能把一个金额加两次，现已校验并去重；二是本地持久预览以前没有绑定ERP环境，现已绑定端点和凭据配置指纹。`/trace`与列表`name`补充了审查证据，但没有把LLM文本变成完全确定的程序输出。
 
-8题结果不能概括为“全部通过”：E02多级BOM、E05客户订单产品汇总、E08拒绝跳过具体确认通过；E01分仓轴承、E03未来到期发票、E04未付采购发票、E06不存在的单据核心结果正确但有无证据额外断言，部分通过；E07歧义采购查了19次工具后因免费额度HTTP403而未完成。采购单名称集合29→29，未新建采购单。轨迹在`evidence/independent_variants_20261017.json`。
+最初八题保留在`variants_initial.json`：3通过、4部分、1额度阻断。用户充值后完整复跑`variants_followup.json`核心8/8、整段6通过2部分；E01仍有无凭证历史与公式，E07把关键词候选当成类别全集，不能算完整正确。
 
-通用提示已加强先澄清、及时停止与禁止无证据推断等规则，受额度限制尚未真实复测。下一步应在有可用额度后验收这些改动，再由本人练习讲解、完成仓库提交；不需要为追求“最新”而立即更换SQLite或堆叠框架。
+增加query_scope/Bin警告后的`variants_refined.json`中E07通过、E01仍部分；增加受限回答检查后的`variants_checked.json`中E01不再有历史断言，但130+100附加公式未调用calculate，保守仍部分，E07通过。该运行没有触发门禁，修正与拒绝机制由mock测试验证。
+
+`conversation_check.json`真实完成三轮：Stores现货130 Nos/在途100→目标180、用calculate得缺口50→引用上轮50 Nos、单价USD4.20生成USD210预览。核心与载荷断言通过；第二轮附加在途情景公式未调用工具，整段部分。所有这些复测的采购单集合保持29→29。完整人工分级由AUDIT及证据记录维护，不能将不同定向运行拼成“最新完整八题全过”。
