@@ -13,6 +13,7 @@ from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 from proposal_store import ProposalStore
 from tool_receipts import tool_receipts
+from answer_checks import evidence_issues
 
 def load_local_env(path=None):
     """Small dotenv loader so the CLI has no third-party runtime dependency."""
@@ -445,8 +446,13 @@ class LLMRunner:
             warnings = []
             if rows and args.get('fields') and any(field not in rows[0] for field in args['fields']):
                 warnings.append('Requested fields are missing; child DocTypes may return only names. Read parent documents; do not assume missing values are zero.')
+            if args['doctype'] == 'Bin':
+                warnings.append('CURRENT SNAPSHOT ONLY: warehouse is a location label, not evidence of a completed issue/transfer/receipt. Do not describe material as already issued or transferred without Stock Entry/Stock Ledger event evidence. projected_qty is returned by ERP; its formula cannot be inferred from a subset of planning fields.')
             return {'records': rows, 'pagination': {'offset': offset, 'limit': limit, 'returned': len(rows), 'total': total,
                                                    'has_more': has_more, 'next_offset': offset+len(rows) if has_more else None},
+                    'query_scope': {'doctype': args['doctype'], 'filters': normalize_filters(args.get('filters')),
+                                    'fields': fields or ['name'],
+                                    'coverage': 'Coverage is limited to these exact filters. Name/keyword matches are search candidates, not proof of every member of a business category. Only returned field values are established; historical events and causes require separate evidence.'},
                     'warnings': warnings}
         if name == 'aggregate_documents':
             return self.agent.c.aggregate(args['doctype'], args.get('filters'), args.get('group_by'), args.get('sum_fields'))
@@ -473,6 +479,7 @@ class LLMRunner:
                 'Avoid unrequested costs, dates and other ancillary claims; every extra factual claim also needs evidence.')
         self.last_turn_start = len(messages)
         messages.append({"role": "user", "content": question})
+        answer_repairs = 0
         for _ in range(self.max_rounds):
             payload = {"model": self.model, "messages": messages, "tools": TOOL_DEFS, "tool_choice": "auto", "temperature": 0}
             if os.getenv("LLM_ENABLE_THINKING"):
@@ -496,6 +503,14 @@ class LLMRunner:
             if not calls:
                 if not msg.get('content'):
                     raise RuntimeError('Model returned neither an answer nor tool calls')
+                issues = evidence_issues(msg['content'], messages)
+                if issues:
+                    if answer_repairs:
+                        raise RuntimeError('Answer failed the stock evidence check after one repair. Inspect /trace; no final answer was accepted.')
+                    answer_repairs += 1
+                    messages.append({'role': 'user', 'content': '[PROGRAM EVIDENCE CHECK — not a new business request] '
+                                     + ' '.join(issues) + ' Revise the previous draft using existing evidence.'})
+                    continue
                 if history is not None:
                     history[:] = messages
                 return msg.get("content", ""), messages

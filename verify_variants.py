@@ -12,7 +12,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
 from agent import Agent, ERPNextClient, LLMRunner, configure_console
-from tool_receipts import tool_receipts
 
 
 def po_names(client):
@@ -59,7 +58,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--ids', nargs='*', help='Optional case IDs; default all')
     parser.add_argument('--workers', type=int, choices=(1, 2), default=2)
-    parser.add_argument('--output', default='independent_variants_20261017.json')
+    parser.add_argument('--output', default='variants_run.json')
     options = parser.parse_args()
     root = Path(__file__).parent
     spec = json.loads((root / 'review_cases.json').read_text(encoding='utf-8'))

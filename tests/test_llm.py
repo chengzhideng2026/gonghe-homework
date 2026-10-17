@@ -51,6 +51,8 @@ class TestLLMProtocol(unittest.TestCase):
         result = runner._tool('list_documents', {'doctype': 'Item', 'fields': ['stock_uom', 'name']})
         self.assertEqual(runner.agent.c.list.call_args.args[1], ['name', 'stock_uom'])
         self.assertEqual(result['records'][0]['name'], 'I1')
+        self.assertEqual(result['query_scope']['doctype'], 'Item')
+        self.assertEqual(result['query_scope']['fields'], ['name', 'stock_uom'])
 
     def test_truncated_or_empty_response_is_not_reported_as_success(self):
         for reason, message in [('length', {'content': 'partial'}), ('stop', {'content': ''})]:

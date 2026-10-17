@@ -34,6 +34,7 @@ def tool_receipts(messages):
             name = receipt['tool']
             if name == 'list_documents' and isinstance(data, dict):
                 receipt['summary'] = {'pagination': data.get('pagination'),
+                                      'query_scope': data.get('query_scope'),
                                       'record_names': [row.get('name') for row in data.get('records', [])],
                                       'warnings': data.get('warnings', [])}
             elif name == 'aggregate_documents' and isinstance(data, dict):
