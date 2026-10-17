@@ -1,6 +1,8 @@
 # 项目接手与学习指南
 
-这份指南面向第一次接手项目的人：先自己运行，再把一次问答和一次采购预览沿代码走通，最后练习解释取舍。当前八工具、170项代码测试通过；已有REST及追加join/币种实测，模型真实回答仍有部分通过项。运行入口见 [README](README.md)，最新独立十题与定向分级见 [SCORING_REVIEW](evidence/SCORING_REVIEW.md)，早期复测与演进见 [FOLLOWUP_REVIEW](evidence/FOLLOWUP_REVIEW.md)、[AUDIT](AUDIT.md)。
+这份指南面向第一次接手项目的人。仓库已公开并已提交评审，默认分支 `main-v2`；应用验收基线为 `5fe679e`，后续本次提交仅整理文档。先读 [README](README.md) 的完整启动、三个演示与验收摘要，再读 [WRITEUP](WRITEUP.md) 的六项设计说明，最后按下表走读代码。
+
+全新克隆验证为 170 项测试、248 项子测试通过，`--demo` 成功。开发复测见 [N05/N07记录](evidence/N05_N07_REVIEW.md)；独立报告文件已核实存在且尚未纳入仓库，位置及结论见 [README](README.md)。新 SHA 仅独立首次复测 N05/N07 通过，不能和旧版另八题拼成 10/10；F01/F02 未覆盖。用户已亲自完成库存、跨轮计算、日期查询及采购预览，不代表用户验证过确认写入或全部案例。下文历史阶段的未验收措辞保留其原语境；旧版分级见 [SCORING_REVIEW](evidence/SCORING_REVIEW.md)，完整演进见 [AUDIT](AUDIT.md)。
 
 题目已经提供可恢复的 ERPNext 和业务数据，所以这份作业无需从零开发 ERP。我们实现的是 ERP 之上的问答与受控采购 Agent。代码规模可以比较小，但库存、账期、BOM、成本和不确定写入的业务边界需要仔细验证。
 

@@ -1,114 +1,93 @@
 # Plantcore ERPNext Agent
 
-通过实时 ERPNext API 回答库存、采购、工单、BOM 和财务问题，并在人工确认后创建采购草稿。使用 Python 标准库 CLI、默认八个可注册模型工具和本地 SQLite 确认日志；题目提供的 ERPNext 环境保留在 `erpnext/`。
+## 项目能力
 
-第一次接手请读 [项目指南](PROJECT_GUIDE.md)；原题与评分要求见 [ORIGINAL_README.md](ORIGINAL_README.md)。
+通过实时 ERPNext API 回答库存、采购、工单、BOM 和财务问题，并在人工确认后创建采购草稿。Python 标准库 CLI 提供八个模型工具：元数据、计数、列表、单单详情、批量详情、完整聚合、Decimal 算术及采购预览。工具收据、上下文预算和执行轨迹帮助追溯查询与计算来源。
 
-## 启动
+**已提交评审的应用验收基线为 `5fe679ea3aaffd53042518238acf09866e56bc4b`（`5fe679e`）。后续本次提交仅整理文档，应用代码不变。** 公开仓库默认分支为 [main-v2](https://github.com/chengzhideng2026/gonghe-homework/tree/main-v2)。
 
-需要 Python 3.10+、Docker Desktop/Engine（推荐28+）、Compose2.24.4+，以及可用的模型 API 配置。命令均在项目根目录运行；Linux/macOS 可将 `python` 换成 `python3`。无需安装第三方 Python 运行库。
+## 环境要求和启动步骤
 
-```text
-docker compose -f erpnext/compose.yml -f compose.local.yml up -d
-docker compose -f erpnext/compose.yml -f compose.local.yml logs -f restore-site
-```
+需要 Git、Python 3.10+、已运行的 Docker Desktop/Engine（推荐 28+）、Compose 2.24.4+，以及可用的模型 API 配置。无需第三方 Python 运行库。以下命令在项目根目录执行；Linux/macOS 可用 `python3` 替换 `python`。
 
-首次等待 `Restore complete.`；已有站点可能跳过恢复。`Ctrl+C` 退出日志查看。首次镜像下载与恢复所需时间取决于网络。
+1. 克隆并进入项目：
 
-`compose.local.yml`保留原题文件，将ERP仅发布到127.0.0.1与::1；日后启动继续带此overlay，避免回到全网卡发布。当前Nginx入口没有实现多副本负载均衡。HTTP、防注入、权限与生产化取舍见[SECURITY_AND_DEPLOYMENT](SECURITY_AND_DEPLOYMENT.md)。
+   ```text
+   git clone --branch main-v2 https://github.com/chengzhideng2026/gonghe-homework.git
+   cd gonghe-homework
+   ```
 
-仅在根目录没有 `.env` 时复制样例：
+2. 启动题目提供的 ERPNext，并等待首次恢复完成：
 
-```powershell
-# Windows PowerShell
-Copy-Item .env.example .env
-```
+   ```text
+   docker compose -f erpnext/compose.yml -f compose.local.yml up -d
+   docker compose -f erpnext/compose.yml -f compose.local.yml logs -f restore-site
+   ```
 
-```bash
-# Linux/macOS
-cp .env.example .env
-```
+   看到 `Restore complete.` 后按 `Ctrl+C` 退出日志查看；已有站点可能跳过恢复。首次下载镜像和恢复时间取决于网络。以后启动仍须带 `compose.local.yml`，将端口仅发布到 `127.0.0.1` 和 `::1`。浏览器打开 [本地 ERPNext](http://localhost:8080)，题目 seed 登录为 `Administrator` / `admin`。不要为普通重启删除数据卷或确认日志。
 
-在本机 `.env` 填写 `LLM_API_KEY`，核对 `LLM_BASE_URL`、`LLM_MODEL`；样例提供百炼配置。ERP 配置为 `ERPNEXT_URL`、`ERPNEXT_API_KEY`、`ERPNEXT_API_SECRET`。不覆盖已有配置，不提交密钥。
+3. **仅在项目根目录没有 `.env` 时**复制配置样例，保留已有配置：
 
-远端API要求HTTPS，本机回环允许HTTP；基础URL不接受内嵌凭据/查询串。API重定向拒绝，响应大小有上限，错误遮蔽当前凭据。当前seed管理员权限较宽，只用于本机作业；正式部署必须配置最小权限账号。
+   ```powershell
+   # Windows PowerShell
+   Copy-Item .env.example .env
+   ```
 
-```text
-python agent.py --check
-python agent.py --check-model
-python agent.py
-```
+   ```bash
+   # Linux/macOS
+   cp .env.example .env
+   ```
 
-`--check`只查 ERP 连接和配置存在，不调用模型。`--check-model`是可选的真实模型/只读工具检查，会消耗 API 额度，失败区分 configuration、erp、model、tool_protocol 阶段；已在本地约 5 秒完成 Item=18 回路。默认启动 CLI 不请求模型，输入问题后才调用。最新状态见 [评分复核](evidence/SCORING_REVIEW.md) 与 [AUDIT](AUDIT.md)。ERP 页面为 [localhost:8080](http://localhost:8080)，本地 seed 登录为 `Administrator` / `admin`。
+   在本机 `.env` 填写 `LLM_API_KEY`，核对 `LLM_BASE_URL`、`LLM_MODEL`；样例使用百炼兼容接口。ERP 配置为 `ERPNEXT_URL`、`ERPNEXT_API_KEY`、`ERPNEXT_API_SECRET`，题目 seed 已预置样例密钥对。真实密钥不要提交 Git。远端 API 要求 HTTPS，本机回环允许 HTTP；API 重定向拒绝。
 
-作业业务参考日保持 **2025-10-15**。机器日期和单号年份不能替代它；写入也显式传入交易日与需求日。
+4. 检查并启动：
 
-## 使用
+   ```text
+   python agent.py --demo
+   python agent.py --check
+   python agent.py
+   ```
 
-可以先问：
+   `--demo` 为本地加载检查；`--check` 检查 ERP 连接和模型配置字段，不调用模型，不能证明模型额度或业务回答正确。默认 CLI 只在输入问题后调用模型。
 
-```text
-铜线的现货、在途和生产预留分别有多少？请列出单位和仓库。
-Show me overdue sales invoices.
-按供应商和币种汇总已提交采购发票的未付余额。
-```
+   **可选**：`python agent.py --check-model` 会调用真实模型及只读工具、消耗 API 额度；只验证连通性与工具协议，不是完整业务验收。
 
-| 命令 | 作用 |
+作业业务参考日固定为 **2025-10-15**；机器日期、单号年份不能替代它。发票日期关系以程序参考日证据为准，原始 ERP `status` 单独保留；写入需明确交易日和需求日。
+
+## 三个简短演示
+
+在 `python agent.py` 中依次尝试；输出以当前 ERP 实际数据和工具证据为准。
+
+1. **库存与跨轮计算**：问“铜线的现货、在途和生产预留分别有多少？请列出物料、仓库和单位。”再问“以刚才同一物料和仓库的现货为基础，目标为 180 Nos，缺口是多少？请调用计算工具。”有歧义先确认物料和范围，不能把在途等同现货。
+2. **参考日期查询**：问“以 2025-10-15 为参考日，列出已提交的逾期销售发票，显示公司、币种、到期日和未付余额。”输入 `/trace` 查看查询范围、日期证据与计算来源。
+3. **采购预览**：提供明确的物料、供应商、公司、数量、库存单位、单价/币种、交易日和需求日，要求“先生成单行采购预览，不确认写入”。用 `/pending` 查看状态；只有人工输入 `/confirm <proposal_id>` 才复验、创建并回读 ERP 草稿。若仅演示预览，用 `/discard <proposal_id>` 撤销本地预览，`/quit` 退出。预览不是已创建订单，模型不能代替确认。
+
+预览默认 15 分钟有效并绑定连接配置，状态保存在被忽略的 `.local/proposals.sqlite3`。失败且已有单号时用 `/reconcile <proposal_id>` 只读核查；未收到单号需人工核查，禁止盲目重发。
+
+## 验收摘要
+
+| 范围 | 已有结论及证据边界 |
 |---|---|
-| `/trace` | 查看上一模型轮的实际工具收据、查询范围、分页与错误 |
-| `/refresh` | 清读缓存，下一问全程回源；请求限额仍有效 |
-| `/tools` | 查看当前进程的注册工具、启用状态、版本及effect |
-| `/tools enable 名称`、`/tools disable 名称` | 启停已注册的模型工具；不调用模型，重启恢复默认 |
-| `/pending` | 查看当前连接保存的采购预览及状态 |
-| `/confirm id` | 明确确认该预览，重新校验后创建并回读草稿 |
-| `/reconcile id` | 中断创建已有单号时，只读回查原单并更新本地核查结果 |
-| `/discard id` | 撤销本地待确认预览，不改变 ERP 单据 |
-| `/reset`、`/quit` | 清对话、退出；重置对话不删除采购状态 |
+| 应用基线 `5fe679e` 的全新克隆 | 170 项测试、248 项子测试通过，`--demo` 成功；属于本地代码验证。开发回归原输出见 [unit_n05_n07_final.txt](evidence/unit_n05_n07_final.txt)。 |
+| 开发线程 N05/N07 复测 | 最终两题业务结果通过；开发过程保留首次不足及两次复测，N07 最终仍有一次错误子表请求。见 [开发复测记录](evidence/N05_N07_REVIEW.md)，不代替独立结论。 |
+| 独立线程在新 SHA 的首次复测 | N05/N07 均通过；N07 为 17 次 GET、无错误查询。本轮未触发真实错误恢复，其余 8 题未在新 SHA 重跑，不能合并成新版 10/10。独立报告文件已核实存在，位置说明见下文。 |
+| 用户本人操作 | 已完成库存、跨轮计算、日期查询及采购预览；未据此认定用户验证了确认写入或全部案例。 |
 
-采购先显示真实载荷与具体 ID，只有人工 `/confirm id` 才写入。模型不能直接确认、创建、提交或取消。报价必须明确 `currency`，与公司本位币不符即拒绝，不自动换汇或把外币报价改名为本位币。报价 JSON 小数先保留为 Decimal，再校验数值范围与 ERP 浮点可表示性；收据保留报价小数文本。当前支持单行、物料库存单位，税费/默认值差异在回读中标记复核。
+独立报告为单独保存的 `D:\work\gonghe-eval-runs\5fe679e_20261018\REPORT.md`，已读取核实，**尚未纳入本仓库**，这里不提供不存在的仓库链接。其余历史阶段和失败回答保留在 [AUDIT](AUDIT.md)、[业务验收说明](BUSINESS_ACCEPTANCE.md) 及其证据入口中，阶段结论不自动迁移到新版本。
 
-预览默认 15 分钟有效，绑定 ERP 端点与凭据配置；查询和修改均检查绑定，状态在被 Git 忽略的 `.local/proposals.sqlite3`。每个预览保存稳定 `idempotency_key`，原生客户端向支持该约定的网关发送 `X-Idempotency-Key`；题目 ERPNext 原生接口不承诺服务端去重，所以仍必须用已知单号对账，不能把请求头写成 exactly-once。已知单号可 `/reconcile id`，没有收到单号则人工核查，禁止盲重发。
+本地回归可运行 `python -m unittest discover -s tests -v`；有 pytest 环境也可运行 `python -m pytest -q tests`。这些测试不能替代独立真实业务评测。
 
-纯天气、吃饭问题由同一模型按业务范围规则引导返回；混合问题处理其中的ERP部分。这是软提示路由。恢复、记忆、检索、模型路由与租户的详细取舍见 [RECOVERY_AND_DESIGN](RECOVERY_AND_DESIGN.md)。
+## 主要限制
 
-`erp_tools.py`将Schema与handler一起注册到`ToolRegistry`，可信代码可运行时注册/移除；停用与同名替换后旧调用拒绝，新工具下一次模型请求可见。没有模型可调用的工具管理功能或任意脚本热加载。接入示例与边界见[TOOL_REGISTRY](TOOL_REGISTRY.md)。自动化、长任务、幂等键和Docker/K8s升级路径见[DEPLOYMENT_AND_AUTOMATION](DEPLOYMENT_AND_AUTOMATION.md)。
+- **F01/F02 未覆盖，不能宣称所有隐藏题通过。** 独立 N05/N07 通过不构成长对话稳定性、故障恢复或真实确认写入全覆盖。
+- 有限格式的小计检查和已知措辞检查不是通用事实证明器；模型仍可能额外断言，需核对范围、单位、币种和证据。完整聚合不是事务快照，缓存附读取时间而非实时保证。
+- 当前轮上下文可能临时超预算；按完整轮裁剪历史不是严格 token 上限，也没有持久聊天检查点。独立 N07 的 `over_budget=true` 已在外部报告记录。
+- 采购只支持单行、库存单位及公司本位币；不自动换汇、提交或取消订单。本地原子领取与幂等键不等于 ERPNext 服务端 exactly-once。
+- seed 管理员凭据只用于本机作业；尚无生产租户隔离、最小权限服务、负载均衡或高并发保证。真实测试草稿数量不是新 seed 启动条件。
 
-客户API不可改且不宜频繁调用时：先用精确对象/时间/组织过滤、必要字段和少量候选缩小范围；`include_total=false`可省略候选列表的额外计数，但不证明完整覆盖。问答内/跨问答复用相同成功GET，业务默认30秒、元数据600秒，显示原读取时间；本地计算无需再次查ERP。每问默认40次ERP HTTP尝试、滚动每分钟120次、间隔0.25秒，均可配置；这是演示默认而非客户SLA。汇总、采购校验和回读绕过缓存，POST尝试清缓存。`/trace`区分工具调用、HTTP尝试与缓存命中；每轮另保存脱敏轨迹到被忽略的`.local/traces/`，usage没有返回时标记unknown。详见[API_EFFICIENCY](API_EFFICIENCY.md)。
+## 深入阅读
 
-长对话按 `LLM_CONTEXT_MAX_BYTES` 做低依赖的完整轮预算：保留系统规则和当前完整轮，旧工具结果变为带 `fetched_at` 的历史摘要并提示重新查询；当前轮完整工具结果无法拆分时允许临时 `over_budget`，不伪装成严格 token 限制。`LLM_TURN_TIMEOUT` 控制整轮截止，`/trace`与`.local/traces/`记录工具版本、参数、耗时、证据来源、HTTP/缓存计数和模型 usage（没有返回则为 unknown）。轨迹写失败不改变问答或采购状态。
-
-## 验证与已知边界
-
-本地代码测试和真实 REST 检查：
-
-```text
-python -m unittest discover -s tests -v
-python verify_live.py
-```
-
-170项代码测试通过，最新输出`evidence/unit_n05_n07_final.txt`。本轮仅修独立N05/N07：完整聚合附本地分区小计，逐表核算可匹配的显式小计；同轮已缺失字段不重复聚合，优先按子表条件筛父单。预算未提高。首次复测N05金额正确但附加张数缺计算来源；补本地rollups后通过。N07首次19次、最终17次ERP均完整给出统计。原始失败和两次复测见[N05/N07记录](evidence/N05_N07_REVIEW.md)，仍有一次可避免的子表查询错误，不代表任意回答都已验证。
-
-日期阶段163项代码测试通过，阶段输出`evidence/unit_invoice_dates_scoped.txt`，新增5项程序日期及真实ask协议测试。日期比较与已有`overdue()`共用规则；问逾期时在读工具显式设置`assess_due_date=true`，返回独立`reference_date_evidence`，不改原始status、不增加HTTP。余额读取默认不附评估。见[日期复测](evidence/INVOICE_DATE_REVIEW.md)：19项REST及最终2次HTTP核对通过；真实模型共8轮，最终原R1与原题逾期查询的日期/余额目标通过，完整回答仍部分，本人操作尚未验证。
-
-ce95390阶段158项输出`unit_answer_boundaries.txt`及[三类边界旧复测](evidence/ANSWER_BOUNDARIES_REVIEW.md)保留，其中R1日期失败原文未改；新复测不能替代全部历史模型验收。
-
-截止/上下文阶段156项输出为`evidence/unit_turn_controls.txt`，包含7项真实`ask()`截止/上下文/轨迹测试；`unit_read_policy.txt`保留此前17项API复用/限额/新鲜度及4项幂等/长任务测试。真实模型三轮ERP请求为1→0→0：查询18、本地计算36、再次计数命中约10秒缓存并标注时间，见`read_efficiency.json`。本轮六个新的只读变式（C01—C06）见`closeout_run_20261017.json`；C02初始预期选错后保留原记录并用`closeout_c02_corrected_20261017.json`重跑，不能把初始错误预期当代码失败。按[业务正确性验收](BUSINESS_ACCEPTANCE.md)由AI逐项复核后，C01和C05为核心通过/完整部分，C02修正记录完整通过；没有为测试写死答案。注册表阶段128项输出`unit_registry.txt`含13项注册变更测试；临时第9工具实测见`registry_live.json`。安全阶段115项及历史104/82项原记录保留，不将本地验证称为生产安全认证。
-
-按需运行模型案例会消耗API额度，使用新的输出文件保留审计：
-
-```text
-python verify_variants.py --output variants_my_run.json
-python verify_conversation.py --output conversation_my_run.json
-```
-
-新独立H01—H10在旧七工具基线下核心10/10、整段7通过3部分；部分涉及FX公式口径、“分文未收”的证据范围和未查公司缩写。随后修复子表join重复父单，真实ERP和J01模型均确认raw2→distinct1、父金额6600仅计一次，J01核心与整段通过。定向修复题不计入独立集通过率；较早记录见 [FOLLOWUP_REVIEW.md](evidence/FOLLOWUP_REVIEW.md)。
-
-第八工具`get_documents`一次读取至多20个指定父单，逐项成功/错误，部分失败时complete=false。B01三单成功/一单404，批量与核心通过；整段仍部分，因为把“不能称四单完整合计”泛化为所有跨单据合计都无效。明确范围的三单小计仍可计算。B01不计独立十题。
-
-`query_scope`、Bin 快照警告和 `/trace`帮助核证；`answer_checks.py`只检查已知库存历史措辞，不是通用真值验证器。显式子表 join 的列表保留原始行和 offset，父单数量/金额应用 count/aggregate 工具；不能把 join 行数当父单数或静默丢子行。完整聚合不是事务快照；本地防重不是全局幂等。未实现多行/外币采购、自动取消、生产权限隔离和高并发服务，额外断言与公式仍须核对。
-
-真实测试草稿及本地记录数量见审计，不是评审者 fresh seed 的启动条件。不要为普通重启删除数据库卷或确认日志。
-
-## 阅读入口
-
-[项目指南](PROJECT_GUIDE.md) · [架构](ARCHITECTURE.md) · [设计与 AI 工作流程](WRITEUP.md) · [技术选型复核](TECH_REVIEW.md) · [审计与交付状态](AUDIT.md) · [交接记录](HANDOFF.md)
+- [原题及六项要求](ORIGINAL_README.md) · [一页设计说明](WRITEUP.md) · [项目指南](PROJECT_GUIDE.md) · [交接入口](HANDOFF.md)
+- [架构](ARCHITECTURE.md) · [工具扩展](TOOL_REGISTRY.md) · [API 效率](API_EFFICIENCY.md) · [恢复与取舍](RECOVERY_AND_DESIGN.md)
+- [安全与部署](SECURITY_AND_DEPLOYMENT.md) · [业务验收标准](BUSINESS_ACCEPTANCE.md) · [审计和历史原始记录](AUDIT.md)
+- [开发 N05/N07 记录](evidence/N05_N07_REVIEW.md) · [日期复测](evidence/INVOICE_DATE_REVIEW.md) · [旧版独立题分级](evidence/SCORING_REVIEW.md)
