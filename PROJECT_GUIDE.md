@@ -1,6 +1,6 @@
 # 项目接手与学习指南
 
-这份指南面向第一次接手项目的人：先自己运行，再把一次问答和一次采购预览沿代码走通，最后练习解释取舍。当前八工具、156项代码测试通过；已有REST及追加join/币种实测，模型真实回答仍有部分通过项。运行入口见 [README](README.md)，最新独立十题与定向分级见 [SCORING_REVIEW](evidence/SCORING_REVIEW.md)，早期复测与演进见 [FOLLOWUP_REVIEW](evidence/FOLLOWUP_REVIEW.md)、[AUDIT](AUDIT.md)。
+这份指南面向第一次接手项目的人：先自己运行，再把一次问答和一次采购预览沿代码走通，最后练习解释取舍。当前八工具、158项代码测试通过；已有REST及追加join/币种实测，模型真实回答仍有部分通过项。运行入口见 [README](README.md)，最新独立十题与定向分级见 [SCORING_REVIEW](evidence/SCORING_REVIEW.md)，早期复测与演进见 [FOLLOWUP_REVIEW](evidence/FOLLOWUP_REVIEW.md)、[AUDIT](AUDIT.md)。
 
 题目已经提供可恢复的 ERPNext 和业务数据，所以这份作业无需从零开发 ERP。我们实现的是 ERP 之上的问答与受控采购 Agent。代码规模可以比较小，但库存、账期、BOM、成本和不确定写入的业务边界需要仔细验证。
 
@@ -22,6 +22,8 @@
 `DATASET.md` 是学习和验收的资料，不是运行时查答案的知识库。正常问答应从真实 ERP API 取得证据，不能把说明文档里的数字直接背给用户。
 
 业务正确性验收标准见[BUSINESS_ACCEPTANCE](BUSINESS_ACCEPTANCE.md)：未知DocType必须完成自然语言问题、字段/关联发现、查询、口径核验和有来源回答；空结果、404、权限错误、查询错误和部分读取要分别处理。关键数字、派生计算、参考日期、公司、币种、单位、状态和库存/金额口径逐项复核；没有证据的附加事实要删除或降级完整回答。
+
+三类回答边界实测见[ANSWER_BOUNDARIES_REVIEW](evidence/ANSWER_BOUNDARIES_REVIEW.md)。程序158项通过不等于正文全对：AI复核发现R1日期附加判断错误、R3否定范围仍有歧义，本人操作验证尚未执行。预览的`local_state=pending`属于本地journal，`doc.docstatus`属于拟写载荷，`erp_document=null`仅说明本次预览没有创建对应ERP单据。
 
 ## 2. 最小运行：先建立自己的操作经验
 
@@ -281,7 +283,7 @@ python -m unittest discover -s tests -v
 python verify_live.py
 ```
 
-前者检验代码机制，后者请求真实ERP；当前156项代码测试通过，既有19项REST又追加join/币种验证。两者均不能自动证明模型文字正确。后续数量看当次输出，不要把测试项数当正确率。想明确验证模型协议，可额外运行`--check-model`，它会消耗API额度。
+前者检验代码机制，后者请求真实ERP；当前158项代码测试通过，既有19项REST又追加join/币种验证。两者均不能自动证明模型文字正确。后续数量看当次输出，不要把测试项数当正确率。想明确验证模型协议，可额外运行`--check-model`，它会消耗API额度。
 
 ### 实验 B：铜线库存与证据
 

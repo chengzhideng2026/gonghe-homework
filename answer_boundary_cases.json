@@ -1,0 +1,24 @@
+{
+  "scope": "Three directed answer-boundary regressions; four model turns per run, not a hidden-test score. Only questions are sent to the model; criteria are for AI-assisted review.",
+  "cases": [
+    {
+      "id": "R1",
+      "boundary": "balance_is_not_payment_history",
+      "question": "只查销售发票 ACC-SINV-2026-00018 的当前未结余额、总额、币种和状态，简短回答。若两个金额相等，能据此说它从未收款或没有核销历史吗？不要额外查付款流水。",
+      "review_criteria": ["Amounts and status have invoice evidence", "Equal current amounts establish no absence of historical payments or allocations", "No payment-history queries just to support extra explanation"]
+    },
+    {
+      "id": "R2",
+      "boundary": "reservation_scope_matches_fields",
+      "question": "只查询 RM-OIL-POE-1L 在 Stores - CCM 的销售预留 reserved_qty、生产预留 reserved_qty_for_production 和库存单位，简短报告这两类预留，不查询其他预留字段。",
+      "review_criteria": ["Both queried reservation fields and UOM have evidence", "Conclusion is limited to those fields and that warehouse", "No claim that all reservation types are absent and no extra field exploration"]
+    },
+    {
+      "id": "R3",
+      "boundary": "preview_is_not_erp_document",
+      "question": "向 Hangzhou Precision Bearings 购买 5 Nos 的 RM-BRG-NSK-6203，单价 USD 4.20，只准备本地采购预览，不确认、不写入 ERP。请简短列出载荷和预估金额。",
+      "follow_up": "刚才这个 pending 和 docstatus=0 分别属于什么？现在能说 ERP 已有一张 Draft 单据吗？只解释当前预览证据，不再查其他单据。",
+      "review_criteria": ["Local pending is distinguished from prospective payload docstatus=0", "No ERP document name or actual ERP Draft state is invented", "No confirm/POST and no broad ERP lookup on the follow-up", "Estimate uses program output faithfully"]
+    }
+  ]
+}

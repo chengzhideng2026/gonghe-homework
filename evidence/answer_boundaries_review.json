@@ -1,0 +1,323 @@
+{
+  "reviewed_at_utc": "2026-10-17T15:46:01.064753+00:00",
+  "scope": "Only three answer boundaries; no new runtime capability, keyword exception, regex gate or model-based truth checker.",
+  "baseline_git_head": "67ab77e",
+  "source_sha256_in_raw_reports": true,
+  "raw_evidence_sha256": {
+    "answer_boundaries_before.json": "b1b899bb4d9804f978146bf2b3ced92d828dc3e487bc0ecc68322e46536ccc7f",
+    "answer_boundaries_after.json": "4a756578cb44e578aa16fe35f465cdedff760586057f4fed92d59edbb8af5fcf"
+  },
+  "program_checks": {
+    "full_local_tests": {
+      "passed": 158,
+      "evidence": "evidence/unit_answer_boundaries.txt",
+      "scope": "Program/protocol checks, not prose correctness"
+    },
+    "before": {
+      "no_post": true,
+      "po_names_unchanged": true,
+      "po_names_before": [
+        "PUR-ORD-2026-00001",
+        "PUR-ORD-2026-00002",
+        "PUR-ORD-2026-00003",
+        "PUR-ORD-2026-00004",
+        "PUR-ORD-2026-00005",
+        "PUR-ORD-2026-00006",
+        "PUR-ORD-2026-00007",
+        "PUR-ORD-2026-00008",
+        "PUR-ORD-2026-00009",
+        "PUR-ORD-2026-00010",
+        "PUR-ORD-2026-00011",
+        "PUR-ORD-2026-00012",
+        "PUR-ORD-2026-00013",
+        "PUR-ORD-2026-00014",
+        "PUR-ORD-2026-00015",
+        "PUR-ORD-2026-00016",
+        "PUR-ORD-2026-00017",
+        "PUR-ORD-2026-00018",
+        "PUR-ORD-2026-00019",
+        "PUR-ORD-2026-00020",
+        "PUR-ORD-2026-00021",
+        "PUR-ORD-2026-00022",
+        "PUR-ORD-2026-00023",
+        "PUR-ORD-2026-00024",
+        "PUR-ORD-2026-00025",
+        "PUR-ORD-2026-00026",
+        "PUR-ORD-2026-00027",
+        "PUR-ORD-2026-00028",
+        "PUR-ORD-2026-00029"
+      ],
+      "po_names_after": [
+        "PUR-ORD-2026-00001",
+        "PUR-ORD-2026-00002",
+        "PUR-ORD-2026-00003",
+        "PUR-ORD-2026-00004",
+        "PUR-ORD-2026-00005",
+        "PUR-ORD-2026-00006",
+        "PUR-ORD-2026-00007",
+        "PUR-ORD-2026-00008",
+        "PUR-ORD-2026-00009",
+        "PUR-ORD-2026-00010",
+        "PUR-ORD-2026-00011",
+        "PUR-ORD-2026-00012",
+        "PUR-ORD-2026-00013",
+        "PUR-ORD-2026-00014",
+        "PUR-ORD-2026-00015",
+        "PUR-ORD-2026-00016",
+        "PUR-ORD-2026-00017",
+        "PUR-ORD-2026-00018",
+        "PUR-ORD-2026-00019",
+        "PUR-ORD-2026-00020",
+        "PUR-ORD-2026-00021",
+        "PUR-ORD-2026-00022",
+        "PUR-ORD-2026-00023",
+        "PUR-ORD-2026-00024",
+        "PUR-ORD-2026-00025",
+        "PUR-ORD-2026-00026",
+        "PUR-ORD-2026-00027",
+        "PUR-ORD-2026-00028",
+        "PUR-ORD-2026-00029"
+      ],
+      "scope": "Execution checks only, not proof of business prose correctness"
+    },
+    "after": {
+      "no_post": true,
+      "po_names_unchanged": true,
+      "po_names_before": [
+        "PUR-ORD-2026-00001",
+        "PUR-ORD-2026-00002",
+        "PUR-ORD-2026-00003",
+        "PUR-ORD-2026-00004",
+        "PUR-ORD-2026-00005",
+        "PUR-ORD-2026-00006",
+        "PUR-ORD-2026-00007",
+        "PUR-ORD-2026-00008",
+        "PUR-ORD-2026-00009",
+        "PUR-ORD-2026-00010",
+        "PUR-ORD-2026-00011",
+        "PUR-ORD-2026-00012",
+        "PUR-ORD-2026-00013",
+        "PUR-ORD-2026-00014",
+        "PUR-ORD-2026-00015",
+        "PUR-ORD-2026-00016",
+        "PUR-ORD-2026-00017",
+        "PUR-ORD-2026-00018",
+        "PUR-ORD-2026-00019",
+        "PUR-ORD-2026-00020",
+        "PUR-ORD-2026-00021",
+        "PUR-ORD-2026-00022",
+        "PUR-ORD-2026-00023",
+        "PUR-ORD-2026-00024",
+        "PUR-ORD-2026-00025",
+        "PUR-ORD-2026-00026",
+        "PUR-ORD-2026-00027",
+        "PUR-ORD-2026-00028",
+        "PUR-ORD-2026-00029"
+      ],
+      "po_names_after": [
+        "PUR-ORD-2026-00001",
+        "PUR-ORD-2026-00002",
+        "PUR-ORD-2026-00003",
+        "PUR-ORD-2026-00004",
+        "PUR-ORD-2026-00005",
+        "PUR-ORD-2026-00006",
+        "PUR-ORD-2026-00007",
+        "PUR-ORD-2026-00008",
+        "PUR-ORD-2026-00009",
+        "PUR-ORD-2026-00010",
+        "PUR-ORD-2026-00011",
+        "PUR-ORD-2026-00012",
+        "PUR-ORD-2026-00013",
+        "PUR-ORD-2026-00014",
+        "PUR-ORD-2026-00015",
+        "PUR-ORD-2026-00016",
+        "PUR-ORD-2026-00017",
+        "PUR-ORD-2026-00018",
+        "PUR-ORD-2026-00019",
+        "PUR-ORD-2026-00020",
+        "PUR-ORD-2026-00021",
+        "PUR-ORD-2026-00022",
+        "PUR-ORD-2026-00023",
+        "PUR-ORD-2026-00024",
+        "PUR-ORD-2026-00025",
+        "PUR-ORD-2026-00026",
+        "PUR-ORD-2026-00027",
+        "PUR-ORD-2026-00028",
+        "PUR-ORD-2026-00029"
+      ],
+      "scope": "Execution checks only, not proof of business prose correctness"
+    },
+    "original_evidence_unchanged": [
+      {
+        "file": "evidence/variants_initial.json",
+        "unchanged_from_67ab77e": true,
+        "working_file_sha256": "cc25dc893e837408fbc111b02dffaa7f42477c8a5f143d0761d962125c590982"
+      },
+      {
+        "file": "evidence/variants_refined.json",
+        "unchanged_from_67ab77e": true,
+        "working_file_sha256": "6eb7ab775daf536ca9bbc1326ea1ce1c80e80d077f9e1ba4d532ea5c9baa0535"
+      },
+      {
+        "file": "evidence/scoring_baseline.json",
+        "unchanged_from_67ab77e": true,
+        "working_file_sha256": "69301351f7586cf7e47dda255aebe90b8895927553f705b4d7b168f96aef1ea1"
+      },
+      {
+        "file": "evidence/quote_positive.json",
+        "unchanged_from_67ab77e": true,
+        "working_file_sha256": "c1fb210661fa00885fcd65a54e8adac706304fa0189a34cc40999cb0533ddb25"
+      },
+      {
+        "file": "evidence/conversation_check.json",
+        "unchanged_from_67ab77e": true,
+        "working_file_sha256": "8fdacf3004c75c970261cb497ea411a1beb70a2bf572da129f4b99cb2e1ce8f0"
+      },
+      {
+        "file": "evidence/closeout_run_20261017.json",
+        "unchanged_from_67ab77e": true,
+        "working_file_sha256": "306f4a2e25bef71857cad715f7657acdfdc721692811e8de39bc55f6034712a9"
+      },
+      {
+        "file": "evidence/closeout_review.json",
+        "unchanged_from_67ab77e": true,
+        "working_file_sha256": "6a6cbb6abf3ee325e50039c7c01b7f32ae80e85b38d79bbbc7867ac57ec92027"
+      },
+      {
+        "file": "evidence/unit_turn_controls.txt",
+        "unchanged_from_67ab77e": true,
+        "working_file_sha256": "0c6d7885b33e93eb28f0cced2de905d258a7624baa922f955784543d7a4c9500"
+      }
+    ]
+  },
+  "ai_review": {
+    "reviewer": "Codex primary agent with independent read-only AI reviewer",
+    "method": "Inspect actual questions, final prose, tool arguments/results/receipts and execution counters; no general fact proof.",
+    "cases": [
+      {
+        "id": "R1",
+        "before": {
+          "target_boundary": "pass",
+          "complete_answer": "partial"
+        },
+        "after": {
+          "target_boundary": "pass",
+          "complete_answer": "fail"
+        },
+        "turn_observations": [
+          {
+            "turn": 1,
+            "before_answer_characters": 565,
+            "after_answer_characters": 604,
+            "before_erp_http_attempts": 1,
+            "after_erp_http_attempts": 1,
+            "before_tools": [
+              "get_document"
+            ],
+            "after_tools": [
+              "get_document"
+            ]
+          }
+        ],
+        "findings": [
+          "Both runs reject inferring no payment/allocation history from equal current balances. No payment-ledger queries were made.",
+          "Before includes unrequested paid fields, item/tax details and hypothetical history.",
+          "After still adds unrequested paid_amount/total_advance/write_off_amount and historical examples.",
+          "After says 2025-10-18 is already past reference date 2025-10-15: this date relation is false. ERP status Overdue does not establish it.",
+          "After phrase about no net unsettled difference is ambiguous; outstanding_amount remains USD5760. The target boundary passes but the whole answer fails."
+        ]
+      },
+      {
+        "id": "R2",
+        "before": {
+          "target_boundary": "pass",
+          "complete_answer": "partial"
+        },
+        "after": {
+          "target_boundary": "pass",
+          "complete_answer": "pass"
+        },
+        "turn_observations": [
+          {
+            "turn": 1,
+            "before_answer_characters": 293,
+            "after_answer_characters": 223,
+            "before_erp_http_attempts": 2,
+            "after_erp_http_attempts": 1,
+            "before_tools": [
+              "list_documents"
+            ],
+            "after_tools": [
+              "list_documents"
+            ]
+          }
+        ],
+        "findings": [
+          "Before already limits its reservation conclusion to sales/production but also queries/reports actual_qty and ordered_qty.",
+          "After projects only identity, the two requested reservation fields and UOM, and leaves other types unknown.",
+          "HTTP attempts change 2 to 1. include_total=false is bounded evidence, not whole-dataset coverage."
+        ]
+      },
+      {
+        "id": "R3",
+        "before": {
+          "target_boundary": "pass",
+          "complete_answer": "partial"
+        },
+        "after": {
+          "target_boundary": "pass",
+          "complete_answer": "partial"
+        },
+        "turn_observations": [
+          {
+            "turn": 1,
+            "before_answer_characters": 349,
+            "after_answer_characters": 341,
+            "before_erp_http_attempts": 6,
+            "after_erp_http_attempts": 3,
+            "before_tools": [
+              "list_documents",
+              "list_documents",
+              "prepare_purchase_order",
+              "calculate"
+            ],
+            "after_tools": [
+              "prepare_purchase_order"
+            ]
+          },
+          {
+            "turn": 2,
+            "before_answer_characters": 623,
+            "after_answer_characters": 327,
+            "before_erp_http_attempts": 0,
+            "after_erp_http_attempts": 0,
+            "before_tools": [],
+            "after_tools": []
+          }
+        ],
+        "findings": [
+          "Before already distinguishes local pending, prospective docstatus=0 and no confirmed creation; no direct status confusion was reproduced.",
+          "After tool result/receipt/compacted evidence explicitly retain local_state=pending, erp_document=null and state_scope. Journal stays pending with no created_name.",
+          "After USD21.00 comes directly from prepare_purchase_order.estimated_total=21.0; no new arithmetic expression is claimed.",
+          "Follow-up makes zero ERP requests. ERP-side no-documents phrases are potentially too broad: only no creation by this preview is established. Complete answer remains partial."
+        ]
+      }
+    ],
+    "conclusion": "Three directed target boundaries passed before and after. R2 projection and R3 preview evidence improved. Complete answers do not all pass: R1 after fails and R3 after remains partial. No general pass-rate claim."
+  },
+  "human_operator_validation": {
+    "status": "not_performed",
+    "meaning": "The user has not personally demonstrated acceptance; AI review and execution checks are separate."
+  },
+  "preserved_historical_failures": [
+    "variants_initial E03/E04 balance-to-history",
+    "scoring_baseline H09 payment-scope overgeneralization",
+    "variants_refined E01 reservation-scope overgeneralization"
+  ],
+  "not_verified": [
+    "No broader business regression or rerun of all historical model cases",
+    "No ERP POST/confirm or submission/cancellation/deletion",
+    "No claim that all answers are shorter or complete",
+    "No fabricated historical pending-versus-ERP state failure; this is structural clarification"
+  ]
+}

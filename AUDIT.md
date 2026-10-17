@@ -1,5 +1,11 @@
 # 审计记录（最新更新：2026-10-17）
 
+## 本轮：三类通用回答边界
+
+在67ab77e基础上收紧通用提示：当前余额/总额不能证明无收付款或核销历史，预留否定结论限于所查字段，pending预览/拟写docstatus/实际ERP状态分层。预览增加local_state、erp_document和state_scope，收据/历史摘要保留标签；没有改变确认执行、增加关键词门禁或扩大业务功能。
+
+158项程序检查通过（`unit_answer_boundaries.txt`）。修改前后各3题、每次4轮，均只读、采购名集合29→29，正式journal未改。AI复核：三类核心边界在本组修改前就已成立；R2投影和R3标签改善，但R1完整回答仍添字段且发生参考日期判断错误，完整失败；R3仍有否定范围歧义，完整部分。本人操作验证尚未执行。见[ANSWER_BOUNDARIES_REVIEW](evidence/ANSWER_BOUNDARIES_REVIEW.md)及`answer_boundaries_review.json`，旧失败轨迹内容不变。
+
 ## 当前：客户API调用效率与新鲜度
 
 补齐此前缺少的短时精确GET缓存、元数据复用、HTTP尝试预算与节流，支持候选列表省略count，记录读取时间/缓存年龄。完整聚合、采购校验与回读绕过缓存，POST尝试清缓存；不要求客户修改API。156项代码测试通过，新增7项真实ask截止/上下文/轨迹测试；此前17项读策略及4项幂等/长任务测试见`evidence/unit_read_policy.txt`。

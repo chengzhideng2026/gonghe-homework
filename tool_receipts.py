@@ -62,7 +62,9 @@ def tool_receipts(messages, tool_metadata=None):
                 receipt['summary'] = {'doctype': data.get('doctype'),
                                       'schemas': [doc.get('name') for doc in data.get('docs', [])]}
             elif name == 'prepare_purchase_order' and isinstance(data, dict):
-                receipt['summary'] = {key: data.get(key) for key in ('proposal_id', 'estimated_total', 'requires_confirmation')}
+                receipt['summary'] = {key: data.get(key) for key in
+                                      ('proposal_id', 'estimated_total', 'requires_confirmation',
+                                       'local_state', 'erp_document', 'state_scope')}
             else:
                 receipt['summary'] = data
         if 'io' in result:

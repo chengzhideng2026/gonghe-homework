@@ -143,7 +143,9 @@ def get_documents(context, args):
               'description': 'Validate and preview a Purchase Order. Explicit quote currency is '
                              'required and must match company base currency; never silently reinterpret '
                              'or convert a foreign quote. Never creates it; returns a proposal '
-                             'requiring explicit user /confirm.',
+                             'requiring explicit user /confirm. local_state=pending describes only '
+                             'the local proposal; doc.docstatus is a prospective value and '
+                             'erp_document=null means no ERP document was created by this preview.',
               'parameters': {'type': 'object',
                              'properties': {'supplier': {'type': 'string'},
                                             'item': {'type': 'string'},

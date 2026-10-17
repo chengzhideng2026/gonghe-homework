@@ -75,7 +75,8 @@ def _tool_summary(call, result):
                            ('doctype', 'count', 'matched_rows', 'duplicates_collapsed', 'complete', 'groups')}
     elif name == 'prepare_purchase_order' and isinstance(data, dict):
         summary['data'] = {key: data.get(key) for key in
-                           ('proposal_id', 'idempotency_key', 'estimated_total', 'requires_confirmation', 'doc')}
+                           ('proposal_id', 'idempotency_key', 'estimated_total', 'requires_confirmation',
+                            'local_state', 'erp_document', 'state_scope', 'doc')}
     elif isinstance(data, dict):
         summary['data'] = _important_record(data)
     else:
