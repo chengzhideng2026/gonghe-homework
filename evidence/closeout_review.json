@@ -1,0 +1,19 @@
+{
+  "suite": "Closeout business acceptance",
+  "method": "Manual review of actual model histories, tool receipts, query_scope, io sources and read-only ERP results. No expected answer is used by runtime.",
+  "runtime_hardcoded_answers": false,
+  "criteria": {
+    "unknown_doctype": "Natural-language question -> field/link discovery -> scoped query -> completeness/semantic checks -> sourced answer; get_document alone is insufficient.",
+    "negative_states": ["empty successful scope", "missing document", "permission error", "query error", "partial read"],
+    "final_answer": ["key numbers have tool sources", "derived arithmetic has calculate/aggregate evidence", "date/company/currency/UOM/status/basis are explicit", "candidate/snapshot/outstanding balance boundaries are respected", "partial totals are scoped", "unsupported extras are removed or downgrade completeness"]
+  },
+  "cases": [
+    {"id": "C01", "core": "pass", "complete": "partial", "evidence_supported": true, "reason": "Unknown Purchase Receipt flow used metadata and parent/child reads; 200+60 was stated without calculate."},
+    {"id": "C02_initial", "core": "not_applicable", "complete": "not_applicable", "evidence_supported": true, "reason": "The original expected case selected SAL-ORD-2026-00020 incorrectly; zero rows was correct for that actual question."},
+    {"id": "C02_corrected", "core": "pass", "complete": "pass", "evidence_supported": true, "reason": "SAL-ORD-2026-00010 produced raw 2, distinct parent 1, USD6600 once, with calculate detail reconciliation."},
+    {"id": "C03", "core": "pass", "complete": "pass", "evidence_supported": true, "reason": "Meter/kg mismatch and missing conversion basis were handled without preview or write."},
+    {"id": "C04", "core": "pass", "complete": "pass", "evidence_supported": true, "reason": "One named receipt succeeded and one 404 failed; complete=false and no full total was claimed."},
+    {"id": "C05", "core": "pass", "complete": "partial", "evidence_supported": true, "reason": "130 Meter used prior evidence and calculate with zero ERP requests; extra on-order comparison had no calculation and was unrequested."},
+    {"id": "C06", "core": "pass", "complete": "pass", "evidence_supported": true, "reason": "The valid item_name filter returned a successful empty scope, distinct from query failure."}
+  ]
+}

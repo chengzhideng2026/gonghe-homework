@@ -212,6 +212,7 @@ SQLite的BEGIN IMMEDIATE使同一本地journal的并发确认只有一个领取�
 |---|---|
 | agent.py | CLI、模型循环、八工具、截止/上下文控制、只读协议检查、ERP HTTP客户端、采购规则 |
 | context_budget.py / execution_trace.py | 完整轮上下文预算、历史证据摘要和best-effort脱敏执行轨迹 |
+| BUSINESS_ACCEPTANCE.md | 未知DocType流程、负面状态区分、数字/口径/附加事实的人工验收标准 |
 | http_transport.py / query_policy.py | 共享HTTP安全策略和有限查询语法；不替代ERP权限 |
 | erp_tools.py / tool_registry.py | 内置工具就近注册Schema/handler，运行时发现、启停、移除和旧视图拒绝 |
 | compose.local.yml | 覆盖主机端口为IPv4/IPv6回环，原题栈文件不变 |

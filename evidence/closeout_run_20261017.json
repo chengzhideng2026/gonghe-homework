@@ -18,9 +18,9 @@
       },
       "manual_grade": {
         "core": "pass",
-        "complete": "pass",
+        "complete": "partial",
         "evidence_supported": true,
-        "notes": "Metadata and parent/child evidence were used; requested fields and units were reported."
+        "notes": "Metadata and parent/child evidence were used; requested fields and units were reported, but 200+60=260 was stated without a calculate receipt."
       },
       "turns": [
         {
@@ -939,9 +939,9 @@
       },
       "manual_grade": {
         "core": "pass",
-        "complete": "pass",
+        "complete": "partial",
         "evidence_supported": true,
-        "notes": "The follow-up reused the prior Bin observation, called calculate for 180-50, and made zero ERP HTTP calls."
+        "notes": "The requested 130 Meter difference used calculate and zero ERP HTTP calls; the extra on-order comparison was unrequested and had no calculation receipt."
       },
       "turns": [
         {

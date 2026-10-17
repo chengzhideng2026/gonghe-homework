@@ -88,7 +88,7 @@ python verify_live.py
 
 156项代码测试通过；既有19项REST后，真实join计数/金额及外币拒绝也已验证，见 [SCORING_REVIEW.md](evidence/SCORING_REVIEW.md)。非项目目录按脚本路径启动检查通过。
 
-最新156项输出为`evidence/unit_turn_controls.txt`，包含7项真实`ask()`截止/上下文/轨迹测试；`unit_read_policy.txt`保留此前17项API复用/限额/新鲜度及4项幂等/长任务测试。真实模型三轮ERP请求为1→0→0：查询18、本地计算36、再次计数命中约10秒缓存并标注时间，见`read_efficiency.json`。本轮六个新的只读变式（C01—C06）见`closeout_run_20261017.json`；C02初始预期选错后保留原记录并用`closeout_c02_corrected_20261017.json`重跑，不能把初始错误预期当代码失败。注册表阶段128项输出`unit_registry.txt`含13项注册变更测试；临时第9工具实测见`registry_live.json`。安全阶段115项及历史104/82项原记录保留，不将本地验证称为生产安全认证。
+最新156项输出为`evidence/unit_turn_controls.txt`，包含7项真实`ask()`截止/上下文/轨迹测试；`unit_read_policy.txt`保留此前17项API复用/限额/新鲜度及4项幂等/长任务测试。真实模型三轮ERP请求为1→0→0：查询18、本地计算36、再次计数命中约10秒缓存并标注时间，见`read_efficiency.json`。本轮六个新的只读变式（C01—C06）见`closeout_run_20261017.json`；C02初始预期选错后保留原记录并用`closeout_c02_corrected_20261017.json`重跑，不能把初始错误预期当代码失败。按[业务正确性验收](BUSINESS_ACCEPTANCE.md)人工复核后，C01和C05为核心通过/完整部分，C02修正记录完整通过；没有为测试写死答案。注册表阶段128项输出`unit_registry.txt`含13项注册变更测试；临时第9工具实测见`registry_live.json`。安全阶段115项及历史104/82项原记录保留，不将本地验证称为生产安全认证。
 
 按需运行模型案例会消耗API额度，使用新的输出文件保留审计：
 

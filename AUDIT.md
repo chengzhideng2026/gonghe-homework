@@ -12,6 +12,8 @@
 
 新增六个只读业务变式 C01—C06，真实模型最多七次问答（C05含一轮追问），见`evidence/closeout_run_20261017.json`。C01新Purchase Receipt父子表、C03单位与币种边界、C04部分读取、C05跨轮calculate、C06查询结果/错误边界均保留人工待审记录；C02初始题目选错销售订单，模型正确报告0行，随后修正为真实重复父发票`SAL-ORD-2026-00010`并单独重跑，见`closeout_c02_corrected_20261017.json`。所有采购单集合保持不变。
 
+业务正确性逐项复核后，C01的父子字段和主数字有来源，但`200+60=260`没有`calculate`收据；C05的130米差额有`calculate`，但额外“在途到货后超过目标”没有计算且未被要求。两题均记录为核心通过、完整回答部分；C02修正案例 raw2→distinct1→USD6600 完整通过。见[BUSINESS_ACCEPTANCE](BUSINESS_ACCEPTANCE.md)和`evidence/closeout_review.json`。没有把这些答案写入运行时。
+
 ## 上一阶段：工具注册与运行时变化
 
 工具Schema、handler、版本/effect与Decimal解析策略统一注册，替换原静态TOOL_DEFS/if分发。每个Runner复制默认目录，支持启停、注册、移除；每次模型请求发现视图，执行前检查停用/替换。模型无管理入口，原人工确认与ERP权限边界保留。

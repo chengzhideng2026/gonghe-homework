@@ -7,6 +7,7 @@
 - 用户充值后模型 API 已恢复，E07 探测在 10.67 秒内正常返回澄清。此前免费额度 HTTP403 是已保留的历史失败，不是当前阻断。
 - 当前默认八工具、156项代码测试与19项真实REST通过。最新输出`unit_read_policy.txt`新增17项缓存/限额/新鲜度和4项幂等/长任务测试，另有7项真实ask截止/上下文/轨迹测试；注册表阶段128项`unit_registry.txt`及安全阶段115项`unit_security.txt`保留。
 - 客户API效率已补：精确GET短时复用、候选可省略count、真实HTTP预算/节流和时间收据；采购校验/回读与完整聚合回源。真实模型三轮HTTP1→0→0，见`read_efficiency.json`和[API_EFFICIENCY](API_EFFICIENCY.md)。演示限额需按客户约定配置，没有ERP改造或离线全库同步。
+- 业务正确性复核见[BUSINESS_ACCEPTANCE](BUSINESS_ACCEPTANCE.md)和`evidence/closeout_review.json`：C01/C05核心通过但完整部分，C02修正记录完整通过。不要把工具成功或脚本正常退出当作所有自然语言答案正确。
 - 工具Schema/handler在`erp_tools.py`一起注册，`ToolRegistry`支持运行时可信代码增删与会话启停。实际模型临时调用第9个扩展工具读取Item18，移除回8、停用/恢复为7→8；无ERP写入，见`registry_live.json`和[TOOL_REGISTRY](TOOL_REGISTRY.md)。没有脚本自动热加载或插件沙箱。
 - 本机容器仅发布127.0.0.1和::1:8080，今后启动带`-f compose.local.yml`；只绑定IPv4曾导致Windows localhost约2秒回退，双回环后样本约40—50毫秒。原题文件与数据卷保留，未改变系统防火墙。详见[SECURITY_AND_DEPLOYMENT](SECURITY_AND_DEPLOYMENT.md)。
 - 连接绑定贯穿预览查询和修改，修复共享日志跨连接可见/丢弃缺口。`/reconcile id`只读核查已知单号，不创建；无单号仍阻断。恢复阶段104项输出为`unit_recovery.txt`；恢复/记忆/检索/租户边界见[RECOVERY_AND_DESIGN](RECOVERY_AND_DESIGN.md)。
