@@ -1,0 +1,46 @@
+{
+  "suite": "Closeout business variations",
+  "designed_on": "2026-10-17",
+  "reference_date": "2025-10-15",
+  "scope": "Six new read-only variations for this closeout. They are not employer hidden questions and expected fields are for human review only.",
+  "execution_contract": "Send only question to the model. No case authorizes a write. Compare tool evidence and ERP Purchase Order names before/after.",
+  "cases": [
+    {
+      "id": "C01",
+      "question": "请先发现 Purchase Receipt 的字段，再读取 MAT-PRE-2026-00014。只回答供应商、过账日期、币种、总数量、每个子表物料的实收数量、单位、入库仓和关联采购订单；不要只报总金额。",
+      "expected": {"doctype": "Purchase Receipt", "name": "MAT-PRE-2026-00014", "supplier": "Hangzhou Precision Bearings", "posting_date": "2025-06-03", "currency": "USD", "total_qty": 260},
+      "acceptance": ["metadata or a valid parent read establishes the unseen DocType fields", "parent and child rows are read", "units and warehouses are preserved", "no historical conclusion is inferred from the receipt alone"]
+    },
+    {
+      "id": "C02",
+      "question": "请查 Sales Invoice Item 中 sales_order 等于 SAL-ORD-2026-00010 的发票。关联明细可能让同一张父发票出现多行：告诉我原始匹配行数和不同父发票数，并且每张父发票金额只算一次。",
+      "expected": {"join": "Sales Invoice Item.sales_order", "raw_rows": 2, "distinct_parent_count": 1, "parent_invoice": "ACC-SINV-2026-00010", "parent_grand_total": 6600},
+      "acceptance": ["raw rows and distinct parents are distinguished", "duplicate parent is not silently dropped or double-summed", "aggregation evidence is complete or explicitly bounded"]
+    },
+    {
+      "id": "C03",
+      "question": "铜线 RM-COIL-CU-2.0 的库存单位是什么？如果供应商报价写成 100 kg、USD 29/kg，能不能直接按当前采购工具生成采购预览？请先说明单位和币种是否满足，不要自行换算或创建订单。",
+      "expected": {"stock_uom": "Meter", "requested_uom": "kg", "currency": "USD", "result": "reject or clarify; no preview/write"},
+      "acceptance": ["unit mismatch is explicit", "no silent conversion", "no preview and no ERP write"]
+    },
+    {
+      "id": "C04",
+      "question": "请一次读取这两张采购收货单：MAT-PRE-2026-00014 和 MAT-PRE-2026-99999。逐项说明成功或失败；不要因为其中一张不存在就把另一张也丢掉，也不要把结果说成完整的全部收货单。",
+      "expected": {"success": ["MAT-PRE-2026-00014"], "failure": ["MAT-PRE-2026-99999"], "complete": false},
+      "acceptance": ["partial read status is explicit", "successful identity and error are retained", "no full-dataset claim"]
+    },
+    {
+      "id": "C05",
+      "question": "先查 Stores - CCM 中 RM-COIL-CU-2.0 的 actual_qty 和 ordered_qty。",
+      "expected": {"actual_qty": 50, "ordered_qty": 200, "uom": "Meter"},
+      "follow_up": "基于上一轮已验证的数字，目标库存 180 米还差多少？只用 calculate 做差额，不要重新读取 ERP；说明这是上一轮观察值的推导。",
+      "acceptance": ["follow-up preserves item/warehouse/unit context", "calculate is called for 180-50", "no unnecessary ERP request", "result is marked as derived from prior observation"]
+    },
+    {
+      "id": "C06",
+      "question": "查询物料名称中包含 laptop 的 Item，并报告是否找到。若第一种过滤字段或写法报错，请根据 ERP 返回的错误发现有效字段后修正；查询错误本身不能当成没有数据。",
+      "expected": {"matches": [], "result": "no matching item after a valid query"},
+      "acceptance": ["query failure is repaired or valid metadata is used", "empty result is distinguished from a failed request", "no invented item"]
+    }
+  ]
+}

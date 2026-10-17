@@ -34,6 +34,7 @@ class ReadPolicy:
         self.per_minute = _number('ERP_MAX_REQUESTS_PER_MINUTE', 120, 1, 10000, True) if per_minute is None else per_minute
         self.interval = _number('ERP_MIN_REQUEST_INTERVAL', .25, 0, 10) if interval is None else interval
         self.clock, self.sleep = clock, sleep
+        self.deadline = None
         self.cache = OrderedDict()
         self.cache_bytes = 0
         self.window = deque()
@@ -86,6 +87,12 @@ class ReadPolicy:
     def request(self, method, path, params, scope, send):
         method = method.upper()
         read = method == 'GET'
+        if self.deadline is not None and self.clock() >= self.deadline:
+            if self.active:
+                self.stats['rejected_requests'] += 1
+            self._event('deadline_rejected', path)
+            raise RequestLimitError('ERP request skipped because the model turn deadline expired; '
+                                    'earlier requests may already have reached ERPNext')
         # Credentials never enter the retained key, event log or business cache.
         key = hashlib.sha256(json.dumps([scope, path, params], sort_keys=True,
                                       ensure_ascii=False, allow_nan=False).encode()).hexdigest()
@@ -116,6 +123,12 @@ class ReadPolicy:
         if self.last_attempt is not None:
             delay = self.interval - (now-self.last_attempt)
             if delay > 0:
+                if self.deadline is not None and now + delay >= self.deadline:
+                    if self.active:
+                        self.stats['rejected_requests'] += 1
+                    self._event('deadline_rejected', path)
+                    raise RequestLimitError('ERP request skipped because no remaining turn time remains '
+                                            'after the required request interval')
                 self.sleep(delay)
         self.last_attempt = self.clock()
         self.window.append(self.last_attempt)

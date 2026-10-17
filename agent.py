@@ -6,6 +6,7 @@ import hashlib
 import time
 import os, sys, json, uuid
 import inspect
+from datetime import datetime, timezone
 from pathlib import Path
 from datetime import date
 from decimal import Decimal, InvalidOperation, DecimalException
@@ -21,6 +22,8 @@ from erp_tools import BUILTIN_TOOLS, ToolContext
 from read_policy import ReadPolicy
 from contextlib import nullcontext
 from functools import wraps
+from context_budget import compact_messages
+from execution_trace import ExecutionTraceWriter
 
 
 def fresh_reads(method):
@@ -115,13 +118,20 @@ class ERPNextClient:
         self.headers = {"Authorization": f"token {key}:{secret}", "Accept": "application/json"}
         self._secrets = (key, secret, self.headers['Authorization'])
         self.read_policy = ReadPolicy()
+        self.deadline = None
 
     def _req(self, method, path, **kwargs):
         # Include trusted routing headers as well as credentials in isolation.
+        if self.deadline is not None:
+            self.read_policy.deadline = self.deadline
         identity = hashlib.sha256(json.dumps(self.headers, sort_keys=True).encode()).hexdigest()
         request_data = {'params': kwargs.get('params'), 'json': kwargs.get('json')}
         return self.read_policy.request(method, path, request_data, [self.base, identity],
                                         lambda: self._http_req(method, path, **kwargs))
+
+    def _check_deadline(self):
+        if self.deadline is not None and time.monotonic() >= self.deadline:
+            raise ERPError('ERP operation deadline exceeded; earlier requests may already have reached ERPNext')
 
     def _http_req(self, method, path, **kwargs):
         params = kwargs.pop("params", None)
@@ -134,8 +144,15 @@ class ERPNextClient:
         headers.update(kwargs.pop('headers', {}) or {})
         if data is not None:
             headers["Content-Type"] = "application/json"
+        timeout = self.timeout
+        if self.deadline is not None:
+            remaining = self.deadline - time.monotonic()
+            if remaining <= 0:
+                raise ERPError('ERP request skipped because the model turn deadline expired; '
+                               'earlier requests may already have reached ERPNext')
+            timeout = min(timeout, remaining)
         try:
-            response = urlopen(Request(url, data=data, headers=headers, method=method), timeout=self.timeout)
+            response = urlopen(Request(url, data=data, headers=headers, method=method), timeout=timeout)
             raw = read_body(response, 8 * 1024 * 1024)
         except HTTPError as exc:
             detail = http_error_detail(exc, self._secrets)
@@ -214,6 +231,7 @@ class ERPNextClient:
         results = []
         for name in unique_names:
             try:
+                self._check_deadline()
                 document = self.get(doctype, name)
                 if not isinstance(document, dict) or document.get('name') != name:
                     raise ERPError(f'Invalid document read-back: expected an object with name {name!r}')
@@ -252,6 +270,7 @@ class ERPNextClient:
         fields = list(dict.fromkeys(['name'] + group_by + sum_fields))
         seen, groups, matched_rows = {}, {}, 0
         while matched_rows < total:
+            self._check_deadline()
             rows = self.list(doctype, fields, filters, min(100, total-matched_rows), matched_rows, 'name asc')
             if not rows:
                 raise ERPError('Dataset changed or pagination ended early; no complete total can be reported')
@@ -285,6 +304,7 @@ class ERPNextClient:
                         raise ERPError(f'Cannot sum non-finite field {field}')
                     bucket['sums'][field] += number
             matched_rows += len(rows)
+        self._check_deadline()
         if matched_rows != total or self.count(doctype, filters) != total:
             raise ERPError('Record count changed while scanning; no consistent total available')
         return {'doctype': doctype, 'count': len(seen), 'matched_rows': matched_rows,
@@ -564,39 +584,140 @@ class LLMRunner:
         self.last_io = {}
         self.force_fresh_next = False
         self._turn_deadline = None
+        self.context_max_bytes = int(os.getenv('LLM_CONTEXT_MAX_BYTES', '60000'))
+        self.last_context = {}
+        self.trace_writer = ExecutionTraceWriter()
+        self.turn_id = None
+        self._trace_started = None
+        self._trace_end_reason = 'not_started'
+        self._turn_usage = None
+        self._turn_usages = []
+        self._turn_calls = []
+        self.last_trace_write_error = None
 
     def receipts(self):
         """Actual tool activity for the most recent turn, excluding older history."""
         return tool_receipts(self.last_trace[self.last_turn_start:], self.last_tool_metadata)
 
+    def _set_turn_start(self, messages, question):
+        for index in range(len(messages) - 1, -1, -1):
+            message = messages[index]
+            if (message.get('role') == 'user' and message.get('content') == question):
+                self.last_turn_start = index
+                return
+        self.last_turn_start = max(0, len(messages) - 1)
+
     def available(self):
         return bool(self.key and self.model)
 
     def _tool(self, name, args):
-        if self._turn_deadline is not None and time.monotonic() >= self._turn_deadline:
-            raise RuntimeError('Model turn deadline exceeded; inspect /trace and retry with a narrower scope')
+        self._check_deadline()
         return self.registry.snapshot().invoke(name, args, self.tool_context)
 
+    def _check_deadline(self):
+        if self._turn_deadline is not None and time.monotonic() >= self._turn_deadline:
+            raise RuntimeError('Model turn deadline exceeded; no new tool was started. '
+                               'Earlier requests may already have reached ERPNext; inspect /trace and reconcile writes.')
+
+    def _trace_arguments(self, raw_args):
+        try:
+            return json.loads(raw_args or '{}', parse_float=str)
+        except (ValueError, TypeError):
+            return {'unparsed_arguments': str(raw_args)[:400]}
+
+    def _evidence_identity(self, result):
+        if not isinstance(result, dict):
+            return []
+        identities = []
+        for key in ('doctype', 'name', 'proposal_id'):
+            if result.get(key) is not None:
+                identities.append({key: str(result[key])[:200]})
+        for key in ('records', 'results'):
+            for row in (result.get(key) or [])[:20]:
+                if isinstance(row, dict):
+                    name = row.get('name')
+                    if name is not None:
+                        identities.append({'name': str(name)[:200]})
+        pagination = result.get('pagination')
+        if isinstance(pagination, dict):
+            identities.append({'scope': result.get('query_scope'),
+                               'offset': pagination.get('offset'),
+                               'returned': pagination.get('returned'),
+                               'total': pagination.get('total')})
+        return identities[:30]
+
+    def _persist_trace(self):
+        if not self.turn_id:
+            return
+        record = {
+            'turn_id': self.turn_id,
+            'started_at_utc': self._trace_started_at,
+            'ended_at_utc': datetime.now(timezone.utc).isoformat(),
+            'elapsed_ms': round((time.monotonic() - self._trace_started) * 1000, 3),
+            'started_monotonic': self._trace_started,
+            'end_reason': self._trace_end_reason,
+            'usage': self._turn_usage if self._turn_usage is not None else {'status': 'unknown'},
+            'usage_events': self._turn_usages,
+            'context': self.last_context,
+            'tool_calls': self._turn_calls,
+            'erp_io': self.last_io,
+        }
+        try:
+            self.trace_writer.write(self.turn_id, record)
+            self.last_trace_write_error = None
+        except Exception as exc:
+            # Diagnostics must never replace a model/ERP/proposal error.
+            self.last_trace_write_error = str(exc)[:300]
+
     def ask(self, question, history=None):
+        self.turn_id = uuid.uuid4().hex
+        self._trace_started = time.monotonic()
+        self._trace_started_at = datetime.now(timezone.utc).isoformat()
+        self._trace_end_reason = 'running'
+        self._turn_usage = None
+        self._turn_usages = []
+        self._turn_calls = []
+        self.last_trace_write_error = None
         policy = getattr(self.agent.c, 'read_policy', None)
         self.last_io = {}
         if not isinstance(policy, ReadPolicy):
-            return self._ask(question, history)
+            try:
+                return self._ask(question, history)
+            except Exception:
+                self._trace_end_reason = 'error'
+                raise
+            finally:
+                self._persist_trace()
+                self._turn_deadline = None
+                if hasattr(self.agent.c, 'deadline'):
+                    self.agent.c.deadline = None
         fresh = self.force_fresh_next
         self.force_fresh_next = False
         with policy.turn():
             try:
                 with policy.fresh() if fresh else nullcontext():
                     return self._ask(question, history, fresh=fresh)
+            except Exception as exc:
+                self._trace_end_reason = 'timeout' if 'deadline' in str(exc).lower() else 'error'
+                raise
             finally:
                 self.last_io = policy.report()
+                self._persist_trace()
                 self._turn_deadline = None
+                if hasattr(self.agent.c, 'deadline'):
+                    self.agent.c.deadline = None
+                if hasattr(self.agent.c, 'read_policy'):
+                    self.agent.c.read_policy.deadline = None
 
     def _ask(self, question, history=None, fresh=False):
         if not self.available():
             raise RuntimeError("LLM_API_KEY and LLM_MODEL must be set in .env before live chat")
         messages = copy.deepcopy(history) if history is not None else []
         self._turn_deadline = time.monotonic() + self.turn_timeout
+        if hasattr(self.agent.c, 'deadline'):
+            self.agent.c.deadline = self._turn_deadline
+        if hasattr(self.agent.c, 'read_policy'):
+            self.agent.c.read_policy.deadline = self._turn_deadline
         self.last_trace = messages
         self.last_tool_metadata = {}
         if not messages or messages[0].get('role') != 'system':
@@ -642,8 +763,14 @@ class LLMRunner:
         if fresh:
             question += '\n[CLIENT CONTROL] This turn requires fresh reads: re-read necessary business evidence instead of reusing earlier turns.'
         messages.append({"role": "user", "content": question})
+        messages, self.last_context = compact_messages(messages, self.context_max_bytes)
+        self.last_trace = messages
+        self._set_turn_start(messages, question)
         answer_repairs = 0
         for _ in range(self.max_rounds):
+            messages, self.last_context = compact_messages(messages, self.context_max_bytes)
+            self.last_trace = messages
+            self._set_turn_start(messages, question)
             remaining = self._turn_deadline - time.monotonic()
             if remaining <= 0:
                 raise RuntimeError('Model turn deadline exceeded; inspect /trace and retry with a narrower scope')
@@ -666,7 +793,11 @@ class LLMRunner:
                 raise RuntimeError(f"LLM request failed: {redact(getattr(exc, 'reason', exc), (self.key,), 500)}") from None
             except (TransportError, UnicodeError) as exc:
                 raise RuntimeError('LLM response rejected: ' + redact(exc, (self.key,), 500)) from None
-            choice = json.loads(raw)["choices"][0]
+            response = json.loads(raw)
+            self._turn_usage = response.get('usage') if isinstance(response, dict) else None
+            if self._turn_usage is not None:
+                self._turn_usages.append(self._turn_usage)
+            choice = response["choices"][0]
             if choice.get('finish_reason') == 'length':
                 raise RuntimeError('Model output was truncated; increase the output/thinking budget or simplify the request')
             msg = choice["message"]
@@ -685,24 +816,40 @@ class LLMRunner:
                     continue
                 if history is not None:
                     history[:] = messages
+                self._trace_end_reason = 'completed'
                 return msg.get("content", ""), messages
             for call in calls:
+                call_started = time.monotonic()
+                call = call if isinstance(call, dict) else {}
+                function = call.get('function') if isinstance(call.get('function'), dict) else {}
+                call_id = call.get('id') or f'malformed-{len(self._turn_calls)+1}'
+                name = function.get('name') or '<malformed-tool-call>'
+                raw_args = function.get('arguments') or '{}'
+                metadata = view.metadata(name) or {}
                 policy = getattr(self.agent.c, 'read_policy', None)
                 measured = isinstance(policy, ReadPolicy) and policy.active
                 mark = policy.mark() if measured else None
                 try:
-                    raw_args = call["function"].get("arguments") or "{}"
-                    name = call['function']['name']
-                    metadata = view.metadata(name)
+                    self._check_deadline()
                     if metadata:
-                        self.last_tool_metadata[call['id']] = metadata
+                        self.last_tool_metadata[call_id] = metadata
+                    if not function.get('name'):
+                        raise ValueError('Malformed model tool call: function name is missing')
                     result = view.invoke_json(name, raw_args, self.tool_context)
                     payload = {"ok": True, "data": result}
                 except Exception as exc:
                     payload = {"ok": False, "error": str(exc)}
                 if measured:
                     payload['io'] = policy.report(mark)
-                messages.append({"role": "tool", "tool_call_id": call["id"], "content": json.dumps(payload, ensure_ascii=False, default=str)})
+                self._turn_calls.append({'call_id': call_id, 'tool': name,
+                                         'version': metadata.get('version'), 'effect': metadata.get('effect'),
+                                         'arguments': self._trace_arguments(raw_args),
+                                         'status': 'ok' if payload.get('ok') else 'error',
+                                         'error': payload.get('error') if not payload.get('ok') else None,
+                                         'evidence_identity': self._evidence_identity(result) if payload.get('ok') else [],
+                                         'elapsed_ms': round((time.monotonic()-call_started)*1000, 3),
+                                         'io': payload.get('io', {})})
+                messages.append({"role": "tool", "tool_call_id": call_id, "content": json.dumps(payload, ensure_ascii=False, default=str)})
         raise RuntimeError(f"LLM tool loop exceeded {self.max_rounds} rounds")
 
 def check_model(runner):

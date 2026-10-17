@@ -73,7 +73,9 @@ Show me overdue sales invoices.
 
 `erp_tools.py`将Schema与handler一起注册到`ToolRegistry`，可信代码可运行时注册/移除；停用与同名替换后旧调用拒绝，新工具下一次模型请求可见。没有模型可调用的工具管理功能或任意脚本热加载。接入示例与边界见[TOOL_REGISTRY](TOOL_REGISTRY.md)。自动化、长任务、幂等键和Docker/K8s升级路径见[DEPLOYMENT_AND_AUTOMATION](DEPLOYMENT_AND_AUTOMATION.md)。
 
-客户API不可改且不宜频繁调用时：先用精确对象/时间/组织过滤、必要字段和少量候选缩小范围；`include_total=false`可省略候选列表的额外计数，但不证明完整覆盖。问答内/跨问答复用相同成功GET，业务默认30秒、元数据600秒，显示原读取时间；本地计算无需再次查ERP。每问默认40次ERP HTTP尝试、滚动每分钟120次、间隔0.25秒，均可配置；这是演示默认而非客户SLA。汇总、采购校验和回读绕过缓存，POST尝试清缓存。`/trace`区分工具调用、HTTP尝试与缓存命中。详见[API_EFFICIENCY](API_EFFICIENCY.md)。
+客户API不可改且不宜频繁调用时：先用精确对象/时间/组织过滤、必要字段和少量候选缩小范围；`include_total=false`可省略候选列表的额外计数，但不证明完整覆盖。问答内/跨问答复用相同成功GET，业务默认30秒、元数据600秒，显示原读取时间；本地计算无需再次查ERP。每问默认40次ERP HTTP尝试、滚动每分钟120次、间隔0.25秒，均可配置；这是演示默认而非客户SLA。汇总、采购校验和回读绕过缓存，POST尝试清缓存。`/trace`区分工具调用、HTTP尝试与缓存命中；每轮另保存脱敏轨迹到被忽略的`.local/traces/`，usage没有返回时标记unknown。详见[API_EFFICIENCY](API_EFFICIENCY.md)。
+
+长对话按 `LLM_CONTEXT_MAX_BYTES` 做低依赖的完整轮预算：保留系统规则和当前完整轮，旧工具结果变为带 `fetched_at` 的历史摘要并提示重新查询；当前轮完整工具结果无法拆分时允许临时 `over_budget`，不伪装成严格 token 限制。`LLM_TURN_TIMEOUT` 控制整轮截止，`/trace`与`.local/traces/`记录工具版本、参数、耗时、证据来源、HTTP/缓存计数和模型 usage（没有返回则为 unknown）。轨迹写失败不改变问答或采购状态。
 
 ## 验证与已知边界
 
@@ -84,9 +86,9 @@ python -m unittest discover -s tests -v
 python verify_live.py
 ```
 
-149项代码测试通过；既有19项REST后，真实join计数/金额及外币拒绝也已验证，见 [SCORING_REVIEW.md](evidence/SCORING_REVIEW.md)。非项目目录按脚本路径启动检查通过。
+156项代码测试通过；既有19项REST后，真实join计数/金额及外币拒绝也已验证，见 [SCORING_REVIEW.md](evidence/SCORING_REVIEW.md)。非项目目录按脚本路径启动检查通过。
 
-最新149项输出为`evidence/unit_read_policy.txt`，新增17项API复用/限额/新鲜度测试及4项幂等/长任务测试。真实模型三轮ERP请求为1→0→0：查询18、本地计算36、再次计数命中约10秒缓存并标注时间，见`read_efficiency.json`。注册表阶段128项输出`unit_registry.txt`含13项注册变更测试；临时第9工具实测见`registry_live.json`。安全阶段115项及历史104/82项原记录保留，不将本地验证称为生产安全认证。
+最新156项输出为`evidence/unit_turn_controls.txt`，包含7项真实`ask()`截止/上下文/轨迹测试；`unit_read_policy.txt`保留此前17项API复用/限额/新鲜度及4项幂等/长任务测试。真实模型三轮ERP请求为1→0→0：查询18、本地计算36、再次计数命中约10秒缓存并标注时间，见`read_efficiency.json`。本轮六个新的只读变式（C01—C06）见`closeout_run_20261017.json`；C02初始预期选错后保留原记录并用`closeout_c02_corrected_20261017.json`重跑，不能把初始错误预期当代码失败。注册表阶段128项输出`unit_registry.txt`含13项注册变更测试；临时第9工具实测见`registry_live.json`。安全阶段115项及历史104/82项原记录保留，不将本地验证称为生产安全认证。
 
 按需运行模型案例会消耗API额度，使用新的输出文件保留审计：
 

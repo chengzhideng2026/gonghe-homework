@@ -2,7 +2,7 @@
 
 本项目是单人使用的 ERPNext CLI Agent。当前实现了通用只读工具、多轮工具选择、人工采购确认、本地持久状态、防同一预览重复派发和有界的恢复核查。它没有应用登录、完整 SaaS 租户权限、持久聊天检查点、长期用户记忆或运行时多模型路由。新增组件应解决可测的问题，不能用组件数量代替可靠性。
 
-后续HTTP安全阶段115项测试通过，见`evidence/unit_security.txt`和[SECURITY_AND_DEPLOYMENT](SECURITY_AND_DEPLOYMENT.md)。注册表阶段128项，API效率阶段当前149项，见[TOOL_REGISTRY](TOOL_REGISTRY.md)和[API_EFFICIENCY](API_EFFICIENCY.md)；下文104项是恢复阶段记录，未改写原输出。
+后续HTTP安全阶段115项测试通过，见`evidence/unit_security.txt`和[SECURITY_AND_DEPLOYMENT](SECURITY_AND_DEPLOYMENT.md)。注册表阶段128项，API效率/截止阶段当前156项，见[TOOL_REGISTRY](TOOL_REGISTRY.md)和[API_EFFICIENCY](API_EFFICIENCY.md)；下文104项是恢复阶段记录，未改写原输出。
 
 ## 当前运行架构
 
@@ -27,7 +27,7 @@ flowchart TD
     G --> U
 ```
 
-模型不能调用确认、通用创建、SQL 或 Shell；写入只能来自 CLI 的人工确认。模型 messages 和上轮 trace 在进程内存中；SQLite 只保存采购操作状态。验收脚本输出的 JSON 是审计记录，不能当作自动恢复的工作流检查点。
+模型不能调用确认、通用创建、SQL 或 Shell；写入只能来自 CLI 的人工确认。当前模型 messages 仍只在进程内存中；每轮另保存脱敏执行轨迹（工具、版本、参数、耗时、HTTP/缓存、usage或unknown），SQLite继续作为采购操作真相。轨迹不是可恢复的任务检查点。
 
 ## 断线后按什么顺序恢复
 
@@ -50,7 +50,7 @@ flowchart TD
 
 `/reconcile` 对 ERP 只读，但会更新本地状态和核查结果。404、权限错误、超时及坏回包继续保留 failed 和已知单号，不回到 pending。过期预览不能再确认，但已发生创建的单据仍可核查。名称或 DocType 不匹配同样进入差异清单，要求人工复核。
 
-当前没有自动重试网络层、指数退避、熔断、任意工具节点续跑或持久聊天恢复。只读工具错误会进入模型工具结果，模型可修正查询；模型请求失败则该轮历史不提交，最近 trace 留在内存供查看。重新启动会丢失这部分内存。采购状态独立保存，不随 `/reset` 删除。
+当前没有自动重试网络层、指数退避、熔断、任意工具节点续跑或持久聊天恢复；有每轮总时限、工具/分页/HTTP截止检查和脱敏轨迹。只读工具错误会进入模型工具结果，模型可修正查询；模型请求失败则该轮历史不提交，最近 trace 留在内存供查看。重新启动会丢失这部分内存。采购状态独立保存，不随 `/reset` 删除。
 
 ## 幂等键到底有没有
 

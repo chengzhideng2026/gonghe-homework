@@ -2,11 +2,15 @@
 
 ## 当前：客户API调用效率与新鲜度
 
-补齐此前缺少的短时精确GET缓存、元数据复用、HTTP尝试预算与节流，支持候选列表省略count，记录读取时间/缓存年龄。完整聚合、采购校验与回读绕过缓存，POST尝试清缓存；不要求客户修改API。149项代码测试通过，新增17项读策略及4项幂等/长任务测试见`evidence/unit_read_policy.txt`。
+补齐此前缺少的短时精确GET缓存、元数据复用、HTTP尝试预算与节流，支持候选列表省略count，记录读取时间/缓存年龄。完整聚合、采购校验与回读绕过缓存，POST尝试清缓存；不要求客户修改API。156项代码测试通过，新增7项真实ask截止/上下文/轨迹测试；此前17项读策略及4项幂等/长任务测试见`evidence/unit_read_policy.txt`。
 
 真实ERP与Qwen三轮：Item18查询1次HTTP→calculate得36、0次HTTP→再次count命中9.95秒缓存、0次HTTP，答案注明原读取时间。确定性检查又核对省略count、前置预算拒绝和聚合起止回源。见`evidence/read_efficiency.json`；均未派发POST，采购数量29→29。验证脚本最后控制台打印曾因Windows GBK不能输出模型的Unicode符号而失败，报告已成功保存且断言均通过；已让脚本使用UTF-8控制台，不篡改真实轨迹。
 
 默认30秒业务缓存/600秒元数据、每问40次/滚动分钟120次/间隔0.25秒是可配置演示值，未获得客户实际配额。没有离线镜像、增量同步、语义缓存或分布式租户限额；详见[API_EFFICIENCY](API_EFFICIENCY.md)。
+
+截止与上下文收尾阶段：修复真实`ask()`循环绕过截止检查的问题；模型响应中每个工具调用前、`get_many`每个名称、聚合每页和ERP HTTP发送前均检查剩余时间，单次HTTP timeout取剩余时间与自身上限的较小值。新增`context_budget.py`按完整轮裁剪历史，旧工具详情变为带来源时间的历史摘要；新增`execution_trace.py`按轮保存脱敏工具/HTTP/usage轨迹，写失败不覆盖业务结果。7项真实ask路径测试见`evidence/unit_turn_controls.txt`。
+
+新增六个只读业务变式 C01—C06，真实模型最多七次问答（C05含一轮追问），见`evidence/closeout_run_20261017.json`。C01新Purchase Receipt父子表、C03单位与币种边界、C04部分读取、C05跨轮calculate、C06查询结果/错误边界均保留人工待审记录；C02初始题目选错销售订单，模型正确报告0行，随后修正为真实重复父发票`SAL-ORD-2026-00010`并单独重跑，见`closeout_c02_corrected_20261017.json`。所有采购单集合保持不变。
 
 ## 上一阶段：工具注册与运行时变化
 
