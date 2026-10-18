@@ -17,8 +17,8 @@ Five material failures/risks were **preserved** rather than corrected during eva
 
 | Layer | Tested version | Observed result | What it proves |
 |---|---|---|---|
-| **Current published `main-v2`** | `2d6ce5c` | **190/190** GitHub Actions unit/contract tests | Existing merged code passes offline test suite. |
-| **Unmerged code hardening [PR #4](https://github.com/chengzhideng2026/gonghe-homework/pull/4)** | `3636ddb2` | **234/234** GitHub Actions unit/contract tests | Tool/checker/recovery contracts at this exact SHA; **not** the real-model business score. |
+| **Published `main-v2` code** | code PR #4 merge `f806519b` (evaluated source `3636ddb2`) | **234/234** GitHub Actions unit/contract tests on evaluated source | Source-level code hardening now merged; formal default HEAD may advance again with docs-only merge. |
+| **Code hardening [merged PR #4](https://github.com/chengzhideng2026/gonghe-homework/pull/4)** | source `3636ddb2` | **234/234** GitHub Actions unit/contract tests | Proven at tested code SHA; business grade is separately measured with actual model. |
 | **Real ERP REST** | historical client/API revisions | **19/19** scoped read checks in their recorded runs | Actual seed data and interface compatibility, **not** LLM judgment. [REST evidence](evidence/live_read.json) |
 | **Six-case real-model directed run** | `f11d6c09` | **5 business-acceptable final answers; H08 exception** (independent AI-assisted review) | FNL-12/02/07 and E07/E08 worked; FX H08 failed to produce a final answer. [Case review](evidence/DIRECTED_SIX_CASE_F11_REVIEW_20261018.md) |
 | **H08-only real-model retest** | `3636ddb2` | **exception**, despite correct ERP reads, `calculate(10*29)=290`, **0 ERP writes** | A safe EUR-quote answer can be blocked by the limited evidence checker. [Recorded diagnosis](evidence/H08_3636_LIVE_RETEST_PENDING_20261018.md) |
@@ -66,7 +66,7 @@ python agent.py --check
 python agent.py --check-model
 ~~~
 
-- **Unit/contract CI**: open the relevant [GitHub Actions](https://github.com/chengzhideng2026/gonghe-homework/actions) run for that SHA; `234` belongs to PR #4, `190` to the merged baseline.
+- **Unit/contract CI**: the merged code source SHA `3636ddb2` has **234** passing tests ([GitHub Actions](https://github.com/chengzhideng2026/gonghe-homework/actions/runs/39117349928)). The old pre-hardening baseline `2d6ce5c` had **190**, recorded only as historical context.
 - **Business manual review**: run the seeded ERPNext with [README](README.md), ask [three review questions](README.md#review-three-workflows) in the CLI, and inspect `/trace`. Check evidence, not just whether the command exited with code zero.
 - **Private directed evaluator**: historical first-run question SHA, operator's read-only ERP GET/HEAD transport, complete result JSON, pricing assumptions and seed date were saved outside the public repo. Do not represent their summaries as publicly executable test fixtures.
 - **Write-path limitation**: offline state-machine/idempotency tests and historical local created-draft/readback evidence exist, but **this latest read-only directed run did not execute `/confirm`**; its 0-write audit cannot prove end-to-end exactly-once delivery.
