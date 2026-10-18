@@ -1,8 +1,8 @@
 # 项目接手与学习指南
 
-这份指南面向第一次接手项目的人。仓库已公开并已提交评审，默认分支 `main-v2`，当前交付 SHA 为 `2d6ce5c1b3c4a95f6d6ddbe6b640c76aaab4a800`；原应用验收基线为 `5fe679e`，当前默认分支已合入只读明细统计及快照一致性修复（源功能合并提交 `e6d0ffd`），并通过 190 项 GitHub Actions 离线回归。历史真实业务评测保留对应旧 SHA 的结论。先读 [README](README.md) 的完整启动、三个演示与验收摘要，再读 [WRITEUP](WRITEUP.md) 的六项设计说明，最后按下表走读代码。
+这份指南面向第一次接手项目的人。仓库已公开并已提交评审，默认分支 `main-v2`，这份文档整理时的基线 SHA 为 `2d6ce5c1b3c4a95f6d6ddbe6b640c76aaab4a800`（实际交付版本以 `main-v2` 当前 HEAD 为准）；原应用验收基线为 `5fe679e`，当前默认分支已合入只读明细统计及快照一致性修复（源功能合并提交 `e6d0ffd`），并通过 190 项 GitHub Actions 离线回归。历史真实业务评测保留对应旧 SHA 的结论。先读 [README](README.md) 的完整启动、三个演示与验收摘要，再读 [WRITEUP](WRITEUP.md) 的六项设计说明，最后按下表走读代码。
 
-原应用基线的全新克隆验证为 170 项测试、248 项子测试通过，`--demo` 成功；当前增强版由 GitHub Actions 验证 190 项离线回归全部通过。开发复测见 [N05/N07记录](evidence/N05_N07_REVIEW.md)；独立报告文件已核实存在且尚未纳入仓库，位置及结论见 [README](README.md)。新 SHA 仅独立首次复测 N05/N07 通过，不能和旧版另八题拼成 10/10；F01/F02 未覆盖。用户已亲自完成库存、跨轮计算、日期查询及采购预览，不代表用户验证过确认写入或全部案例。下文历史阶段的未验收措辞保留其原语境；旧版分级见 [SCORING_REVIEW](evidence/SCORING_REVIEW.md)，完整演进见 [AUDIT](AUDIT.md)。
+原应用基线的全新克隆验证为 170 项测试、248 项子测试通过，`--demo` 成功；当前增强版由 GitHub Actions 验证 190 项离线回归全部通过。开发复测见 [N05/N07记录](evidence/N05_N07_REVIEW.md)；独立报告文件已核实存在且尚未纳入仓库，位置及结论见 [README](README.md)。历史 N05/N07 独立首测只覆盖两题，不能与旧版另八题拼接成同一版本的 10/10；F01/F02 未覆盖。用户已亲自完成库存、跨轮计算、日期查询及采购预览，不代表用户验证过确认写入或全部案例。下文历史阶段的未验收措辞保留其原语境；旧版分级见 [SCORING_REVIEW](evidence/SCORING_REVIEW.md)，完整演进见 [AUDIT](AUDIT.md)。
 
 题目已经提供可恢复的 ERPNext 和业务数据，所以这份作业无需从零开发 ERP。我们实现的是 ERP 之上的问答与受控采购 Agent。代码规模可以比较小，但库存、账期、BOM、成本和不确定写入的业务边界需要仔细验证。
 
@@ -119,7 +119,7 @@ flowchart TD
 
 辅助职责中，`main()` 管理 CLI 与人工命令；`ProposalStore` 管理 SQLite 状态；`tool_receipts` 提取实际证据，`answer_checks` 检查已知库存历史措辞。ERPNext 及 MariaDB 是业务数据的权威位置，模型在云端推理，电脑本地无需运行大模型。
 
-## 4. 八个工具：通用读取，专用写入预览
+## 4. 九个工具：通用读取、证据计算与专用采购预览
 
 这是默认集合，可以变化。工具Schema与同步handler位于`erp_tools.py`，使用装饰器一起注册；Runner每次模型请求发现当前工具视图，再由同一注册记录执行。`agent.TOOL_DEFS`只是兼容导出，不是运行时控制入口。先用`/tools`、`/tools disable calculate`、`/tools enable calculate`观察变化；它们不消耗模型额度。新增工具、移除、会话隔离和并发变更语义见[TOOL_REGISTRY](TOOL_REGISTRY.md)。
 
@@ -134,6 +134,7 @@ flowchart TD
 | `get_documents` | “读取这几张单据，检查各自明细” | 同DocType最多20个输入名，保序去重、逐项成功/错误；部分失败complete=false，不自动join/重试 |
 | `aggregate_documents` | “按客户排名、按供应商汇总未付余额” | 完整有界扫描；显式join的同父名仅在投影一致时折叠，冲突拒绝；非事务快照 |
 | `calculate` | “差额、占比、净额、毛利是多少？” | 只支持受限算术，不运行任意 Python，不访问 ERP；输入数字仍须来自正确证据 |
+| `summarize_details` | “从已读取的父单子表统计数量、金额和加权单价” | 仅使用本轮真实读取证据，不增加 ERP HTTP；同一父单快照冲突拒绝，完整性仍取决于上游父单名单是否完整 |
 | `prepare_purchase_order` | “准备一张采购单” | 只校验和生成一个待确认预览，不创建 ERP 单据 |
 
 通用的读接口可复用到新的单据类型，但不会自动理解所有业务定义。新写操作通常需要新的专用校验与确认适配。不能为图省事把通用 `create`、SQL 或 Shell 暴露给模型。
