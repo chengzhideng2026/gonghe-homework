@@ -829,8 +829,29 @@ class LLMRunner:
             'journal for execution state, never an old chat summary. '
             'When evidence is insufficient, narrow the claim. Do not expand queries to justify '
             'unrequested history, other reservation types or additional state explanations.')
-        if '[ANSWER EVIDENCE BOUNDARIES v1]' not in messages[0]['content']:
-            messages[0]['content'] += answer_boundaries
+        evidence_boundaries = (
+            ' [ANSWER EVIDENCE BOUNDARIES v2] Answer requested facts concisely; bound uncertain claims. '
+            'Separate ERP facts, user-provided conditions and calculate results. Explicit user quotes '
+            'including currency are valid calculation inputs: attribute them to the user, not ERP; '
+            'do not demand proof of a currency already supplied. Label reused earlier user inputs as earlier, '
+            'not current ERP facts. No automatic conversion or purchase-validation bypass. Empty master '
+            'fields/child tables establish local absence only, not global absence of quotes/records. '
+            'Balances/totals, even equal, do not prove absence of past payments, allocations or write-offs. '
+            'For requested allocation links, shortlist Payment Entry parents by party/company; '
+            'get_document/get_documents must verify docstatus=1 and references.reference_doctype, '
+            'reference_name, allocated_amount. reference_no is text, not allocation evidence; '
+            'paid_amount is not each invoice allocation. Missing/failed details leave links unverified; '
+            'partial reads are not complete history. '
+            'Bin reservations are item/warehouse aggregates, limited to returned fields, not exclusive '
+            'Work Order reservations. Equal demand proves no ownership; require an order-level link '
+            'or report warehouse totals only. '
+            'Local pending and prospective docstatus are not an existing ERP Draft; actual state requires '
+            'ERP evidence and execution uses the confirmation journal, not chat summaries. '
+            'Do not research unrequested history or add speculative explanations.')
+        if '[ANSWER EVIDENCE BOUNDARIES v2]' not in messages[0]['content']:
+            # Replace the exact previous policy; retain unrelated system rules.
+            messages[0]['content'] = messages[0]['content'].replace(answer_boundaries, '')
+            messages[0]['content'] += evidence_boundaries
         if '[REPLENISHMENT BASIS v1]' not in messages[0]['content']:
             messages[0]['content'] += (
                 ' [REPLENISHMENT BASIS v1] Physical targets use actual_qty; free-stock targets deduct '
