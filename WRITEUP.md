@@ -1,41 +1,37 @@
 # Design Write-up — ERPNext Agent
 
-**设计判断：让模型选择查询，让代码控制事实、计算与副作用。** ERPNext 是业务事实来源；模型没有通用 SQL、Shell 或直接创建订单的权限。实现为 Python 标准库 CLI，面向 [原题六项评审标准](ORIGINAL_README.md)。
+> **Core decision:** The model interprets requests and chooses tools; deterministic code owns ERP facts, money arithmetic, authorization, and side effects. The objective is **auditable business correctness**, not simply fluent answers. [Run the project](README.md) · [Inspect evaluation evidence](EVALUATION_EVIDENCE.md).
 
-## 1. Tool layer：通用读取 + 确定性计算
+### 1. Tool-layer design
 
-九个注册式工具分为三层：① 元数据、计数、列表、单单/批量详情、完整聚合；② `calculate` 与基于当轮真实 `evidence_ref` 的 `summarize_details`；③ 只生成本地采购预览的 `prepare_purchase_order`。
+The **nine built-in typed tools** are: `get_doctype_meta`, `count_documents`, `list_documents`, `get_document`, `get_documents`, `aggregate_documents`, `calculate`, `summarize_details`, and `prepare_purchase_order`. Each Schema, handler and effect/version lives in one ToolRegistry entry. The LLM never obtains arbitrary SQL, shell execution, or a general ERP mutation primitive.
 
-未知 DocType 先发现字段、Link/Table，再复用过滤、分页、父单和子表查询，不必增加一个专用工具。数值由 Decimal 计算，父单连接行与不同父单分别计数；币种、公司、单位分区；同一父单两次读取子表快照冲突则拒绝拼接。Schema、handler、effect/version 同源注册，Runner 不写死工具分发分支。
+The read surface works on **unknown DocTypes**: discover fields and Link/Table relations, filter the parent endpoint, page within explicit limits, and fetch shortlisted parent documents with their child rows. The client detects duplicate parents caused by child joins, distinguishes raw matched rows from distinct documents, rejects conflicting repeated projections, and separates partial reads from a complete scan. `calculate` uses restricted `Decimal` expressions; `summarize_details` operates on current-turn read evidence rather than LLM-supplied numeric arrays.
 
-## 2. Uncertainty：只回答证据覆盖的范围
+### 2. Uncertainty handling
 
-空结果、404、权限拒绝、字段错误、部分成功和分页未完成都不等于同一件事；`query_scope`、`complete` 与 `/trace` 暴露查询范围。业务日期固定 **2025-10-15**，不能按宿主时钟生成的发票 `status` 判定逾期；Bin 库存快照也不能证明历史转料。
+A failed query is not an empty ERP dataset; a name search is not a complete business category; a current `Bin` warehouse label is not proof of stock-transfer history. The response must distinguish on-hand vs ordered vs reserved, invoice `outstanding_amount` vs actual allocations in `Payment Entry.references`, and raw ERP `status` vs **overdue as of 2025-10-15**.
 
-程序提供有限小计与证据措辞检查，必要时要求模型改写一次；明确区分**用户报价条件、ERP 字段事实、程序计算结果**。真实验收中，收款参考文本不足以证明核销，须读取 `Payment Entry.references`；Bin 仓级预留不能直接归属于某张工单。它**不是任意自然语言事实证明器**。失败轨迹保留，参见 [验收标准](BUSINESS_ACCEPTANCE.md)。
+Tool receipts record scope, pagination, freshness, partial failures and math. A bounded program evidence check catches selected unsupported numerical/wording claims and may request **one** repair, then fail closed. It is not a semantic truth theorem: a real H08 EUR-quote test still triggers a **false rejection of a safe answer**. The false rejection is disclosed, not converted into a PASS.
 
-## 3. Write path：预览与实际写入分离
+### 3. Write path and recovery
 
-模型仅能请求生成单行、明确币种的采购预览；程序校验供应商、物料、UOM、金额、公司及日期，存入绑定连接的 SQLite 状态（15分钟有效）。用户必须独立输入 `/confirm <proposal_id>`；随后重新校验、原子领取、POST 草稿并 GET 回读。
+`prepare_purchase_order` only validates and persists a **single-line local pending proposal**, with the agreed unit price explicitly denominated in the company's currency. The model cannot call `/confirm`. After a human independently enters `/confirm <proposal_id>`, code revalidates supplier, item, UOM, dates, quantity, amount, connection scope and expiration; atomically claims local SQLite state; then POSTs a draft and GETs it back. Failure/uncertain response is journaled and reconciled against **known ERP identity**; no blind second POST. These are local replay controls—not a claim of ERP server-side distributed exactly-once. Foreign-currency quotes without a user-agreed conversion cannot be executed.
 
-丢失响应时保留操作状态与已知单号；`/reconcile` 只读核验，不盲目重发。此保证是**本地同一预览不重复派发**，不是 ERP 服务端跨机器 exactly-once。模型文本不能代替人工确认。
+### 4. Extensibility
 
-## 4. Extensibility：扩单据不扩模型权限
+For a new read-only DocType, an engineer can usually reuse metadata + scoped list/get/aggregate without changing the model loop. To add a new operation, register its Schema/handler/effect in `erp_tools.py`, write unit tests for validation/partial failures/source receipts, then add a focused actual-ERP scenario. New **write** operations require a separate human-approval path, not merely registering a tool. The registry is a trusted-code capability catalog, not an untrusted plugin sandbox or tenant ACL system.
 
-新只读 DocType 通常只需元数据发现与既有工具组合；确有新计算能力才在 `erp_tools.py` 注册 handler/Schema 并补契约测试。新写入类型必须另设业务校验与确认。ToolRegistry 接受可信代码，不是不可信插件沙箱或租户鉴权。
+### 5. Judgment under constraints
 
-## 5. Judgment under constraints：优先修真正的业务风险
+I prioritized: **(i)** correct ERP reads and date/quantity/currency semantics; **(ii)** deterministic computation and source boundaries; **(iii)** purchase confirmation, journal and recovery; **(iv)** read-only adversarial regression. I deliberately did **not** build a web frontend, RAG/Milvus, cloud service, multi-agent orchestration, autonomous ERP writes, multi-line POs or an FX service; none addressed the assignment's principal failure modes.
 
-优先顺序是 **实时查询与完整性 → 口径/单位/币种 → 人工写入闸门 → 真实评测**。主动不做前端、Milvus、运行时多 Agent、云部署、多行/外币采购；它们不能优先解决这份题目的事实错误与采购副作用。
+The assignment framed a **six-hour** budget. I did **not** retain reliable hour-by-hour timing, and later hardening/review continued after the initial deliverable, so I do not invent a six-hour timesheet or claim all commits were completed within that window. The priorities above describe effort allocation rather than measured hours. Git history and dated evidence preserve the actual sequence.
 
-原题要求说明六小时投入。现有记录可复核开发阶段先后，但缺少可信的分阶段工时计量，因此**不编造“刚好六小时”时间表**，也不宣称满足六小时上限；详见 [AUDIT](AUDIT.md)。
+### 6. Coding-agent workflow and validation
 
-## 6. Coding-agent workflow：隔离实施与验证
+Coding agents helped implement bounded changes, generate edge-case tests, and inspect business traces. I retained decisions about tool effect boundaries, evidence strength, confirmation requirements and what **not** to ship. Implementation, independent evaluator and documentation workspaces used fixed Git SHAs; failing **first attempts remain preserved** rather than replaced by successful reruns. A real-model trace caught `Payment Entry.reference_no` being mistaken for allocation, and another caught the difference between a safely declined foreign-currency purchase and the checker rejecting a safe explanation.
 
-Codex 用于代码实现、测试生成和轨迹审阅；人为决定工具边界、写入权限与取舍。开发、独立业务评测、集成交付使用隔离工作区及固定 SHA，保留第一次失败，不用重测覆盖。
+**Measured evidence has separate layers:** GitHub CI **234/234 offline tests** at proposed code SHA `3636ddb2` ([PR #4](https://github.com/chengzhideng2026/gonghe-homework/pull/4)); earlier six-case actual-model run with **five acceptable business replies and one H08 exception** at `f11d6c09`; H08-only actual-model **exception** again at `3636ddb2` despite **zero ERP writes**. Neither is a hidden-set score; the 60-case bank is unexecuted. See [the test matrix](EVALUATION_EVIDENCE.md).
 
-真实失败推动过两类改动：聚合来源正确而模型正文小计错误 → 本地 Decimal 小计和受限校验；子表误查耗尽 HTTP 预算 → 精确父端关联过滤与查询恢复。离线测试只证明程序契约，不等于模型回答正确率。
-
-**证据边界**：原应用 `5fe679e` 有 170 项离线测试；九工具正式版 [PR #2](https://github.com/chengzhideng2026/gonghe-homework/pull/2) 的 GitHub Actions 为 **190/190**；独立待审修复 [PR #4](https://github.com/chengzhideng2026/gonghe-homework/pull/4) 在 SHA `3636ddb2` 为 **234/234**，且旧候选定向六题暴露了程序证据误报；新候选的真实模型验收尚未完成，不能移用旧版六题成绩。隐藏题未知，仓库外报告不冒充公开原始证据。
-
-启动、代码入口与完整限制见 [README](README.md)、[PROJECT_GUIDE](PROJECT_GUIDE.md)。
+**Limits:** statement-level checks can under- or over-block; bounded paging does not guarantee a transaction snapshot; the SQLite journal is not globally exactly-once; ERP security still depends on its own API account permissions. These are explicit engineering tradeoffs, not unseen guarantees.
