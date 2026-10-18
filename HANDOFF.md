@@ -4,7 +4,7 @@
 
 ## 当前状态与阅读入口
 
-仓库已公开并已向评审提交链接，默认分支为 `main-v2`。应用验收基线为 `5fe679ea3aaffd53042518238acf09866e56bc4b`；本次后续提交仅整理文档，应用代码不变。首次评审从 [README](README.md) 的启动、三个演示和验收摘要开始，设计理由见 [WRITEUP](WRITEUP.md)，再按 [PROJECT_GUIDE](PROJECT_GUIDE.md) 深入。
+仓库已公开并已向评审提交链接，默认分支为 `main-v2`。原始应用验收基线为 `5fe679ea3aaffd53042518238acf09866e56bc4b`；当前增强版已在此基础上增加证据绑定的 `summarize_details`、重复父单快照冲突拒绝和相关测试，合并提交为 `e6d0ffdad0ba29de03068d1f715b50427acf1926`。GitHub Actions 对增强版完成 **190 项离线回归，全部通过**；原基线的真实模型评测不能自动算作新版本完整业务验收。首次评审从 [README](README.md) 的启动、三个演示和验收摘要开始，设计理由见 [WRITEUP](WRITEUP.md)，再按 [PROJECT_GUIDE](PROJECT_GUIDE.md) 深入。
 
 全新克隆 170 项测试、248 项子测试及 `--demo` 通过。开发复测见 [N05/N07记录](evidence/N05_N07_REVIEW.md)；独立报告已核实在 `D:\work\gonghe-eval-runs\5fe679e_20261018\REPORT.md`，未纳入仓库，其结论仅为新 SHA 的 N05/N07 首次复测通过。不能合并旧版另八题为新版 10/10；F01/F02 未覆盖。用户已完成库存、跨轮计算、日期查询和采购预览，不代表用户已验证确认写入或全部案例。
 
@@ -14,7 +14,7 @@
 
 
 - 用户充值后模型 API 已恢复，E07 探测在 10.67 秒内正常返回澄清。此前免费额度 HTTP403 是已保留的历史失败，不是当前阻断。
-- 当前默认八工具，170项代码测试通过，最新输出为`unit_n05_n07_final.txt`；日期阶段19项REST初版回归及只读核对记录分别为`invoice_dates_rest.json`、`invoice_dates_readback.json`。历史149项`unit_read_policy.txt`、156项`unit_turn_controls.txt`、注册表阶段128项`unit_registry.txt`及安全阶段115项`unit_security.txt`保留。
+- 原始验收基线默认八工具、170项代码测试通过，原输出为`unit_n05_n07_final.txt`；当前 `main-v2` 为九工具、190项离线回归通过，新增统计与来源引用测试包含在 GitHub Actions 结果中；日期阶段19项REST初版回归及只读核对记录分别为`invoice_dates_rest.json`、`invoice_dates_readback.json`。历史149项`unit_read_policy.txt`、156项`unit_turn_controls.txt`、注册表阶段128项`unit_registry.txt`及安全阶段115项`unit_security.txt`保留。
 - 客户API效率已补：精确GET短时复用、候选可省略count、真实HTTP预算/节流和时间收据；采购校验/回读与完整聚合回源。真实模型三轮HTTP1→0→0，见`read_efficiency.json`和[API_EFFICIENCY](API_EFFICIENCY.md)。演示限额需按客户约定配置，没有ERP改造或离线全库同步。
 - 业务正确性复核见[BUSINESS_ACCEPTANCE](BUSINESS_ACCEPTANCE.md)和`evidence/closeout_review.json`：C01/C05核心通过但完整部分，C02修正记录完整通过。不要把工具成功或脚本正常退出当作所有自然语言答案正确。
 - ce95390阶段158项程序检查输出`unit_answer_boundaries.txt`；修改前后定向复测及AI复核见[ANSWER_BOUNDARIES_REVIEW](evidence/ANSWER_BOUNDARIES_REVIEW.md)。R1完整失败、R2通过、R3部分；三类核心边界在本组修改前后均成立，没有把未复现问题标成修复成功。本人操作验证尚未执行。

@@ -75,6 +75,8 @@
 
 独立报告为单独保存的 `D:\work\gonghe-eval-runs\5fe679e_20261018\REPORT.md`，已读取核实，**尚未纳入本仓库**，这里不提供不存在的仓库链接。其余历史阶段和失败回答保留在 [AUDIT](AUDIT.md)、[业务验收说明](BUSINESS_ACCEPTANCE.md) 及其证据入口中，阶段结论不自动迁移到新版本。
 
+当前默认 `main-v2` 的增强版在 GitHub Actions 上已通过 **190 项离线测试**（记录于 [合并 PR #2](https://github.com/chengzhideng2026/gonghe-homework/pull/2)），没有因此重新运行真实模型或 ERP 全面评测。
+
 本地回归可运行 `python -m unittest discover -s tests -v`；有 pytest 环境也可运行 `python -m pytest -q tests`。这些测试不能替代独立真实业务评测。
 
 ## 明细统计工具（增强版）
