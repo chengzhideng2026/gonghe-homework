@@ -6,6 +6,17 @@
 
 **设计原则：业务事实从 ERP 读取，计算与权限约束由代码执行，模型负责理解问题和选择工具。** 不把 `DATASET.md` 中的答案装进模型提示，也不开放 SQL、Shell 或通用写入工具。
 
+**工程验证与业务评测（按版本区分）**
+
+| 已验证的结果 | 适用范围 |
+|---|---|
+| **190 / 190** 离线回归通过 | 当前已交付 `main-v2`，见 [合并 PR #2](https://github.com/chengzhideng2026/gonghe-homework/pull/2) |
+| **205 / 205** 离线回归通过 | [定向修复 PR #4](https://github.com/chengzhideng2026/gonghe-homework/pull/4) 的候选 SHA `571f52e`，**尚未合并；真实性能与 FNL-12 待复测** |
+| 多系列真实 ERP + 模型历史评测 | E/H/C 等已保存原始轨迹、部分失败和复测结论；详见 [评测证据索引](EVALUATION_EVIDENCE.md)，不能拼成一个最终版本的通过率 |
+| **60 题统一评测** | 40 道去重历史候选题 + 20 道新题，**规划中，未冻结 Oracle、未执行，不展示通过率** |
+
+这些数字分属代码级回归和真实模型业务评测，不可互相代替。
+
 ## 1. 快速启动
 
 需要 Git、Python **3.10+**、Docker Engine/Desktop、Compose **2.24.4+** 及可用的 OpenAI-compatible 模型 API。Agent 自身无需第三方 Python 包；首次下载镜像、ERP 恢复和模型配置可能使总启动时间超过五分钟。
