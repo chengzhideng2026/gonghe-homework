@@ -11,10 +11,11 @@
 | 已验证的结果 | 适用范围 |
 |---|---|
 | **190 / 190** 离线回归通过 | 当前已交付 `main-v2`，见 [合并 PR #2](https://github.com/chengzhideng2026/gonghe-homework/pull/2) |
-| **229 / 229** 离线回归通过 | [定向修复 PR #4](https://github.com/chengzhideng2026/gonghe-homework/pull/4) 的最新候选 SHA `bd86c939`，**尚未合并；尚待在该 SHA 上进行真实模型定向回归（前一提交的 H08 冒烟暴露币种来源误报，新提交已做离线修复）** |
-| **6 道真实模型定向题** | 旧候选 `571f52e` 核心 5 PASS/1 PARTIAL；完整 3 PASS/1 PARTIAL/2 FAIL。FNL-12 已修复，核销关联与 EUR 报价暴露未解决问题；见 [脱敏复盘](evidence/TARGETED_REAL_MODEL_REVIEW_20261018.md)。**这不是最新 `bd86c939` 的成绩** |
+| **231 / 231** 离线回归通过 | [定向修复 PR #4](https://github.com/chengzhideng2026/gonghe-homework/pull/4) 的最新候选 SHA `f11d6c09`，**尚未合并；尚待在该 SHA 上进行真实模型定向回归（前一提交的 H08 冒烟暴露币种来源误报，新提交已做离线修复）** |
+| **6 道真实模型定向题** | 旧候选 `571f52e` 核心 5 PASS/1 PARTIAL；完整 3 PASS/1 PARTIAL/2 FAIL。FNL-12 已修复，核销关联与 EUR 报价暴露未解决问题；见 [脱敏复盘](evidence/TARGETED_REAL_MODEL_REVIEW_20261018.md)。**这不是最新 `f11d6c09` 的成绩** |
 | 多系列真实 ERP + 模型历史评测 | E/H/C 等已保存原始轨迹、部分失败和复测结论；详见 [评测证据索引](EVALUATION_EVIDENCE.md)，不能拼成一个最终版本的通过率 |
-| **最新候选的 Windows 真实模型冒烟** | `bd86c939` 上 H08、E07、E08 与一题临时付款核销测试均产生有效回答；原始业务判分仍待人工核验，见 [冒烟记录](evidence/WINDOWS_SMOKE_REVIEW_20261018.md)。不代替冻结 FNL 评测 |
+| **最新候选的 Windows 真实模型冒烟** | `f11d6c09` 上 H08、E07、E08 与一题临时付款核销测试均产生有效回答；原始业务判分仍待人工核验，见 [冒烟记录](evidence/WINDOWS_SMOKE_REVIEW_20261018.md)。不代替冻结 FNL 评测 |
+| **冻结六题独立首次评测** | 前一候选 `bd86c939`：核心人工审查 4 PASS / 2 PARTIAL，完整 4 PASS / 2 FAIL；FNL-12 第二轮 exception，FNL-07 回答被证据检查误改；见 [逐题复盘](evidence/DIRECTED_SIX_CASE_BD86_REVIEW_20261018.md)。**新 `f11d6c09` 尚未实测** |
 | **60 题统一评测** | 40 道去重历史候选题 + 20 道新题，**规划中，未冻结 Oracle、未执行，不展示通过率** |
 
 这些数字分属代码级回归和真实模型业务评测，不可互相代替。
@@ -104,6 +105,6 @@ python -m unittest discover -s tests -v
 - **正确性与安全**：[业务验收](BUSINESS_ACCEPTANCE.md) · [请求成本](API_EFFICIENCY.md) · [采购恢复设计](RECOVERY_AND_DESIGN.md)
 - **历史证据**：[评测证据索引](EVALUATION_EVIDENCE.md) · [审计记录](AUDIT.md) · [原始明细统计实验](https://github.com/chengzhideng2026/gonghe-homework/tree/experiment/detail-statistics/experiment)
 
-**发布说明：**本 README 在 PR #5 的文档草稿分支上，所列 `229/229` 对应未合并的 PR #4 候选。正式合并后须以新的 `main-v2` SHA 和 CI 再确认版本状态。以下评审入口仍是公开仓库默认分支。
+**发布说明：**本 README 在 PR #5 的文档草稿分支上，所列 `231/231` 对应未合并的 PR #4 候选。正式合并后须以新的 `main-v2` SHA 和 CI 再确认版本状态。以下评审入口仍是公开仓库默认分支。
 
 **评审入口始终是公开仓库默认分支 [`main-v2`](https://github.com/chengzhideng2026/gonghe-homework/tree/main-v2)**；其他实验及待审 PR 不代表已交付能力。
