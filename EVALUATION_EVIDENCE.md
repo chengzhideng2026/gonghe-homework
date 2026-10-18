@@ -1,6 +1,6 @@
 # Evaluation Evidence — reproducible test matrix
 
-**Read this before interpreting a percentage:** this project has **offline code checks, real ERP REST checks, and actual-LLM business cases**. They validate different things. Historic model cases span **different commits and sometimes overlapping questions**; they cannot be merged into an overall pass rate. The 60-case unified bank is **planned but not run**.
+**Evidence-rich validation across code, ERP and real-model business behavior.** This project has **offline code checks, real ERP REST checks, and actual-LLM business cases**. They validate different things. Historic model cases span **different commits and sometimes overlapping questions**; they cannot be merged into an overall pass rate. The 60-case unified bank is **planned but not run**.
 
 ## Executive scorecard
 
@@ -64,6 +64,6 @@ python agent.py --check-model
 
 The latest candidate's H08 answer checker can reject a correct response even when the foreign-currency boundary is safe. That reduces **answer availability**, not authorization. The current implementation also does not promise a transactional read snapshot, global ERP-server exactly-once, comprehensive tenant ACLs, or correct handling of arbitrary natural-language unsupported statements. These limitations are acceptance inputs, not hidden guarantees.
 
-The **60-case plan** collected original questions (10), E (8), H (10), C (6), and FNL (12): 46 candidate problems; six substantial duplicates removed → 40; 20 new scenarios proposed. **No frozen independent Oracle or completed all-60 run exists.** Previous estimate of 240–360 model and 400–700 ERP calls is planning only, not measured usage.
+The [60-case independent evaluation protocol](EVALUATION_60_PROTOCOL.md) collects original questions (10), E (8), H (10), C (6), and FNL (12): 46 candidate sources, with six overlapping slots to resolve into 40 unique existing cases; 20 new scenarios proposed. The precise 40 selected IDs, 20 new question texts and private Oracle must still be frozen before any valid scored 60-case run. **No frozen independent Oracle or completed all-60 run exists.** Previous estimate of 240–360 model and 400–700 ERP calls is planning only, not measured usage.
 
 Further technical depth: [business grading criteria](BUSINESS_ACCEPTANCE.md) · [architecture](ARCHITECTURE.md) · [prior audit](AUDIT.md) · [H08 exception evidence](evidence/H08_3636_LIVE_RETEST_PENDING_20261018.md).
