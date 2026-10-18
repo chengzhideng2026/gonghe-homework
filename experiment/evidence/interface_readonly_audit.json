@@ -1,0 +1,788 @@
+{
+  "scope": "Existing files only; no model or ERP calls. JSON byte counts reconstructed from untrimmed history and definitions; not measured token attribution or raw HTTP captures. Usage is recorded provider data.",
+  "runs": [
+    {
+      "case": "D01",
+      "variant": "baseline",
+      "definition_json_bytes": 7119,
+      "definition_count": 8,
+      "rounds": [
+        {
+          "round": 1,
+          "usage": {
+            "completion_tokens": 190,
+            "completion_tokens_details": {
+              "reasoning_tokens": 69,
+              "text_tokens": 190
+            },
+            "prompt_tokens": 3512,
+            "prompt_tokens_details": {
+              "cached_tokens": 0,
+              "text_tokens": 3512
+            },
+            "total_tokens": 3702
+          },
+          "reconstructed_messages_json_bytes": 9017,
+          "message_count": 2,
+          "assistant_json_bytes": 779,
+          "tool_names": [
+            "aggregate_documents"
+          ]
+        },
+        {
+          "round": 2,
+          "usage": {
+            "completion_tokens": 152,
+            "completion_tokens_details": {
+              "reasoning_tokens": 25,
+              "text_tokens": 152
+            },
+            "prompt_tokens": 4144,
+            "prompt_tokens_details": {
+              "cached_tokens": 3200,
+              "text_tokens": 4144
+            },
+            "total_tokens": 4296
+          },
+          "reconstructed_messages_json_bytes": 11457,
+          "message_count": 4,
+          "assistant_json_bytes": 672,
+          "tool_names": [
+            "aggregate_documents"
+          ]
+        },
+        {
+          "round": 3,
+          "usage": {
+            "completion_tokens": 206,
+            "completion_tokens_details": {
+              "reasoning_tokens": 48,
+              "text_tokens": 206
+            },
+            "prompt_tokens": 4423,
+            "prompt_tokens_details": {
+              "cached_tokens": 4096,
+              "text_tokens": 4423
+            },
+            "total_tokens": 4629
+          },
+          "reconstructed_messages_json_bytes": 12663,
+          "message_count": 6,
+          "assistant_json_bytes": 838,
+          "tool_names": [
+            "list_documents"
+          ]
+        },
+        {
+          "round": 4,
+          "usage": {
+            "completion_tokens": 118,
+            "completion_tokens_details": {
+              "reasoning_tokens": 14,
+              "text_tokens": 118
+            },
+            "prompt_tokens": 5378,
+            "prompt_tokens_details": {
+              "cached_tokens": 4352,
+              "text_tokens": 5378
+            },
+            "total_tokens": 5496
+          },
+          "reconstructed_messages_json_bytes": 16125,
+          "message_count": 8,
+          "assistant_json_bytes": 403,
+          "tool_names": [
+            "get_documents"
+          ]
+        },
+        {
+          "round": 5,
+          "usage": {
+            "completion_tokens": 233,
+            "completion_tokens_details": {
+              "reasoning_tokens": 106,
+              "text_tokens": 233
+            },
+            "prompt_tokens": 14231,
+            "prompt_tokens_details": {
+              "cached_tokens": 5120,
+              "text_tokens": 14231
+            },
+            "total_tokens": 14464
+          },
+          "reconstructed_messages_json_bytes": 40586,
+          "message_count": 10,
+          "assistant_json_bytes": 785,
+          "tool_names": [
+            "calculate",
+            "calculate",
+            "calculate"
+          ]
+        },
+        {
+          "round": 6,
+          "usage": {
+            "completion_tokens": 633,
+            "completion_tokens_details": {
+              "reasoning_tokens": 30,
+              "text_tokens": 633
+            },
+            "prompt_tokens": 14925,
+            "prompt_tokens_details": {
+              "cached_tokens": 14080,
+              "text_tokens": 14925
+            },
+            "total_tokens": 15558
+          },
+          "reconstructed_messages_json_bytes": 43060,
+          "message_count": 14,
+          "assistant_json_bytes": 2238,
+          "tool_names": []
+        }
+      ],
+      "tool_bodies": [
+        {
+          "call_id": "call_bbc3a663a400457c86abd8a3",
+          "body_utf8_bytes": 1393,
+          "body_keys": [
+            "ok",
+            "error",
+            "io"
+          ],
+          "protocol_id_in_body": false
+        },
+        {
+          "call_id": "call_775e368347ef4a4eb03dcf4f",
+          "body_utf8_bytes": 422,
+          "body_keys": [
+            "ok",
+            "error",
+            "io"
+          ],
+          "protocol_id_in_body": false
+        },
+        {
+          "call_id": "call_146f78ff7a7b4400a5981690",
+          "body_utf8_bytes": 2338,
+          "body_keys": [
+            "ok",
+            "data",
+            "io"
+          ],
+          "protocol_id_in_body": false
+        },
+        {
+          "call_id": "call_5a077908072d4b808e6f31d7",
+          "body_utf8_bytes": 21778,
+          "body_keys": [
+            "ok",
+            "data",
+            "io"
+          ],
+          "protocol_id_in_body": false
+        },
+        {
+          "call_id": "call_a7b616490f364fb387e8b9b3",
+          "body_utf8_bytes": 437,
+          "body_keys": [
+            "ok",
+            "data",
+            "io"
+          ],
+          "protocol_id_in_body": false
+        },
+        {
+          "call_id": "call_377446545e9945b9b64e604d",
+          "body_utf8_bytes": 443,
+          "body_keys": [
+            "ok",
+            "data",
+            "io"
+          ],
+          "protocol_id_in_body": false
+        },
+        {
+          "call_id": "call_d6e97d1ad5204bff9038368c",
+          "body_utf8_bytes": 453,
+          "body_keys": [
+            "ok",
+            "data",
+            "io"
+          ],
+          "protocol_id_in_body": false
+        }
+      ],
+      "context": {
+        "trimmed": false,
+        "bytes": 42670,
+        "over_budget": false
+      }
+    },
+    {
+      "case": "D01",
+      "variant": "experiment",
+      "definition_json_bytes": 8619,
+      "definition_count": 9,
+      "rounds": [
+        {
+          "round": 1,
+          "usage": {
+            "completion_tokens": 337,
+            "completion_tokens_details": {
+              "reasoning_tokens": 192,
+              "text_tokens": 337
+            },
+            "prompt_tokens": 3847,
+            "prompt_tokens_details": {
+              "cached_tokens": 1024,
+              "text_tokens": 3847
+            },
+            "total_tokens": 4184
+          },
+          "reconstructed_messages_json_bytes": 9017,
+          "message_count": 2,
+          "assistant_json_bytes": 1383,
+          "tool_names": [
+            "list_documents"
+          ]
+        },
+        {
+          "round": 2,
+          "usage": {
+            "completion_tokens": 139,
+            "completion_tokens_details": {
+              "reasoning_tokens": 35,
+              "text_tokens": 139
+            },
+            "prompt_tokens": 4933,
+            "prompt_tokens_details": {
+              "cached_tokens": 3200,
+              "text_tokens": 4933
+            },
+            "total_tokens": 5072
+          },
+          "reconstructed_messages_json_bytes": 13024,
+          "message_count": 4,
+          "assistant_json_bytes": 486,
+          "tool_names": [
+            "get_documents"
+          ]
+        },
+        {
+          "round": 3,
+          "usage": {
+            "completion_tokens": 504,
+            "completion_tokens_details": {
+              "reasoning_tokens": 326,
+              "text_tokens": 504
+            },
+            "prompt_tokens": 13807,
+            "prompt_tokens_details": {
+              "cached_tokens": 4352,
+              "text_tokens": 13807
+            },
+            "total_tokens": 14311
+          },
+          "reconstructed_messages_json_bytes": 37568,
+          "message_count": 6,
+          "assistant_json_bytes": 1710,
+          "tool_names": [
+            "calculate",
+            "calculate",
+            "calculate"
+          ]
+        },
+        {
+          "round": 4,
+          "usage": {
+            "completion_tokens": 642,
+            "completion_tokens_details": {
+              "reasoning_tokens": 50,
+              "text_tokens": 642
+            },
+            "prompt_tokens": 14821,
+            "prompt_tokens_details": {
+              "cached_tokens": 13312,
+              "text_tokens": 14821
+            },
+            "total_tokens": 15463
+          },
+          "reconstructed_messages_json_bytes": 41025,
+          "message_count": 10,
+          "assistant_json_bytes": 2150,
+          "tool_names": []
+        }
+      ],
+      "tool_bodies": [
+        {
+          "call_id": "call_1c9b6c98cf224e87a30bd4dd",
+          "body_utf8_bytes": 2338,
+          "body_keys": [
+            "ok",
+            "data",
+            "io"
+          ],
+          "protocol_id_in_body": false
+        },
+        {
+          "call_id": "call_eb6b718c44e64f49b88f762d",
+          "body_utf8_bytes": 21778,
+          "body_keys": [
+            "ok",
+            "data",
+            "io"
+          ],
+          "protocol_id_in_body": false
+        },
+        {
+          "call_id": "call_ddac897d454c4384b1412345",
+          "body_utf8_bytes": 437,
+          "body_keys": [
+            "ok",
+            "data",
+            "io"
+          ],
+          "protocol_id_in_body": false
+        },
+        {
+          "call_id": "call_5e96065887c944919acb9ba0",
+          "body_utf8_bytes": 443,
+          "body_keys": [
+            "ok",
+            "data",
+            "io"
+          ],
+          "protocol_id_in_body": false
+        },
+        {
+          "call_id": "call_0b184ebc5827442d9e604e91",
+          "body_utf8_bytes": 511,
+          "body_keys": [
+            "ok",
+            "data",
+            "io"
+          ],
+          "protocol_id_in_body": false
+        }
+      ],
+      "context": {
+        "trimmed": false,
+        "bytes": 40632,
+        "over_budget": false
+      }
+    },
+    {
+      "case": "D02",
+      "variant": "baseline",
+      "definition_json_bytes": 7119,
+      "definition_count": 8,
+      "rounds": [
+        {
+          "round": 1,
+          "usage": {
+            "completion_tokens": 419,
+            "completion_tokens_details": {
+              "reasoning_tokens": 266,
+              "text_tokens": 419
+            },
+            "prompt_tokens": 3513,
+            "prompt_tokens_details": {
+              "cached_tokens": 3200,
+              "text_tokens": 3513
+            },
+            "total_tokens": 3932
+          },
+          "reconstructed_messages_json_bytes": 9020,
+          "message_count": 2,
+          "assistant_json_bytes": 1608,
+          "tool_names": [
+            "aggregate_documents"
+          ]
+        },
+        {
+          "round": 2,
+          "usage": {
+            "completion_tokens": 538,
+            "completion_tokens_details": {
+              "reasoning_tokens": 198,
+              "text_tokens": 538
+            },
+            "prompt_tokens": 4374,
+            "prompt_tokens_details": {
+              "cached_tokens": 3200,
+              "text_tokens": 4374
+            },
+            "total_tokens": 4912
+          },
+          "reconstructed_messages_json_bytes": 12286,
+          "message_count": 4,
+          "assistant_json_bytes": 2131,
+          "tool_names": [
+            "aggregate_documents",
+            "list_documents"
+          ]
+        },
+        {
+          "round": 3,
+          "usage": {
+            "completion_tokens": 279,
+            "completion_tokens_details": {
+              "reasoning_tokens": 125,
+              "text_tokens": 279
+            },
+            "prompt_tokens": 6475,
+            "prompt_tokens_details": {
+              "cached_tokens": 4352,
+              "text_tokens": 6475
+            },
+            "total_tokens": 6754
+          },
+          "reconstructed_messages_json_bytes": 19641,
+          "message_count": 7,
+          "assistant_json_bytes": 835,
+          "tool_names": [
+            "calculate",
+            "calculate",
+            "calculate"
+          ]
+        },
+        {
+          "round": 4,
+          "usage": {
+            "completion_tokens": 88,
+            "completion_tokens_details": {
+              "reasoning_tokens": 47,
+              "text_tokens": 88
+            },
+            "prompt_tokens": 7239,
+            "prompt_tokens_details": {
+              "cached_tokens": 6144,
+              "text_tokens": 7239
+            },
+            "total_tokens": 7327
+          },
+          "reconstructed_messages_json_bytes": 22186,
+          "message_count": 11,
+          "assistant_json_bytes": 369,
+          "tool_names": [
+            "calculate"
+          ]
+        },
+        {
+          "round": 5,
+          "usage": {
+            "completion_tokens": 680,
+            "completion_tokens_details": {
+              "reasoning_tokens": 31,
+              "text_tokens": 680
+            },
+            "prompt_tokens": 7456,
+            "prompt_tokens_details": {
+              "cached_tokens": 7168,
+              "text_tokens": 7456
+            },
+            "total_tokens": 8136
+          },
+          "reconstructed_messages_json_bytes": 23091,
+          "message_count": 13,
+          "assistant_json_bytes": 2302,
+          "tool_names": []
+        }
+      ],
+      "tool_bodies": [
+        {
+          "call_id": "call_1a1cf55642204d7ebfa26221",
+          "body_utf8_bytes": 1390,
+          "body_keys": [
+            "ok",
+            "error",
+            "io"
+          ],
+          "protocol_id_in_body": false
+        },
+        {
+          "call_id": "call_7093e2ceae324e69b9ce6872",
+          "body_utf8_bytes": 1390,
+          "body_keys": [
+            "ok",
+            "error",
+            "io"
+          ],
+          "protocol_id_in_body": false
+        },
+        {
+          "call_id": "call_9a856c802603434ca334c995",
+          "body_utf8_bytes": 3188,
+          "body_keys": [
+            "ok",
+            "data",
+            "io"
+          ],
+          "protocol_id_in_body": false
+        },
+        {
+          "call_id": "call_8c19ce5710e44fb8a812cc86",
+          "body_utf8_bytes": 427,
+          "body_keys": [
+            "ok",
+            "data",
+            "io"
+          ],
+          "protocol_id_in_body": false
+        },
+        {
+          "call_id": "call_2f76614075604ad393cdd0c1",
+          "body_utf8_bytes": 443,
+          "body_keys": [
+            "ok",
+            "data",
+            "io"
+          ],
+          "protocol_id_in_body": false
+        },
+        {
+          "call_id": "call_e491f2f9d9ed45ffba6d42ea",
+          "body_utf8_bytes": 484,
+          "body_keys": [
+            "ok",
+            "data",
+            "io"
+          ],
+          "protocol_id_in_body": false
+        },
+        {
+          "call_id": "call_796c61a1c532421d8d1a1c3b",
+          "body_utf8_bytes": 424,
+          "body_keys": [
+            "ok",
+            "error",
+            "io"
+          ],
+          "protocol_id_in_body": false
+        }
+      ],
+      "context": {
+        "trimmed": false,
+        "bytes": 22689,
+        "over_budget": false
+      }
+    },
+    {
+      "case": "D02",
+      "variant": "experiment",
+      "definition_json_bytes": 8619,
+      "definition_count": 9,
+      "rounds": [
+        {
+          "round": 1,
+          "usage": {
+            "completion_tokens": 209,
+            "completion_tokens_details": {
+              "reasoning_tokens": 65,
+              "text_tokens": 209
+            },
+            "prompt_tokens": 3848,
+            "prompt_tokens_details": {
+              "cached_tokens": 3200,
+              "text_tokens": 3848
+            },
+            "total_tokens": 4057
+          },
+          "reconstructed_messages_json_bytes": 9020,
+          "message_count": 2,
+          "assistant_json_bytes": 761,
+          "tool_names": [
+            "list_documents"
+          ]
+        },
+        {
+          "round": 2,
+          "usage": {
+            "completion_tokens": 151,
+            "completion_tokens_details": {
+              "reasoning_tokens": 26,
+              "text_tokens": 151
+            },
+            "prompt_tokens": 4654,
+            "prompt_tokens_details": {
+              "cached_tokens": 3200,
+              "text_tokens": 4654
+            },
+            "total_tokens": 4805
+          },
+          "reconstructed_messages_json_bytes": 11827,
+          "message_count": 4,
+          "assistant_json_bytes": 506,
+          "tool_names": [
+            "get_documents"
+          ]
+        },
+        {
+          "round": 3,
+          "usage": {
+            "completion_tokens": 225,
+            "completion_tokens_details": {
+              "reasoning_tokens": 148,
+              "text_tokens": 225
+            },
+            "prompt_tokens": 15865,
+            "prompt_tokens_details": {
+              "cached_tokens": 4352,
+              "text_tokens": 15865
+            },
+            "total_tokens": 16090
+          },
+          "reconstructed_messages_json_bytes": 42479,
+          "message_count": 6,
+          "assistant_json_bytes": 974,
+          "tool_names": [
+            "summarize_details"
+          ]
+        },
+        {
+          "round": 4,
+          "usage": {
+            "completion_tokens": 179,
+            "completion_tokens_details": {
+              "reasoning_tokens": 102,
+              "text_tokens": 179
+            },
+            "prompt_tokens": 16218,
+            "prompt_tokens_details": {
+              "cached_tokens": 15360,
+              "text_tokens": 16218
+            },
+            "total_tokens": 16397
+          },
+          "reconstructed_messages_json_bytes": 43984,
+          "message_count": 8,
+          "assistant_json_bytes": 713,
+          "tool_names": [
+            "summarize_details"
+          ]
+        },
+        {
+          "round": 5,
+          "usage": {
+            "completion_tokens": 479,
+            "completion_tokens_details": {
+              "reasoning_tokens": 300,
+              "text_tokens": 479
+            },
+            "prompt_tokens": 16525,
+            "prompt_tokens_details": {
+              "cached_tokens": 15360,
+              "text_tokens": 16525
+            },
+            "total_tokens": 17004
+          },
+          "reconstructed_messages_json_bytes": 45228,
+          "message_count": 10,
+          "assistant_json_bytes": 1326,
+          "tool_names": [
+            "calculate",
+            "calculate",
+            "calculate"
+          ]
+        },
+        {
+          "round": 6,
+          "usage": {
+            "completion_tokens": 671,
+            "completion_tokens_details": {
+              "reasoning_tokens": 57,
+              "text_tokens": 671
+            },
+            "prompt_tokens": 17514,
+            "prompt_tokens_details": {
+              "cached_tokens": 16384,
+              "text_tokens": 17514
+            },
+            "total_tokens": 18185
+          },
+          "reconstructed_messages_json_bytes": 48305,
+          "message_count": 14,
+          "assistant_json_bytes": 2212,
+          "tool_names": []
+        }
+      ],
+      "tool_bodies": [
+        {
+          "call_id": "call_761382a06d8d40c69f4b3574",
+          "body_utf8_bytes": 1820,
+          "body_keys": [
+            "ok",
+            "data",
+            "io"
+          ],
+          "protocol_id_in_body": false
+        },
+        {
+          "call_id": "call_a6fa535806934a38a00af771",
+          "body_utf8_bytes": 27330,
+          "body_keys": [
+            "ok",
+            "data",
+            "io"
+          ],
+          "protocol_id_in_body": false
+        },
+        {
+          "call_id": "call_4a0f1ad2f4c240018edd6f27",
+          "body_utf8_bytes": 419,
+          "body_keys": [
+            "ok",
+            "error",
+            "io"
+          ],
+          "protocol_id_in_body": false
+        },
+        {
+          "call_id": "call_316bf1edcfc2431daf8544ee",
+          "body_utf8_bytes": 419,
+          "body_keys": [
+            "ok",
+            "error",
+            "io"
+          ],
+          "protocol_id_in_body": false
+        },
+        {
+          "call_id": "call_0ed923e77e1d4c30b69d0172",
+          "body_utf8_bytes": 435,
+          "body_keys": [
+            "ok",
+            "data",
+            "io"
+          ],
+          "protocol_id_in_body": false
+        },
+        {
+          "call_id": "call_dc001900b39a49f3b9c344fc",
+          "body_utf8_bytes": 451,
+          "body_keys": [
+            "ok",
+            "data",
+            "io"
+          ],
+          "protocol_id_in_body": false
+        },
+        {
+          "call_id": "call_02c318ae4a694d319cdf7b05",
+          "body_utf8_bytes": 509,
+          "body_keys": [
+            "ok",
+            "data",
+            "io"
+          ],
+          "protocol_id_in_body": false
+        }
+      ],
+      "context": {
+        "trimmed": false,
+        "bytes": 47908,
+        "over_budget": false
+      }
+    }
+  ]
+}

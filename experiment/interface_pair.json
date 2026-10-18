@@ -1,0 +1,16 @@
+{
+  "comparison": "third and final pair under the original maximum; authorized interface repair retest, not a selected retry",
+  "source_case": "D02",
+  "question": "以2025-10-15为参考日，统计Crestwind Compressor Manufacturing Co.所有交易日不晚于参考日、已提交销售订单中FG-COMP-1.5HP-R32的明细。只回答匹配行数、不同父单数、数量合计、行amount合计、rate最低和最高值、按qty加权的rate均价。加权均价保留两位小数、四舍五入，给出计算分子和分母。说明币种、单位及查询覆盖范围，不混合币种或单位。只读，不生成采购预览。",
+  "baseline": "5fe679ea3aaffd53042518238acf09866e56bc4b",
+  "pre_fix_experiment": "2e53f12ee1042260e871eb7ff4e11e5f6cf098c7",
+  "variants": [
+    "baseline",
+    "fixed"
+  ],
+  "asks_per_variant": 1,
+  "retries": 0,
+  "new_cases": 0,
+  "budgets": "Same model/configuration and ERP budgets as the original pair; no increases. ERP zero writes.",
+  "oracle": "Reuse retained D02 raw oracle and additionally compare actual current read evidence; no new oracle queries required."
+}
