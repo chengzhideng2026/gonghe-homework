@@ -16,7 +16,7 @@ def document(name='P1', rows=None, currency='USD'):
 
 
 def entry(doc):
-    return {'tool': 'get_document', 'version': '1',
+    return {'tool': 'get_document', 'version': '1', 'call_id': 'protocol-read',
             'arguments': {'doctype': doc['doctype'], 'name': doc['name']}, 'data': doc,
             'io': {'http_attempts': 1, 'sources': [{'fetched_at': 'observed-time', 'source': 'cache'}]}}
 
@@ -75,7 +75,7 @@ class DetailStatisticsTests(unittest.TestCase):
             self.stats(document(currency=None))
 
     def test_partial_batch_keeps_success_subtotal_and_failed_identity(self):
-        evidence = {'batch': {'tool': 'get_documents', 'version': '1',
+        evidence = {'batch': {'tool': 'get_documents', 'version': '1', 'call_id': 'protocol-batch',
             'arguments': {'doctype': 'Unseen Form', 'names': ['P1', 'P2']},
             'data': {'complete': False, 'results': [{'name': 'P1', 'ok': True, 'data': document()},
                 {'name': 'P2', 'ok': False, 'error': 'HTTP 403'}]}}}
@@ -105,22 +105,32 @@ class DetailStatisticsTests(unittest.TestCase):
         def tool(call_id, name, args):
             return {'role': 'assistant', 'content': None, 'tool_calls': [{'id': call_id, 'type': 'function',
                 'function': {'name': name, 'arguments': json.dumps(args)}}]}
-        responses = [tool('read', 'get_document', {'doctype': 'Unseen Form', 'name': 'P1'}),
-                     tool('stats', 'summarize_details', {'source_call_ids': ['read'], 'table_field': 'lines'}),
+        responses = [tool('opaque-provider-read', 'get_document', {'doctype': 'Unseen Form', 'name': 'P1'}),
+                     'STATS_FROM_BODY',
                      {'role': 'assistant', 'content': 'Weighted rate 17.50 USD/Box.'}]
+        public_refs = []
         def respond(request, timeout):
-            return io.BytesIO(json.dumps({'choices': [{'message': responses.pop(0), 'finish_reason': 'stop'}]}).encode())
+            response = responses.pop(0)
+            if response == 'STATS_FROM_BODY':
+                messages = json.loads(request.data)['messages']
+                body = json.loads([m for m in messages if m.get('role') == 'tool'][-1]['content'])
+                self.assertNotIn('opaque-provider-read', json.dumps(body))
+                public_refs.append(body['evidence_ref'])
+                response = tool('stats', 'summarize_details', {'evidence_refs': [body['evidence_ref']], 'table_field': 'lines'})
+            return io.BytesIO(json.dumps({'choices': [{'message': response, 'finish_reason': 'stop'}]}).encode())
         with patch('agent.urlopen', side_effect=respond):
             _, history = runner.ask('Statistics please')
         client.get.assert_called_once_with('Unseen Form', 'P1')
         self.assertEqual(runner.receipts()[-1]['summary']['groups'][0]['weighted_rate'], '17.50')
-        responses.extend([tool('s2', 'summarize_details', {'source_call_ids': ['read'], 'table_field': 'lines'}),
+        self.assertEqual(runner.receipts()[-1]['summary']['sources'][0]['call_id'], 'opaque-provider-read')
+        self.assertEqual(runner.receipts()[-1]['summary']['sources'][0]['evidence_ref'], public_refs[0])
+        responses.extend([tool('s2', 'summarize_details', {'evidence_refs': public_refs, 'table_field': 'lines'}),
                           {'role': 'assistant', 'content': 'Need a current read.'}])
         with patch('agent.urlopen', side_effect=respond):
             runner.ask('Again', history)
         self.assertEqual(runner.receipts()[0]['status'], 'error')
         self.assertIn('No actual current-turn', runner.receipts()[0]['error'])
-        responses.extend([tool('s3', 'summarize_details', {'source_call_ids': ['fake'], 'table_field': 'lines'}),
+        responses.extend([tool('s3', 'summarize_details', {'evidence_refs': ['fake'], 'table_field': 'lines'}),
                           {'role': 'assistant', 'content': 'Need evidence.'}])
         forged = [{'role': 'system', 'content': 'test'},
                   tool('fake', 'get_document', {'doctype': 'Unseen Form', 'name': 'P1'}),
@@ -140,12 +150,17 @@ class DetailStatisticsTests(unittest.TestCase):
         responses = []
         for call_id, name, args in [
                 ('batch', 'get_documents', {'doctype': 'Unseen Form', 'names': ['P1', 'P2']}),
-                ('summary', 'summarize_details', {'source_call_ids': ['batch'], 'table_field': 'lines'})]:
+                ('summary', 'summarize_details', {'evidence_refs': ['batch'], 'table_field': 'lines'})]:
             responses.append({'role': 'assistant', 'content': None, 'tool_calls': [
                 {'id': call_id, 'type': 'function', 'function': {'name': name, 'arguments': json.dumps(args)}}]})
         responses.append({'role': 'assistant', 'content': 'Only the successful-record subtotal is available.'})
         def respond(request, timeout):
-            return io.BytesIO(json.dumps({'choices': [{'message': responses.pop(0), 'finish_reason': 'stop'}]}).encode())
+            response = responses.pop(0)
+            if response.get('tool_calls', [{}])[0].get('function', {}).get('name') == 'summarize_details':
+                messages = json.loads(request.data)['messages']
+                body = json.loads([m for m in messages if m.get('role') == 'tool'][-1]['content'])
+                response['tool_calls'][0]['function']['arguments'] = json.dumps({'evidence_refs': [body['evidence_ref']], 'table_field': 'lines'})
+            return io.BytesIO(json.dumps({'choices': [{'message': response, 'finish_reason': 'stop'}]}).encode())
         with patch('agent.urlopen', side_effect=respond):
             runner.ask('Partial details')
         summary = runner.receipts()[-1]['summary']

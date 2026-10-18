@@ -15,11 +15,11 @@ def _number(value, field):
     return number
 
 
-def summarize_details(evidence, source_call_ids, table_field, fields=None, row_equals=None):
+def summarize_details(evidence, evidence_refs, table_field, fields=None, row_equals=None):
     """No HTTP, model-supplied rows, eval, or inference of global completeness."""
-    if (not isinstance(source_call_ids, list) or not 1 <= len(source_call_ids) <= 40
-            or any(not isinstance(i, str) or not i for i in source_call_ids)):
-        raise ValueError('source_call_ids must contain 1 to 40 current-turn read IDs')
+    if (not isinstance(evidence_refs, list) or not 1 <= len(evidence_refs) <= 40
+            or any(not isinstance(i, str) or not i for i in evidence_refs)):
+        raise ValueError('evidence_refs must contain 1 to 40 explicit current-turn read references')
     mapping = {'quantity': 'qty', 'amount': 'amount', 'rate': 'rate',
                'currency': 'currency', 'unit': 'uom', 'company': 'company'}
     if fields is not None:
@@ -34,12 +34,13 @@ def summarize_details(evidence, source_call_ids, table_field, fields=None, row_e
                    or not isinstance(v, (str, int, bool)) for f, v in row_equals.items())):
         raise ValueError('row_equals must be a small exact field/value object')
     sources, documents, failures = [], [], []
-    for call_id in dict.fromkeys(source_call_ids):
-        entry = evidence.get(call_id)
+    for evidence_ref in dict.fromkeys(evidence_refs):
+        entry = evidence.get(evidence_ref)
         if not entry or entry['tool'] not in ('get_document', 'get_documents'):
-            raise ValueError(f'No actual current-turn parent-read evidence: {call_id}')
+            raise ValueError(f'No actual current-turn parent-read evidence: {evidence_ref}')
         args, data = entry['arguments'], entry['data']
-        sources.append({'call_id': call_id, 'tool': entry['tool'], 'version': entry['version'],
+        call_id = entry['call_id']
+        sources.append({'evidence_ref': evidence_ref, 'call_id': call_id, 'tool': entry['tool'], 'version': entry['version'],
                         'arguments': args, 'io': entry.get('io', {})})
         if entry['tool'] == 'get_document':
             documents.append((args['doctype'], args['name'], data))

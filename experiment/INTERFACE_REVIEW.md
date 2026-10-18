@@ -29,3 +29,31 @@
 仅在实验分支把成功父单读取的短 evidence_ref 放入工具返回正文，内部继续绑定实际协议call_id、工具版本、参数、返回数据、io时间和覆盖范围；来源必须显式选择，不默认最近一次。统计参数改为evidence_refs，其余必要字段选择和行筛选保留。来源拒绝、去重、部分读取及分区检查不放宽。计算规则仅允许这两个计算工具在其支持范围提供计算证据。
 
 先做离线协议测试：从真实出站请求的工具正文复制ref，不访问客户端内部字典/协议ID；覆盖多来源、错误/旧引用、部分成功和范围保持。只有通过后，按 [最后一组冻结计划](interface_pair.json) 对**原D02原文**新增一次原版和一次修复版比较。不新增问题、不提高预算、不重跑择优；新旧记录分开。原已交付分支不变。
+
+## 原四次轨迹的逐轮量化记录
+
+messages字节数为重建值；prompt/completion/cached均为供应商实测。定义大小在每轮分别为原版7119、旧实验8619字节。
+
+| 运行 | 轮 | prompt | completion | cached prompt | messages JSON字节 | 本轮返回的工具调用 |
+|---|---:|---:|---:|---:|---:|---|
+| D01 baseline | 1 | 3512 | 190 | 0 | 9017 | aggregate_documents |
+| D01 baseline | 2 | 4144 | 152 | 3200 | 11457 | aggregate_documents |
+| D01 baseline | 3 | 4423 | 206 | 4096 | 12663 | list_documents |
+| D01 baseline | 4 | 5378 | 118 | 4352 | 16125 | get_documents |
+| D01 baseline | 5 | 14231 | 233 | 5120 | 40586 | calculate, calculate, calculate |
+| D01 baseline | 6 | 14925 | 633 | 14080 | 43060 | 最终回答 |
+| D01 experiment | 1 | 3847 | 337 | 1024 | 9017 | list_documents |
+| D01 experiment | 2 | 4933 | 139 | 3200 | 13024 | get_documents |
+| D01 experiment | 3 | 13807 | 504 | 4352 | 37568 | calculate, calculate, calculate |
+| D01 experiment | 4 | 14821 | 642 | 13312 | 41025 | 最终回答 |
+| D02 baseline | 1 | 3513 | 419 | 3200 | 9020 | aggregate_documents |
+| D02 baseline | 2 | 4374 | 538 | 3200 | 12286 | aggregate_documents, list_documents |
+| D02 baseline | 3 | 6475 | 279 | 4352 | 19641 | calculate, calculate, calculate |
+| D02 baseline | 4 | 7239 | 88 | 6144 | 22186 | calculate |
+| D02 baseline | 5 | 7456 | 680 | 7168 | 23091 | 最终回答 |
+| D02 experiment | 1 | 3848 | 209 | 3200 | 9020 | list_documents |
+| D02 experiment | 2 | 4654 | 151 | 3200 | 11827 | get_documents |
+| D02 experiment | 3 | 15865 | 225 | 4352 | 42479 | summarize_details |
+| D02 experiment | 4 | 16218 | 179 | 15360 | 43984 | summarize_details |
+| D02 experiment | 5 | 16525 | 479 | 15360 | 45228 | calculate, calculate, calculate |
+| D02 experiment | 6 | 17514 | 671 | 16384 | 48305 | 最终回答 |

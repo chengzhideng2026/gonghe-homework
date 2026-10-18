@@ -231,7 +231,8 @@ def calculate(context, args):
 @BUILTIN_TOOLS.tool({'type': 'function', 'function': {
     'name': 'summarize_details',
     'description': 'Compute all detail statistics locally in one call from actual current-turn '
-                   'get_document/get_documents evidence. Pass their tool call IDs, child Table field, '
+                   'get_document/get_documents evidence. Copy top-level evidence_ref from each read RESULT BODY '
+                   'into evidence_refs (never guess protocol call IDs); select the child Table field, '
                    'optional field mapping and exact row_equals filters. No ERP requests or numeric arrays. '
                    'Returns line/distinct-parent counts, Decimal quantity/line-amount sums, min/max rate '
                    'and qty-weighted rate (numerator sum(qty*rate), denominator sum(qty), HALF_UP 2 decimals). '
@@ -240,10 +241,10 @@ def calculate(context, args):
                    'query pagination/filters separately before claiming a full business total. '
                    'Missing current-turn evidence requires a read; never use chat summaries as evidence.',
     'parameters': {'type': 'object', 'properties': {
-        'source_call_ids': {'type': 'array', 'items': {'type': 'string'}, 'minItems': 1, 'maxItems': 40},
+        'evidence_refs': {'type': 'array', 'items': {'type': 'string'}, 'minItems': 1, 'maxItems': 40},
         'table_field': {'type': 'string'},
         'fields': {'type': 'object', 'description': 'Optional mapping keys quantity, amount, rate, currency, unit, company to plain fields. Defaults qty, amount, rate, currency, uom, company. Currency is row field with parent fallback; company is parent field.'},
         'row_equals': {'type': 'object', 'description': 'Exact AND equality on child row fields, e.g. item_code. Missing fields fail; no inferred match.'}},
-        'required': ['source_call_ids', 'table_field'], 'additionalProperties': False}}})
+        'required': ['evidence_refs', 'table_field'], 'additionalProperties': False}}}, version='2')
 def summarize_details(context, args):
     return compute_details(context.detail_evidence or {}, **args)

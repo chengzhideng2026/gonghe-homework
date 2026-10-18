@@ -17,13 +17,22 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--repo', required=True)
     parser.add_argument('--env-file', required=True)
-    parser.add_argument('--variant', choices=['baseline', 'experiment'], required=True)
+    parser.add_argument('--variant', choices=['baseline', 'experiment', 'fixed'], required=True)
     parser.add_argument('--case', choices=['D01', 'D02'], required=True)
+    parser.add_argument('--interface-pair', action='store_true', help='Final authorized pair on frozen D02 only')
     options = parser.parse_args()
     root = Path(__file__).resolve().parent
     spec_bytes = (root / 'cases.json').read_bytes()
     spec = json.loads(spec_bytes)
     case = next(c for c in spec['cases'] if c['id'] == options.case)
+    pair_plan = None
+    if options.interface_pair:
+        pair_plan = json.loads((root / 'interface_pair.json').read_text(encoding='utf-8'))
+        if (options.case != pair_plan['source_case'] or options.variant not in pair_plan['variants']
+                or case['question'] != pair_plan['question']):
+            raise RuntimeError('Final pair must use frozen D02 unchanged, baseline/fixed once each')
+    elif options.variant == 'fixed':
+        raise RuntimeError('Fixed variant is only allowed in the final interface pair')
     repo = Path(options.repo).resolve()
     sha = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo).decode().strip()
     if options.variant == 'baseline' and sha != spec['baseline']:
@@ -38,13 +47,15 @@ def main():
     from execution_trace import ExecutionTraceWriter
     from verify_variants import po_names
     app.configure_console()
-    output = root / 'evidence' / f'{options.case}_{options.variant}.json'
+    prefix = 'interface_' if options.interface_pair else ''
+    output = root / 'evidence' / f'{prefix}{options.case}_{options.variant}.json'
     # Exclusive marker survives interruption. Do not re-run even if result is missing.
     with output.with_suffix('.started').open('x', encoding='utf-8') as marker:
         marker.write(datetime.now(timezone.utc).isoformat())
     if output.exists():
         raise RuntimeError('Refusing to overwrite first result')
     events = []
+    request_measurements = []
     phase = 'audit_before'
     native = app.urlopen
     client = app.ERPNextClient()
@@ -57,6 +68,16 @@ def main():
             body = json.loads(request.data)
             body['max_tokens'] = 4096
             request.data = json.dumps(body).encode('utf-8')
+            messages_json = json.dumps(body['messages']).encode('utf-8')
+            tools_json = json.dumps(body.get('tools', [])).encode('utf-8')
+            request_measurements.append({
+                'round': len(request_measurements) + 1, 'payload_bytes': len(request.data),
+                'messages_bytes': len(messages_json), 'tool_definition_bytes': len(tools_json),
+                'messages_sha256': hashlib.sha256(messages_json).hexdigest(),
+                'tools_sha256': hashlib.sha256(tools_json).hexdigest(),
+                'public_evidence_refs_in_tool_bodies': [json.loads(m['content'])['evidence_ref']
+                    for m in body['messages'] if m.get('role') == 'tool'
+                    and 'evidence_ref' in json.loads(m['content'])]})
             kind = 'model'
         elif request.full_url.startswith(client.base + '/'):
             part = urlsplit(request.full_url[len(client.base):])
@@ -90,12 +111,17 @@ def main():
                            'context_bytes': runner.context_max_bytes, 'max_tokens': 4096},
               'business_review': 'pending AI review, not a program pass',
               'human_operation': 'not_performed'}
+    if pair_plan is not None:
+        report['interface_pair_plan'] = pair_plan
+        report['retained_oracle'] = {'file': 'D02_baseline.json',
+            'sha256': hashlib.sha256((root / 'evidence' / 'D02_baseline.json').read_bytes()).hexdigest(),
+            'expected': json.loads((root / 'evidence' / 'D02_baseline.json').read_text(encoding='utf-8'))['independent_oracle']['expected']}
     try:
         with patch('agent.urlopen', side_effect=wire):
             audit = app.ERPNextClient()
             before = po_names(audit)
             report['purchase_names_before'] = before
-            if options.variant == 'baseline':
+            if options.variant == 'baseline' and not options.interface_pair:
                 phase = 'independent_oracle'
                 # Independent raw reads + direct Decimal formula, no experiment tool reuse.
                 filters = [['company', '=', 'Crestwind Compressor Manufacturing Co.'],
@@ -154,6 +180,7 @@ def main():
                 report['io'] = runner.last_io
                 report['context'] = runner.last_context
                 report['end_reason'] = runner._trace_end_reason
+                report['actual_model_request_measurements'] = request_measurements
                 calls = sum(e['kind'] == 'model' for e in events)
                 usage = runner._turn_usages
                 report['model_calls'] = calls
