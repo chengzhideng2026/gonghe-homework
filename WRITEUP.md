@@ -12,7 +12,7 @@
 
 空结果、404、权限拒绝、字段错误、部分成功和分页未完成都不等于同一件事；`query_scope`、`complete` 与 `/trace` 暴露查询范围。业务日期固定 **2025-10-15**，不能按宿主时钟生成的发票 `status` 判定逾期；Bin 库存快照也不能证明历史转料。
 
-程序提供有限小计与证据措辞检查，必要时要求模型改写一次；它**不是任意自然语言事实证明器**。失败轨迹保留，参见 [验收标准](BUSINESS_ACCEPTANCE.md)。
+程序提供有限小计与证据措辞检查，必要时要求模型改写一次；明确区分**用户报价条件、ERP 字段事实、程序计算结果**。真实验收中，收款参考文本不足以证明核销，须读取 `Payment Entry.references`；Bin 仓级预留不能直接归属于某张工单。它**不是任意自然语言事实证明器**。失败轨迹保留，参见 [验收标准](BUSINESS_ACCEPTANCE.md)。
 
 ## 3. Write path：预览与实际写入分离
 
@@ -36,6 +36,6 @@ Codex 用于代码实现、测试生成和轨迹审阅；人为决定工具边�
 
 真实失败推动过两类改动：聚合来源正确而模型正文小计错误 → 本地 Decimal 小计和受限校验；子表误查耗尽 HTTP 预算 → 精确父端关联过滤与查询恢复。离线测试只证明程序契约，不等于模型回答正确率。
 
-**证据边界**：原应用 `5fe679e` 有 170 项离线测试；九工具版 [PR #2](https://github.com/chengzhideng2026/gonghe-homework/pull/2) 的 GitHub Actions 为 **190/190**。后续修复须按其提交 SHA 单独验收。隐藏题未知，仓库外报告不冒充公开证据。
+**证据边界**：原应用 `5fe679e` 有 170 项离线测试；九工具正式版 [PR #2](https://github.com/chengzhideng2026/gonghe-homework/pull/2) 的 GitHub Actions 为 **190/190**；独立待审修复 [PR #4](https://github.com/chengzhideng2026/gonghe-homework/pull/4) 在 SHA `59339c7d` 为 **227/227**，但其真实模型验收尚未完成，不能移用旧版六题成绩。隐藏题未知，仓库外报告不冒充公开原始证据。
 
 启动、代码入口与完整限制见 [README](README.md)、[PROJECT_GUIDE](PROJECT_GUIDE.md)。
