@@ -197,6 +197,31 @@ def _qualified_historical_currency_estimate(answer, sentence, code, amount,
     return False
 
 
+def _negated_currency_equivalence_positions(sentence):
+    """Exclude amounts only inside explicitly rejected currency substitutions.
+
+    'I will NOT treat EUR29 as USD29' asserts neither amount as an ERP fact.
+    A separate positive ERP currency claim in the same sentence is still
+    checked normally. This exception cannot authorize FX or PO creation.
+    """
+    matches = list(CURRENCY_AMOUNT.finditer(sentence))
+    ignored = set()
+    for first, second in zip(matches, matches[1:]):
+        between = sentence[first.end():second.start()]
+        prefix = sentence[max(0, first.start() - 45):first.start()]
+        if (len(between) > 24
+                or not re.search(r'当作|当成|视为|看作|等同于|'
+                                 r'\btreat(?:ing)?\b.{0,12}\bas\b|'
+                                 r'\bequate\b.{0,12}\bwith\b', between, re.I)):
+            continue
+        # Markdown emphasis can occur within "我**不会**把".
+        if re.search(r'不会|不能|不应|不要|不可|绝不|禁止|拒绝|'
+                     r'\bnever\b|\bwon.t\b|\bdo not\b', prefix, re.I):
+            ignored.add((first.start(), first.end()))
+            ignored.add((second.start(), second.end()))
+    return ignored
+
+
 def _currency_issues(answer, messages):
     current = _current_turn_messages(messages)
     observed = _currency_values(current)
@@ -223,7 +248,10 @@ def _currency_issues(answer, messages):
                            for item in doc.get('items', [])):
                         prepared_totals.add((code, _first_decimal(str(data.get('estimated_total', '')))))
     for sentence, section in _currency_answer_sentences(answer):
+        ignored = _negated_currency_equivalence_positions(sentence)
         for match in CURRENCY_AMOUNT.finditer(sentence):
+            if (match.start(), match.end()) in ignored:
+                continue
             claimed, amount = _currency_claim(match)
             prefix = sentence[max(0, match.start()-48):match.start()]
             suffix = sentence[match.end():match.end()+96]
