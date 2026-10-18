@@ -99,9 +99,8 @@ class TestToolRegistry(unittest.TestCase):
         first, second = BUILTIN_TOOLS.clone(), BUILTIN_TOOLS.clone()
         first.set_enabled('calculate', False)
         first.unregister('get_document')
-        self.assertEqual(len(first.definitions()), 6)
-        self.assertEqual(len(second.definitions()), 8)
-        self.assertEqual(len(BUILTIN_TOOLS.definitions()), 8)
+        self.assertEqual(len(first.definitions()), len(BUILTIN_TOOLS.definitions()) - 2)
+        self.assertEqual(second.definitions(), BUILTIN_TOOLS.definitions())
 
     def test_json_arguments_preserve_decimal_policy_and_reject_non_objects_or_nonfinite(self):
         registry = ToolRegistry()
@@ -146,7 +145,7 @@ class TestRegistryRunnerIntegration(unittest.TestCase):
             return reply(responses.pop(0))
         with patch('agent.urlopen', side_effect=respond):
             runner.ask('Use the extension', [])
-        self.assertEqual(len(requests[0]['tools']), 9)
+        self.assertEqual(len(requests[0]['tools']), len(BUILTIN_TOOLS.definitions()) + 1)
         receipt = runner.receipts()[0]
         self.assertEqual(receipt['arguments']['value'], '1.00000000000000001')
         self.assertEqual(receipt['tool_version'], 'plugin-1')
@@ -166,8 +165,8 @@ class TestRegistryRunnerIntegration(unittest.TestCase):
             return reply({'role': 'assistant', 'content': 'The tool is unavailable.'})
         with patch('agent.urlopen', side_effect=respond):
             runner.ask('Count Item', [])
-        self.assertEqual(len(requests[0]['tools']), 8)
-        self.assertEqual(len(requests[1]['tools']), 7)
+        self.assertEqual(len(requests[0]['tools']), len(BUILTIN_TOOLS.definitions()))
+        self.assertEqual(len(requests[1]['tools']), len(BUILTIN_TOOLS.definitions()) - 1)
         self.assertFalse(any(t['function']['name'] == 'count_documents' for t in requests[1]['tools']))
         runner.agent.c.count.assert_not_called()
         self.assertEqual(runner.receipts()[0]['status'], 'error')
@@ -187,7 +186,8 @@ class TestRegistryRunnerIntegration(unittest.TestCase):
         with patch('agent.urlopen', side_effect=respond):
             runner.ask('Use the new tool', [])
         handler.assert_called_once()
-        self.assertEqual((len(requests[0]['tools']), len(requests[1]['tools'])), (8, 9))
+        count = len(BUILTIN_TOOLS.definitions())
+        self.assertEqual((len(requests[0]['tools']), len(requests[1]['tools'])), (count, count + 1))
         self.assertEqual([r['status'] for r in runner.receipts()], ['error', 'ok'])
 
     def test_empty_registry_omits_tools_and_tool_choice_from_provider_request(self):
