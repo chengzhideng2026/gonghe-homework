@@ -33,6 +33,24 @@ class TestEvidenceChecks(unittest.TestCase):
             with self.subTest(answer=answer):
                 self.assertFalse(evidence_issues(answer, no_currency))
 
+    def test_shortage_table_uses_zero_shortage_for_surplus_rows(self):
+        trace = bin_trace(records=[{'name': 'BIN-1', 'actual_qty': 205}])
+        contradictory = ('| 物料 | 需求 | 实际库存 | 缺口 |\n'
+                         '|---|---:|---:|---:|\n| P1 | 30 | 205 | 不缺（余175） |')
+        self.assertTrue(evidence_issues(contradictory, trace))
+        consistent = ('| 物料 | 需求 | 实际库存 | 缺口 | 余量 |\n'
+                       '|---|---:|---:|---:|---:|\n| P1 | 30 | 205 | 0 | 175 |')
+        self.assertFalse(evidence_issues(consistent, trace))
+
+    def test_shortage_table_checks_deficit_arithmetic_without_fixed_items(self):
+        trace = bin_trace(records=[{'name': 'BIN-1', 'actual_qty': 20}])
+        wrong = ('| Item | Required | actual_qty | shortage |\n'
+                 '|---|---:|---:|---:|\n| X | 30 | 20 | 15 |')
+        self.assertTrue(evidence_issues(wrong, trace))
+        right = ('| Item | Required | actual_qty | shortage |\n'
+                 '|---|---:|---:|---:|\n| X | 30 | 20 | 10 |')
+        self.assertFalse(evidence_issues(right, trace))
+
     def test_snapshot_rejects_movement_assertion_but_allows_location_and_uncertainty(self):
         self.assertTrue(evidence_issues('WIP仓20件已发到生产线。', bin_trace()))
         self.assertTrue(evidence_issues('20 were transferred to production.', bin_trace()))

@@ -1,6 +1,7 @@
 """Narrow evidence checks for known claim types; not a general truth verifier."""
 import json
 import re
+from decimal import Decimal, InvalidOperation
 from tool_receipts import tool_receipts
 
 
@@ -79,6 +80,54 @@ def _currency_issues(answer, messages):
     return []
 
 
+def _first_decimal(text):
+    match = re.search(r'[-+]?\d[\d,]*(?:\.\d+)?', text or '')
+    if not match:
+        return None
+    try:
+        return Decimal(match.group(0).replace(',', ''))
+    except InvalidOperation:
+        return None
+
+
+def _shortage_table_issues(answer):
+    """Catch an internally contradictory shortage column before final acceptance."""
+    lines = [line.strip() for line in answer.splitlines() if '|' in line]
+    for index, header in enumerate(lines):
+        cells = [cell.strip() for cell in header.strip('|').split('|')]
+        lowered = [cell.lower() for cell in cells]
+        shortage = next((i for i, cell in enumerate(lowered)
+                         if '缺口' in cell or 'shortage' in cell or 'shortfall' in cell), None)
+        required = next((i for i, cell in enumerate(lowered)
+                         if '需求' in cell or 'required' in cell or 'need' in cell), None)
+        actual = next((i for i, cell in enumerate(lowered)
+                       if '实际库存' in cell or 'actual_qty' in cell or 'available' in cell), None)
+        if shortage is None or required is None or actual is None:
+            continue
+        if index + 1 < len(lines) and all(re.fullmatch(r':?-{2,}:?', cell.replace(' ', ''))
+                                          for cell in [c.strip() for c in lines[index + 1].strip('|').split('|')]):
+            rows = lines[index + 2:]
+        else:
+            rows = lines[index + 1:]
+        for row in rows:
+            row_cells = [cell.strip() for cell in row.strip('|').split('|')]
+            if len(row_cells) <= max(shortage, required, actual):
+                continue
+            if not any(re.search(r'\d', cell) for cell in row_cells):
+                continue
+            need, have = _first_decimal(row_cells[required]), _first_decimal(row_cells[actual])
+            reported = _first_decimal(row_cells[shortage])
+            if need is None or have is None or reported is None:
+                continue
+            expected = max(need - have, Decimal(0))
+            if reported != expected:
+                return ['The shortage table is internally inconsistent: for rows with required/actual '
+                        'quantities, the shortage column must equal max(required - actual, 0). '
+                        'When actual exceeds required, write shortage=0 and put the surplus in a separate '
+                        'surplus/余量 column; do not put a positive surplus inside the shortage column.']
+    return []
+
+
 def _has_event_records(receipt):
     """A nonempty read is not proof the event supports the answer's claim."""
     summary = receipt.get('summary')
@@ -106,11 +155,12 @@ def evidence_issues(answer, messages):
     receipts = [r for r in tool_receipts(messages)
                 if r['status'] == 'ok' and r['tool'] in {'list_documents', 'get_document', 'get_documents', 'aggregate_documents'}]
     currency_issue = _currency_issues(answer, messages)
+    shortage_issue = _shortage_table_issues(answer)
     reads = {r.get('arguments', {}).get('doctype') for r in receipts}
     has_events = any(r.get('arguments', {}).get('doctype') in {'Stock Entry', 'Stock Ledger Entry'}
                      and _has_event_records(r) for r in receipts)
     if 'Bin' not in reads or has_events:
-        return currency_issue
+        return currency_issue + shortage_issue
     # Preserve question endings and split English sentence boundaries too, so
     # a later sentence's uncertainty cannot qualify an earlier assertion.
     for sentence in re.split(r'\n|(?<=[。！？!?])|(?<=[.!?])\s+', answer):
@@ -120,10 +170,10 @@ def evidence_issues(answer, messages):
             if (QUALIFIED.search(prefix) or QUALIFIED.search(suffix)
                     or QUESTION.search(prefix) or sentence.rstrip().endswith(('?', '？'))):
                 continue
-            return currency_issue + ['Stock movement asserted from a Bin snapshot without Stock Entry/Stock Ledger event evidence. '
+            return currency_issue + shortage_issue + ['Stock movement asserted from a Bin snapshot without Stock Entry/Stock Ledger event evidence. '
                     'If the user asks only about current stock, report snapshot quantities and locations and remove '
                     'the unrequested historical assertion rather than researching unrelated movements to justify it. '
                     'If the user explicitly asks about issue/transfer history, read relevant Stock Entry/Stock Ledger '
                     'events or state that history is unverified; never infer it from a warehouse label. '
                     'Omit unrequested projection formulas; if arithmetic is necessary, use calculate.']
-    return currency_issue
+    return currency_issue + shortage_issue
