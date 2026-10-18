@@ -1,37 +1,39 @@
-# Design Write-up — ERPNext Agent
+# Design Write-up — Plantcore ERPNext Agent
 
-> **Core decision:** The model interprets requests and chooses tools; deterministic code owns ERP facts, money arithmetic, authorization, and side effects. The objective is **auditable business correctness**, not simply fluent answers. [Run the project](README.md) · [Inspect evaluation evidence](EVALUATION_EVIDENCE.md).
+**Principle:** The LLM selects **what to investigate**; typed tools and deterministic code control **what is true, how it is computed, and who may cause a side effect**. [Run instructions](README.md) · [Evidence matrix](EVALUATION_EVIDENCE.md).
 
 ### 1. Tool-layer design
 
-The **nine built-in typed tools** are: `get_doctype_meta`, `count_documents`, `list_documents`, `get_document`, `get_documents`, `aggregate_documents`, `calculate`, `summarize_details`, and `prepare_purchase_order`. Each Schema, handler and effect/version lives in one ToolRegistry entry. The LLM never obtains arbitrary SQL, shell execution, or a general ERP mutation primitive.
+**Nine registered tools:** `get_doctype_meta`, `count_documents`, `list_documents`, `get_document`, `get_documents`, `aggregate_documents`, `calculate`, `summarize_details`, `prepare_purchase_order`. Schemas, handlers and effect metadata are registered together; no arbitrary SQL, shell or generic ERP-write tool is exposed.
 
-The read surface works on **unknown DocTypes**: discover fields and Link/Table relations, filter the parent endpoint, page within explicit limits, and fetch shortlisted parent documents with their child rows. The client detects duplicate parents caused by child joins, distinguishes raw matched rows from distinct documents, rejects conflicting repeated projections, and separates partial reads from a complete scan. `calculate` uses restricted `Decimal` expressions; `summarize_details` operates on current-turn read evidence rather than LLM-supplied numeric arrays.
+For **unseen DocTypes**, the Agent discovers fields and Link/Table relations, then filters/paginates ERP parents and reads their child rows. It distinguishes joined raw rows from distinct parents, detects conflicting projections and represents partial failures. Math runs via `Decimal` or evidence-bound child-row statistics, not free-form LLM arithmetic.
 
-### 2. Uncertainty handling
+### 2. Uncertainty and source boundaries
 
-A failed query is not an empty ERP dataset; a name search is not a complete business category; a current `Bin` warehouse label is not proof of stock-transfer history. The response must distinguish on-hand vs ordered vs reserved, invoice `outstanding_amount` vs actual allocations in `Payment Entry.references`, and raw ERP `status` vs **overdue as of 2025-10-15**.
+An empty filtered result is not a failed read; a warehouse snapshot does not establish historical stock transfer; a payment `reference_no` is not invoice allocation evidence. The Agent uses `Payment Entry.references`, reports stock/on-order/reserved bases separately, and assesses overdue against **2025-10-15** rather than blindly trusting ERP `status`.
 
-Tool receipts record scope, pagination, freshness, partial failures and math. A bounded program evidence check catches selected unsupported numerical/wording claims and may request **one** repair, then fail closed. It is not a semantic truth theorem: a real H08 EUR-quote test still triggers a **false rejection of a safe answer**. The false rejection is disclosed, not converted into a PASS.
+Tool receipts expose scope, pagination, freshness and calculation outputs. Narrow source/wording checks can request **one** repair and then refuse an unsupported answer. They are **not** a formal natural-language truth verifier: an independently tested EUR-quote case still produced a conservative false rejection, documented as a real failure.
 
-### 3. Write path and recovery
+### 3. Write path and errors
 
-`prepare_purchase_order` only validates and persists a **single-line local pending proposal**, with the agreed unit price explicitly denominated in the company's currency. The model cannot call `/confirm`. After a human independently enters `/confirm <proposal_id>`, code revalidates supplier, item, UOM, dates, quantity, amount, connection scope and expiration; atomically claims local SQLite state; then POSTs a draft and GETs it back. Failure/uncertain response is journaled and reconciled against **known ERP identity**; no blind second POST. These are local replay controls—not a claim of ERP server-side distributed exactly-once. Foreign-currency quotes without a user-agreed conversion cannot be executed.
+`prepare_purchase_order` produces a **validated, single-line, local SQLite pending proposal**, not an ERP document. The LLM cannot execute `/confirm`; a human must enter `/confirm <proposal_id>` separately. Code then revalidates inputs and connection scope, atomically claims the proposal, POSTs the ERP draft and GETs its actual state.
+
+If a response is lost, the journal preserves uncertainty; `/reconcile` checks only a known ERP identity instead of blindly retrying the POST. This is local duplicate-prevention, **not** ERP-server global exactly-once. Unagreed foreign-currency prices remain non-executable.
 
 ### 4. Extensibility
 
-For a new read-only DocType, an engineer can usually reuse metadata + scoped list/get/aggregate without changing the model loop. To add a new operation, register its Schema/handler/effect in `erp_tools.py`, write unit tests for validation/partial failures/source receipts, then add a focused actual-ERP scenario. New **write** operations require a separate human-approval path, not merely registering a tool. The registry is a trusted-code capability catalog, not an untrusted plugin sandbox or tenant ACL system.
+A new **read-only** DocType normally uses existing discovery/query tools. New calculations require a typed registry handler plus source, error and contract tests. Each new **write** operation needs its own business validation and human-confirmation boundary. The registry loads trusted code; it is not a sandbox or tenant-authorization layer.
 
-### 5. Judgment under constraints
+### 5. Judgment and time constraint
 
-I prioritized: **(i)** correct ERP reads and date/quantity/currency semantics; **(ii)** deterministic computation and source boundaries; **(iii)** purchase confirmation, journal and recovery; **(iv)** read-only adversarial regression. I deliberately did **not** build a web frontend, RAG/Milvus, cloud service, multi-agent orchestration, autonomous ERP writes, multi-line POs or an FX service; none addressed the assignment's principal failure modes.
+Under the assignment's **six-hour framing**, priority was: (1) live and correctly scoped ERP facts; (2) deterministic numbers and uncertainty; (3) guarded write/recovery; (4) adversarial read-only validation. I cut a frontend, RAG/vector store, multi-agent runtime, cloud deployment, automated FX and multi-line PO support because none improved the specified core evaluation risks.
 
-The assignment framed a **six-hour** budget. I did **not** retain reliable hour-by-hour timing, and later hardening/review continued after the initial deliverable, so I do not invent a six-hour timesheet or claim all commits were completed within that window. The priorities above describe effort allocation rather than measured hours. Git history and dated evidence preserve the actual sequence.
+I did not maintain a reliable hour-by-hour log, so this is a **qualitative allocation**, not an invented six-hour timesheet. Later audit/hardening is visible in dated commits and evidence.
 
-### 6. Coding-agent workflow and validation
+### 6. Coding-agent workflow and evidence
 
-Coding agents helped implement bounded changes, generate edge-case tests, and inspect business traces. I retained decisions about tool effect boundaries, evidence strength, confirmation requirements and what **not** to ship. Implementation, independent evaluator and documentation workspaces used fixed Git SHAs; failing **first attempts remain preserved** rather than replaced by successful reruns. A real-model trace caught `Payment Entry.reference_no` being mistaken for allocation, and another caught the difference between a safely declined foreign-currency purchase and the checker rejecting a safe explanation.
+Coding agents helped implement bounded changes, write negative tests and inspect tool traces. I retained scope/permission decisions and reviewed first-sample failures in **separate code, evaluator and documentation workspaces**, pinned to exact SHAs. A real-model trace exposed a mistaken payment-allocation shortcut; another found a safe currency answer rejected by the provenance checker. Failed first attempts remain in the record.
 
-**Measured evidence has separate layers:** GitHub CI **234/234 offline tests** at proposed code SHA `3636ddb2` ([PR #4](https://github.com/chengzhideng2026/gonghe-homework/pull/4)); earlier six-case actual-model run with **five acceptable business replies and one H08 exception** at `f11d6c09`; H08-only actual-model **exception** again at `3636ddb2` despite **zero ERP writes**. Neither is a hidden-set score; the 60-case bank is unexecuted. See [the test matrix](EVALUATION_EVIDENCE.md).
+**What is demonstrably tested:** proposed code SHA `3636ddb2` has **234/234 offline CI tests**; on earlier `f11d6c09`, five known directed business cases produced supported final answers, while H08 failed; H08-only testing on `3636ddb2` **still failed** to return an answer despite **zero ERP writes**. No hidden-test success or completed 60-case benchmark is claimed. Full per-version results: [EVALUATION_EVIDENCE.md](EVALUATION_EVIDENCE.md).
 
-**Limits:** statement-level checks can under- or over-block; bounded paging does not guarantee a transaction snapshot; the SQLite journal is not globally exactly-once; ERP security still depends on its own API account permissions. These are explicit engineering tradeoffs, not unseen guarantees.
+**Remaining limits:** language checks can over/under-block; scans are not transaction snapshots; SQLite does not give distributed exactly-once, and ERP permissions still depend on the configured API identity.
