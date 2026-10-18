@@ -1,103 +1,94 @@
 # Plantcore ERPNext Agent
 
-## 项目能力
+**基于真实 ERPNext API 的工业业务 Agent：可追溯查询、确定性统计、受控采购。**
 
-通过实时 ERPNext API 回答库存、采购、工单、BOM 和财务问题，并在人工确认后创建采购草稿。Python 标准库 CLI 默认提供九个模型工具：元数据、计数、列表、单单详情、批量详情、完整聚合、Decimal 算术、证据绑定的明细统计及采购预览。工具收据、上下文预算和执行轨迹帮助追溯查询与计算来源。
+本项目使用 Python 标准库实现 CLI 与模型工具循环，连接题目提供的 Crestwind Compressor Manufacturing Co.（CCM）ERPNext。Agent 能查询库存、采购/销售订单、工单、BOM 和发票；处理未知 DocType 与父子表关联；计算有来源的小计；并在用户**独立确认后**创建采购草稿。业务参考日固定为 **2025-10-15**，不以机器时钟或单号年份替代。
 
-**原始已交付应用验收基线为 `5fe679ea3aaffd53042518238acf09866e56bc4b`（`5fe679e`）。当前默认分支交付 SHA 为 `2d6ce5c1b3c4a95f6d6ddbe6b640c76aaab4a800`；本增强版在原始应用基础上加入了只读统计工具和对应测试，属于后续代码变更，原始验收结果不能自动视为增强版测试结果。** 公开仓库默认分支为 [main-v2](https://github.com/chengzhideng2026/gonghe-homework/tree/main-v2)。
+**设计原则：业务事实从 ERP 读取，计算与权限约束由代码执行，模型负责理解问题和选择工具。** 不把 `DATASET.md` 中的答案装进模型提示，也不开放 SQL、Shell 或通用写入工具。
 
-## 环境要求和启动步骤
+## 1. 快速启动
 
-需要 Git、Python 3.10+、已运行的 Docker Desktop/Engine（推荐 28+）、Compose 2.24.4+，以及可用的模型 API 配置。无需第三方 Python 运行库。以下命令在项目根目录执行；Linux/macOS 可用 `python3` 替换 `python`。
+需要 Git、Python **3.10+**、Docker Engine/Desktop、Compose **2.24.4+** 及可用的 OpenAI-compatible 模型 API。Agent 自身无需第三方 Python 包；首次下载镜像、ERP 恢复和模型配置可能使总启动时间超过五分钟。
 
-1. 克隆并进入项目：
+在终端执行：
 
-   ```text
-   git clone --branch main-v2 https://github.com/chengzhideng2026/gonghe-homework.git
-   cd gonghe-homework
-   ```
+```bash
+git clone --branch main-v2 https://github.com/chengzhideng2026/gonghe-homework.git
+cd gonghe-homework
 
-2. 启动题目提供的 ERPNext，并等待首次恢复完成：
+# 从项目根目录启动题目 ERPNext（端口仅绑定本机回环）
+docker compose -f erpnext/compose.yml -f compose.local.yml up -d
+docker compose -f erpnext/compose.yml -f compose.local.yml logs -f restore-site
+```
 
-   ```text
-   docker compose -f erpnext/compose.yml -f compose.local.yml up -d
-   docker compose -f erpnext/compose.yml -f compose.local.yml logs -f restore-site
-   ```
+首次恢复看到 `Restore complete.` 后按 Ctrl+C 退出日志查看（不是停止容器）。已存在的站点可能跳过恢复。ERP 管理页面：http://localhost:8080；题目 seed 的演示账户见 [原题](ORIGINAL_README.md)。**不要为了普通重启执行 `docker compose down -v`，那会删除数据卷。**
 
-   看到 `Restore complete.` 后按 `Ctrl+C` 退出日志查看；已有站点可能跳过恢复。首次下载镜像和恢复时间取决于网络。以后启动仍须带 `compose.local.yml`，将端口仅发布到 `127.0.0.1` 和 `::1`。浏览器打开 [本地 ERPNext](http://localhost:8080)，题目 seed 登录为 `Administrator` / `admin`。不要为普通重启删除数据卷或确认日志。
+仅当项目根目录没有 `.env` 时，复制示例文件：
 
-3. **仅在项目根目录没有 `.env` 时**复制配置样例，保留已有配置：
+```powershell
+# Windows PowerShell
+Copy-Item .env.example .env
+```
 
-   ```powershell
-   # Windows PowerShell
-   Copy-Item .env.example .env
-   ```
+```bash
+# Linux / macOS
+cp .env.example .env
+```
 
-   ```bash
-   # Linux/macOS
-   cp .env.example .env
-   ```
+在本地 `.env` 中填写模型服务的 `LLM_API_KEY`、`LLM_BASE_URL`、`LLM_MODEL`；核对 `ERPNEXT_URL`、`ERPNEXT_API_KEY`、`ERPNEXT_API_SECRET`。题目 seed 提供了 ERP API 的演示配置。**不要提交真实密钥或 `.env`。**
 
-   在本机 `.env` 填写 `LLM_API_KEY`，核对 `LLM_BASE_URL`、`LLM_MODEL`；样例使用百炼兼容接口。ERP 配置为 `ERPNEXT_URL`、`ERPNEXT_API_KEY`、`ERPNEXT_API_SECRET`，题目 seed 已预置样例密钥对。真实密钥不要提交 Git。远端 API 要求 HTTPS，本机回环允许 HTTP；API 重定向拒绝。
+```bash
+python agent.py --demo         # 加载检查：无需模型/ERP
+python agent.py --check        # ERP 连接 + 模型配置检查：不调用模型
+python agent.py                # 进入交互式 Agent
+```
 
-4. 检查并启动：
+`python agent.py --check-model` 为可选的真实模型与只读工具协议检查，会消耗模型额度；它不代表业务题已验收。Linux/macOS 可按环境将 `python` 改为 `python3`。
 
-   ```text
-   python agent.py --demo
-   python agent.py --check
-   python agent.py
-   ```
+## 2. 三个评审场景
 
-   `--demo` 为本地加载检查；`--check` 检查 ERP 连接和模型配置字段，不调用模型，不能证明模型额度或业务回答正确。默认 CLI 只在输入问题后调用模型。
+以下问题可直接输入到 `python agent.py`。请用 `/trace` 核对实际工具调用、过滤范围、分页与数值来源；不同 ERP 状态下以实时读取为准。
 
-   **可选**：`python agent.py --check-model` 会调用真实模型及只读工具、消耗 API 额度；只验证连通性与工具协议，不是完整业务验收。
+| 场景 | 推荐问题 | 评审重点 |
+|---|---|---|
+| 库存与跨轮计算 | “铜线的现货、在途和生产预留分别是多少？列出物料、仓库、单位。”随后问：“以刚才同一物料及仓库的现货为依据，目标 180 Meter，缺口是多少？” | 实物与在途不混算；沿用正确物料身份；单位一致；计算留有来源 |
+| 参考日期与财务 | “以 2025-10-15 为参考日，列出已提交、尚未付清且已逾期的销售发票，包含币种、到期日、未结余额。” | 按日期字段判断，而不是直接相信宿主时钟生成的原始 `status` |
+| 采购预览（不写 ERP） | “按已核验的供应商、物料、数量、单位、单价/币种和日期，仅准备一张采购草稿预览，不执行创建。” | 本地预览与 ERP 实际单据分离；必须人工 `/confirm <proposal_id>` 才能创建 |
 
-作业业务参考日固定为 **2025-10-15**；机器日期、单号年份不能替代它。发票日期关系以程序参考日证据为准，原始 ERP `status` 单独保留；写入需明确交易日和需求日。
+`/pending` 查看本地预览，`/discard <proposal_id>` 放弃预览，`/reconcile <proposal_id>` 只读核查已记录单号；`/quit` 退出。预览默认有效期 15 分钟，并绑定 ERP 连接配置。**预览成功不表示订单已创建。** 不建议在只读评审中输入 `/confirm`。
 
-## 三个简短演示
+## 3. 为什么采用这套架构
 
-在 `python agent.py` 中依次尝试；输出以当前 ERP 实际数据和工具证据为准。
-
-1. **库存与跨轮计算**：问“铜线的现货、在途和生产预留分别有多少？请列出物料、仓库和单位。”再问“以刚才同一物料和仓库的现货为基础，目标为 180 Meter，缺口是多少？请调用计算工具。”有歧义先确认物料和范围，不能把在途等同现货。
-2. **参考日期查询**：问“以 2025-10-15 为参考日，列出已提交的逾期销售发票，显示公司、币种、到期日和未付余额。”输入 `/trace` 查看查询范围、日期证据与计算来源。
-3. **采购预览**：提供明确的物料、供应商、公司、数量、库存单位、单价/币种、交易日和需求日，要求“先生成单行采购预览，不确认写入”。用 `/pending` 查看状态；只有人工输入 `/confirm <proposal_id>` 才复验、创建并回读 ERP 草稿。若仅演示预览，用 `/discard <proposal_id>` 撤销本地预览，`/quit` 退出。预览不是已创建订单，模型不能代替确认。
-
-预览默认 15 分钟有效并绑定连接配置，状态保存在被忽略的 `.local/proposals.sqlite3`。失败且已有单号时用 `/reconcile <proposal_id>` 只读核查；未收到单号需人工核查，禁止盲目重发。
-
-## 验收摘要
-
-| 范围 | 已有结论及证据边界 |
+| 设计选择 | 解决的业务风险 |
 |---|---|
-| 应用基线 `5fe679e` 的全新克隆 | 170 项测试、248 项子测试通过，`--demo` 成功；属于本地代码验证。开发回归原输出见 [unit_n05_n07_final.txt](evidence/unit_n05_n07_final.txt)。 |
-| 开发线程 N05/N07 复测 | 最终两题业务结果通过；开发过程保留首次不足及两次复测，N07 最终仍有一次错误子表请求。见 [开发复测记录](evidence/N05_N07_REVIEW.md)，不代替独立结论。 |
-| 独立线程在新 SHA 的首次复测 | N05/N07 均通过；N07 为 17 次 GET、无错误查询。本轮未触发真实错误恢复，其余 8 题未在新 SHA 重跑，不能合并成新版 10/10。独立报告文件已核实存在，位置说明见下文。 |
-| 用户本人操作 | 已完成库存、跨轮计算、日期查询及采购预览；未据此认定用户验证了确认写入或全部案例。 |
+| **9 个注册式工具**：元数据、计数、列表、单单/批量详情、完整聚合、Decimal 算术、明细统计、采购预览 | 未知 DocType 先发现结构再查询；Schema 与执行 handler 同源；模型不能调用任意代码 |
+| **来源与完整性**：`query_scope`、分页、父单去重、部分失败、`/trace` | 防止把子表连接行数当父单数、把空结果当接口错误、把部分结果称作全量 |
+| **确定性数值**：`aggregate_documents`、`calculate`、`summarize_details` | 避免模型手算造成小计和加权统计错误；金额按公司/币种、数量按单位区分 |
+| **证据绑定明细**：仅引用当前轮真实 `get_document(s)` 读取的 `evidence_ref` | 不让模型自行提交虚构数值；同一父单两次读取的子表快照不一致时拒绝拼接 |
+| **独立写入闸门**：本地 SQLite 预览 → 用户 `/confirm` → ERP POST → GET 回读 | 模型不能自行授权采购；未知提交结果不盲目重发；支持已知单号只读对账 |
 
-独立报告为单独保存的 `D:\work\gonghe-eval-runs\5fe679e_20261018\REPORT.md`，已读取核实，**尚未纳入本仓库**，这里不提供不存在的仓库链接。其余历史阶段和失败回答保留在 [AUDIT](AUDIT.md)、[业务验收说明](BUSINESS_ACCEPTANCE.md) 及其证据入口中，阶段结论不自动迁移到新版本。
+新增只读业务类型通常无需新增工具；新业务能力可在 [`erp_tools.py`](erp_tools.py) 注册 Schema、handler 与契约测试。涉及写入的能力必须另设专用校验与人工确认，不应由通用工具绕过。
 
-当前默认 `main-v2` 的增强版在 GitHub Actions 上已通过 **190 项离线测试**（记录于 [合并 PR #2](https://github.com/chengzhideng2026/gonghe-homework/pull/2)），没有因此重新运行真实模型或 ERP 全面评测。
+## 4. 验证与证据边界
 
-本地回归可运行 `python -m unittest discover -s tests -v`；有 pytest 环境也可运行 `python -m pytest -q tests`。这些测试不能替代独立真实业务评测。
+- **当前已合并应用版本**：`main-v2` 的 [PR #2](https://github.com/chengzhideng2026/gonghe-homework/pull/2) 经 GitHub Actions **190/190 项离线测试通过**；当前分支后续如有新提交，以对应 SHA 的实际 CI 结果为准。
+- **原始应用基线**：`5fe679e` 曾通过 170 项代码测试、248 项子测试和 `--demo`；此成绩不可自动套用到后续版本。
+- **真实业务评测**：已有开发复测、独立变式和失败回放；结果、原始轨迹及适用 SHA 必须分别对照 [业务验收说明](BUSINESS_ACCEPTANCE.md) 与 [历史审计](AUDIT.md)。仓库外的独立运行文件不冒充公开可下载证据。
+- **安全界限**：模型没有直接 ERP 写工具；`/confirm` 的写入回路有专门代码与测试，但现有用户手动演示到采购**预览**为止。单机 SQLite 幂等不等于 ERP 服务端 exactly-once。
 
-## 明细统计工具（增强版）
+运行离线回归：
 
-新增只读 `summarize_details`：先使用 `get_document` / `get_documents` 获取父单，复制成功读取结果正文的 `evidence_ref`，然后指定子表字段（例如 `items`）和需要的精确行筛选（例如 `{"item_code":"..."}`）。工具在本地利用 Decimal 计算匹配行数、不同父单数、数量合计、行金额合计、单价极值和按数量加权单价，不发起新的 ERP 请求。统计结果按公司、币种和单位分组，不进行自动换算。
+```bash
+python -m unittest discover -s tests -v
+```
 
-**证据限制**：同一父单重复读取的子表快照必须一致，行顺序不同不算冲突；发现行增删、字段变化或同一快照重复子行身份会拒绝汇总，不拼接跨时刻结果。即使返回 `complete=true`，也只表示引用的父单读取成功；上游父单列表过滤、分页是否完整仍需独立确认。顺序读取并不等于 ERP 事务快照。
+离线单测不是实际模型回答正确率；一次模型案例成功也不是隐藏题保证。系统仍有开放问题：当前轮超大工具响应、自然语言中未受结构化检查覆盖的附加断言、上游分页/事务快照完整性、多行/外币采购及生产环境租户授权。这些限制不会被 `complete=true`、`temperature=0` 或较高的测试数掩盖。
 
-历史实验记录保留在 [实验分支](https://github.com/chengzhideng2026/gonghe-homework/tree/experiment/detail-statistics/experiment)；初次比较存在来源引用失败，修复后 D02 只有一组真实成功案例，不能宣称统计工具稳定降低 token、延迟或 HTTP 次数。最终验证以本分支上的实际完整离线回归为准，不把旧版测试记录当成新提交的验收结果。
+## 5. 设计与深入资料
 
-## 主要限制
+- **先看**：[一页设计说明](WRITEUP.md)（按原题六项评审指标组织）· [原始作业要求](ORIGINAL_README.md)
+- **代码与操作**：[项目接手指南](PROJECT_GUIDE.md) · [工具注册](TOOL_REGISTRY.md) · [架构](ARCHITECTURE.md)
+- **正确性与安全**：[业务验收](BUSINESS_ACCEPTANCE.md) · [请求成本](API_EFFICIENCY.md) · [采购恢复设计](RECOVERY_AND_DESIGN.md)
+- **历史证据**：[审计记录](AUDIT.md) · [原始明细统计实验](https://github.com/chengzhideng2026/gonghe-homework/tree/experiment/detail-statistics/experiment)
 
-- **F01/F02 未覆盖，不能宣称所有隐藏题通过。** 独立 N05/N07 通过不构成长对话稳定性、故障恢复或真实确认写入全覆盖。
-- 有限格式的小计检查和已知措辞检查不是通用事实证明器；模型仍可能额外断言，需核对范围、单位、币种和证据。完整聚合不是事务快照，缓存附读取时间而非实时保证。
-- 当前轮上下文可能临时超预算；按完整轮裁剪历史不是严格 token 上限，也没有持久聊天检查点。独立 N07 的 `over_budget=true` 已在外部报告记录。
-- 采购只支持单行、库存单位及公司本位币；不自动换汇、提交或取消订单。本地原子领取与幂等键不等于 ERPNext 服务端 exactly-once。
-- seed 管理员凭据只用于本机作业；尚无生产租户隔离、最小权限服务、负载均衡或高并发保证。真实测试草稿数量不是新 seed 启动条件。
-
-## 深入阅读
-
-- [原题及六项要求](ORIGINAL_README.md) · [一页设计说明](WRITEUP.md) · [项目指南](PROJECT_GUIDE.md) · [交接入口](HANDOFF.md)
-- [架构](ARCHITECTURE.md) · [工具扩展](TOOL_REGISTRY.md) · [API 效率](API_EFFICIENCY.md) · [恢复与取舍](RECOVERY_AND_DESIGN.md)
-- [安全与部署](SECURITY_AND_DEPLOYMENT.md) · [业务验收标准](BUSINESS_ACCEPTANCE.md) · [审计和历史原始记录](AUDIT.md)
-- [开发 N05/N07 记录](evidence/N05_N07_REVIEW.md) · [日期复测](evidence/INVOICE_DATE_REVIEW.md) · [旧版独立题分级](evidence/SCORING_REVIEW.md)
+**评审入口始终是公开仓库默认分支 [`main-v2`](https://github.com/chengzhideng2026/gonghe-homework/tree/main-v2)**；其他实验及待审 PR 不代表已交付能力。
