@@ -2,13 +2,26 @@
 
 **A business-grade ERP Agent designed for accuracy, traceability and controlled execution—not a chatbot wrapped around an API.**
 
-**9 typed tools · 234 automated contract tests on the hardening candidate · real ERPNext REST validation · multiple independent real-model business suites · explicit human approval for ERP writes.**
+**9 typed tools · 234/234 offline tests · 60-case real-model business benchmark: 91.7% core acceptance / 83.3% full-answer acceptance · 0 ERP writes in the independent read-only campaign.**
 
 It solves the hard problems that a simple tool-calling demo typically misses: **unfamiliar DocTypes, payment allocation through child tables, joined-row deduplication, partial failures, reference-date accounting, reproducible Decimal calculations, and recovery after uncertain writes.** Every claimed result has a scope and an evidence trail.
 
 A Python standard-library CLI on the supplied Crestwind Compressor Manufacturing Co. ERPNext seed. The LLM chooses from **9 typed tools**; it has no arbitrary SQL, shell, or direct purchase-creation tool. Business reference date: **2025-10-15**.
 
-**Reviewer path:** [Run](#quick-start) · [Try scenarios](#review-three-workflows) · [Design (~1 page)](WRITEUP.md) · [Test matrix](EVALUATION_EVIDENCE.md) · [Original assignment](ORIGINAL_README.md).
+**Reviewer path:** [Run](#quick-start) · [Try scenarios](#review-three-workflows) · [60-case independent results](evidence/UNIFIED_60_FIRST_RUN_20261018.md) · [Design (~1 page)](WRITEUP.md) · [Test matrix](EVALUATION_EVIDENCE.md) · [Original assignment](ORIGINAL_README.md).
+
+## Independently evaluated on 60 real ERP business questions
+
+| Result at **one fixed commit** `3636ddb2` | Observed first-attempt outcome |
+|---|---|
+| **Core business requirements** | **55/60 PASS — 91.7%** (4 PARTIAL, 1 timeout) |
+| **Complete, evidence-disciplined answers** | **50/60 PASS — 83.3%** (6 PARTIAL, 3 FAIL, 1 timeout) |
+| **Read-only execution audit** | **209 LLM requests, 298 Agent ERP GET, zero ERP writes; verified unchanged Purchase Order and 14 business-table snapshots** |
+| **Automated code quality** | **234/234 Python contract and regression tests passed in GitHub Actions** |
+
+All 60 questions used **the same SHA, a pre-frozen independent answer Oracle, first-sample grading and six bounded batches**. The suite combines 40 de-duplicated existing ERP scenarios with 20 newly drafted generalization cases. Failures and the G11 timeout are retained—not replaced by re-sampling. This is our independent technical evaluation, **not** the employer's private hidden-test result.
+
+**[Read the complete 60-case evaluation with per-case grades and evidence](evidence/UNIFIED_60_FIRST_RUN_20261018.md)** · [test methodology](EVALUATION_60_PROTOCOL.md).
 
 ## Quick start
 
@@ -73,21 +86,20 @@ Design/tradeoffs: [WRITEUP.md](WRITEUP.md) · [Tool Registry](TOOL_REGISTRY.md) 
 | Model receives a generic write API and approves itself | **Local proposal → separate human /confirm → ERP draft → GET read-back**, with journal-based uncertain-outcome recovery. |
 | A small demo passes simple happy-path tests | Regression coverage includes **negative, partial, ambiguous, cross-document, multi-turn and safety** cases, with saved first-run failures. |
 
-## Tested, with version boundaries
+## Verification layers, clearly separated
 
-| Evidence | Outcome |
+| Layer | Status |
 |---|---|
-| **Published `main-v2`** | **190/190 offline tests** (merged [PR #2](https://github.com/chengzhideng2026/gonghe-homework/pull/2)). |
-| **Hardening candidate `3636ddb2`**, [PR #4](https://github.com/chengzhideng2026/gonghe-homework/pull/4) | **234/234 offline tests** in GitHub Actions; **not yet merged**. |
-| Directed **real-model** regression on prior `f11d6c09` | Five of six known cases produced supported final business answers; H08 ended in an evidence-check exception. **Not a 5/6 score for the latest code**. |
-| H08-only **real-model** test on `3636ddb2` | EUR quotation was **not** converted or written, but even after a correct `calculate` call the final answer was rejected. **Known answer-availability defect**; not a bypass. |
-| Historic E/H/C/S/J/B/R/N suites | Multiple independently reviewed business scenarios, including partial/fail outcomes. **Scores differ by SHA and must not be combined.** |
+| **Unified 60-case actual-model first run** | **55/60 core PASS, 50/60 full PASS** on candidate SHA `3636ddb2`; [detailed first-attempt review](evidence/UNIFIED_60_FIRST_RUN_20261018.md) |
+| **Offline code regression on the same SHA** | **234/234** Python tests in [PR #4](https://github.com/chengzhideng2026/gonghe-homework/pull/4) and GitHub Actions |
+| **Published baseline** | `main-v2` is still `2d6ce5c`, with **190/190** offline tests until code PR #4 is merged |
+| **Earlier focused model regressions** | Preserved in [evidence index](EVALUATION_EVIDENCE.md), including a prior H08 false refusal; the **new same-SHA 60-case H08 passed both grades** |
 
-~~~bash
+```bash
 python -m unittest discover -s tests -v
-~~~
+```
 
-See the **[full test evidence matrix](EVALUATION_EVIDENCE.md)** and **[60-case independent validation protocol](EVALUATION_60_PROTOCOL.md)** for exact cases, data sources and the next unified holdout. The 60-case bank is designed but **not yet executed**; no score is fabricated. Offline tests ≠ model-answer accuracy; a no-write smoke test ≠ full live confirmation testing.
+**What remains:** one G11 wide-join timeout, incomplete or unsupported statements in O05/FNL-04/G13/G16, and several less serious full-answer limitations. These are business accuracy/availability boundaries, **not** observed unauthorized ERP writes. This take-home demonstrates a *human-supervised ERP Agent*, not a production-certified autonomous buyer or accountant.
 
 **Deliberately omitted:** frontend, Milvus/RAG, multi-agent runtime, cloud hosting, arbitrary ERP writes, foreign-currency conversion, multi-line purchases. Current preview supports one line and agreed company currency. Source scans are not transactional snapshots; local journal idempotency is not an ERP-wide exactly-once guarantee.
 
