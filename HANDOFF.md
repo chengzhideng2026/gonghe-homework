@@ -7,7 +7,7 @@
 | Branch | Current role | Validation |
 |---|---|---|
 | `main-v2` | Public default/released code at the time of this handoff; baseline `2d6ce5c` | **190/190** offline CI |
-| `fix/targeted-business-robustness` / [PR #4](https://github.com/chengzhideng2026/gonghe-homework/pull/4) | Proposed code hardening at `3636ddb2`; **not merged** | **234/234** offline CI; most recent real H08 answer still rejected |
+| `fix/targeted-business-robustness` / [PR #4](https://github.com/chengzhideng2026/gonghe-homework/pull/4) | Proposed code hardening at `3636ddb2`; **not merged** | **234/234** offline CI; **unified 60-case 55/60 core PASS, 50/60 full PASS**, 0 ERP writes; prior isolated H08 refusal retained |
 | `docs/review-final-20261018` / [PR #5](https://github.com/chengzhideng2026/gonghe-homework/pull/5) | Reviewer-facing documentation; **not merged** | Documentation checks only |
 
 Do not assume code/docs PR results apply to default `main-v2` until both are merged. After a merge, verify **new main SHA + CI**, then update this table.
@@ -45,6 +45,15 @@ New **read** DocTypes usually reuse existing tools. New **write** operations req
 2. `Payment Entry.references` proves actual allocations; `reference_no` does **not**. `Bin` reservations are warehouse aggregates, not exclusive Work Order ownership. Do not sum join-duplicated parent invoices.
 3. `prepare_purchase_order` makes only a pending local preview; `/confirm` is separate. No automatic FX conversion, multi-line PO, cancellation or generic ERP mutation.
 4. **Known H08 deficiency:** a safe EUR quote may be rejected after deterministic calculation due to provenance/table formatting, even though ERP writes and incorrect conversions remain blocked. See the [full first-run diagnosis](evidence/H08_3636_LIVE_RETEST_PENDING_20261018.md). Do **not** describe this case as passed.
-5. Preserve first attempts and their SHAs. Label offline **234** tests, 19 historic real-REST checks, historic E/H/C/S series and the planned **60** cases separately. Do not roll across versions or claim a 60-case pass score.
+5. Preserve first attempts and their SHAs. The **executed same-SHA 60-case first sample** reports **55/60 core PASS, 50/60 full PASS** under `3636ddb2` ([full evaluation](evidence/UNIFIED_60_FIRST_RUN_20261018.md)). Separate these genuine model business results from **234 offline tests**, older E/H/C/S runs on other SHAs and the employer's unseen hidden score.
 
 For review, prioritise a **stable fixed SHA, clean/secret-free public repo, short start path, truthful test matrix, and no-write evidence** over further last-minute regex or feature additions.
+
+
+## Release review decision after unified evaluation
+
+**Local take-home delivery: GO with documented P1 business limits.** An independent frozen 60-case first run on `3636ddb2` completed all attempts (59 final answers, G11 timed out). Core business: **55 PASS / 4 PARTIAL / 1 EXCEPTION**. Full final answer: **50 PASS / 6 PARTIAL / 3 FAIL / 1 EXCEPTION**. 209 model calls, 298 Agent ERP GET, **zero ERP writes**, no PO/table drift.
+
+Do not suppress the main defects: O05 wrong price effective-date assumption; FNL-04 claimed Purchase Invoice association without fetching it; G13 false universal shortage inequality; G16 return-flag inversion and unverified payment inference; G11 wide-join timeout. The earlier isolated H08 failure persists as historical evidence, but the unified run H08 itself passed. This is **not** a production autonomous accounting/purchasing go-ahead.
+
+**Release sequencing:** merge code PR #4 only after go-ahead; verify actual merged `main-v2` SHA and CI; then reconcile README/WRITEUP/EVALUATION/HANDOFF release-state labels and merge documentation PR #5. Never advertise an unmerged candidate as the default branch.
