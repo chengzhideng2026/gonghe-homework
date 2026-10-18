@@ -21,6 +21,6 @@
 
 上述 FNL-07 / FNL-02 / H08 问题和两个离线误报，推动了 PR #4 的后续候选提交 `59339c7d850cfccd0b144fda694b94fac246ecc8`：增加付款子表核验指引、区分用户报价与 ERP 事实、限制仓级预留归属、修正跨表格和紧连币种检查。**GitHub Actions 227/227 项离线测试通过**，但此最新候选**尚无新的真实模型配对验收**，不能把上表 6 题结果挪用为它的成绩。
 
-验证命令、启动方式和分层历史证据见 [README](../README.md)、[评测索引](../EVALUATION_EVIDENCE.md) 与 [最新修复设计](FINAL_EVIDENCE_BOUNDARIES_REVIEW.md)。
+验证命令、启动方式和分层历史证据见 [README](../README.md)、[评测索引](../EVALUATION_EVIDENCE.md) 与 [最新修复设计](https://github.com/chengzhideng2026/gonghe-homework/blob/fix/targeted-business-robustness/evidence/FINAL_EVIDENCE_BOUNDARIES_REVIEW.md)。
 
 **合并门槛：**对最新 SHA 重新验证 FNL-07、H08、FNL-02、FNL-12、E07/E08；无未授权 ERP 写入和新的关键业务回归，再更新发布说明。统一 60 题目前仍为计划，不存在公开的 60 题得分。
