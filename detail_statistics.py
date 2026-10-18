@@ -55,6 +55,7 @@ def summarize_details(evidence, evidence_refs, table_field, fields=None, row_equ
                 failures.append({'call_id': call_id, 'error': 'Source reports incomplete coverage'})
 
     seen, groups, parents, parent_context = {}, {}, set(), {}
+    parent_snapshots = {}
     input_rows = duplicates = excluded = 0
     with localcontext() as context:
         context.prec = 200  # bounded inputs: <=40 digits and <=10000 child rows
@@ -71,6 +72,22 @@ def summarize_details(evidence, evidence_refs, table_field, fields=None, row_equ
             if parent_key in parent_context and parent_context[parent_key] != observed:
                 raise ValueError(f'Conflicting parent observations: {parent_name}')
             parent_context[parent_key] = observed
+            # The same parent may be read repeatedly. Never union child rows from
+            # different observations and label the result as a complete snapshot.
+            # Compare by stable child identity so ordering alone does not conflict.
+            snapshot_rows = {}
+            for snapshot_row in rows:
+                if not isinstance(snapshot_row, dict):
+                    raise ValueError('Child evidence row must be an object')
+                snapshot_name = snapshot_row.get('name')
+                if not isinstance(snapshot_name, str) or not snapshot_name:
+                    raise ValueError('Stable child row name is required; equal values do not prove duplicates')
+                if snapshot_name in snapshot_rows:
+                    raise ValueError(f'Duplicate child row identity within parent snapshot: {snapshot_name}')
+                snapshot_rows[snapshot_name] = snapshot_row
+            if parent_key in parent_snapshots and parent_snapshots[parent_key] != snapshot_rows:
+                raise ValueError(f'Conflicting child-table snapshots for repeated parent: {parent_name}')
+            parent_snapshots[parent_key] = snapshot_rows
             for row in rows:
                 input_rows += 1
                 if input_rows > 10000:
