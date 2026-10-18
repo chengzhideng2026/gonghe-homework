@@ -1,6 +1,6 @@
 # Latest candidate independent six-case directed regression — pending review
 
-**Candidate SHA:** `f11d6c09e9c3e328a191bd532f7b85e822b6db76` on unmerged [PR #4](https://github.com/chengzhideng2026/gonghe-homework/pull/4).
+**Tested candidate SHA:** `bd86c939a8043a9ebab135dc337e6d86b9ce74fd` on unmerged [PR #4](https://github.com/chengzhideng2026/gonghe-homework/pull/4).
 
 **Evidence status:** operator console excerpt from the first attempt at `D:\work\gonghe-targeted-bd86c93\attempt1_20261018T171421_cdedf915`; the detailed `completed.json` and raw traces remain local. This is an independent *directed regression*, not a blind benchmark or graded 6/6 PASS. Code branch still awaits release approval.
 
