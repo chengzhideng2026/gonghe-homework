@@ -36,6 +36,6 @@ Codex 用于代码实现、测试生成和轨迹审阅；人为决定工具边�
 
 真实失败推动过两类改动：聚合来源正确而模型正文小计错误 → 本地 Decimal 小计和受限校验；子表误查耗尽 HTTP 预算 → 精确父端关联过滤与查询恢复。离线测试只证明程序契约，不等于模型回答正确率。
 
-**证据边界**：原应用 `5fe679e` 有 170 项离线测试；九工具正式版 [PR #2](https://github.com/chengzhideng2026/gonghe-homework/pull/2) 的 GitHub Actions 为 **190/190**；独立待审修复 [PR #4](https://github.com/chengzhideng2026/gonghe-homework/pull/4) 在 SHA `59339c7d` 为 **227/227**，但其真实模型验收尚未完成，不能移用旧版六题成绩。隐藏题未知，仓库外报告不冒充公开原始证据。
+**证据边界**：原应用 `5fe679e` 有 170 项离线测试；九工具正式版 [PR #2](https://github.com/chengzhideng2026/gonghe-homework/pull/2) 的 GitHub Actions 为 **190/190**；独立待审修复 [PR #4](https://github.com/chengzhideng2026/gonghe-homework/pull/4) 在 SHA `bd86c939` 为 **229/229**，但其真实模型验收尚未完成，不能移用旧版六题成绩。隐藏题未知，仓库外报告不冒充公开原始证据。
 
 启动、代码入口与完整限制见 [README](README.md)、[PROJECT_GUIDE](PROJECT_GUIDE.md)。
