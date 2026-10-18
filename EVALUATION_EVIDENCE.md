@@ -2,6 +2,18 @@
 
 This page indexes **historical real-model business trials**, **live ERP integration checks**, and **offline code regressions** separately. A trial recorded on one commit is **not** automatically a pass on a later commit. The numbers below are not the recruiter's held-out test score.
 
+## Verified status and what the numbers mean (2026-10-18)
+
+| Layer | Current verified evidence | Interpretation |
+|---|---|---|
+| **Release CI** | `main-v2` release baseline: **190/190** GitHub Actions tests, [PR #2](https://github.com/chengzhideng2026/gonghe-homework/pull/2) | Program/unit/contract checks, not model business answers |
+| **Targeted fix CI** | Commit `571f52ec2e0254941d83e2a5af4ae9f128df988e`: **205/205** GitHub Actions tests, [PR #4](https://github.com/chengzhideng2026/gonghe-homework/pull/4) | Passing candidate; **not** merged into release; live FNL-12 improvement is still unverified |
+| **Historical real-model trials** | E/H/C/S/J/B/R/N series below have per-case result files and explicit partial/failure cases | Multiple code stages; do not combine into one `main-v2` pass rate |
+| **Independent final FNL run** | External evaluation thread reports 12 baseline cases, **10/12 core** and **9/12 full** | Source run files remain in a local worktree; **not independently downloadable from this public repository** |
+| **Planned unified business benchmark** | 46 candidate prompts across original/E/H/C/FNL → 6 semantic overlaps removed → 40 retained + 20 novel drafts = **60 planned** | **Planning only**: new oracle pending; no single-SHA 60-case run exists |
+
+A higher code-test count is useful but does not directly compare with another project's model-answer PASS rate, assertion count, or held-out accuracy. Comparisons must use the **same layer**, denominator, model and scoring rubric.
+
 ## A. Historical real-model evaluation families
 
 | Suite | Size and basis | Reported core / full-answer outcomes | Source and caveat |
@@ -25,14 +37,20 @@ The E/H/C/S/J/B/R/N family names above represent **34 labelled business scenario
 | Write-side evidence | Historical purchase preview, explicit user confirmation, draft creation and GET read-back have recorded tests; newer business evaluations typically forbid POST. No cross-host exactly-once claim; see [write-path design](RECOVERY_AND_DESIGN.md) |
 | Source and error handling | Model-tool receipts, query scope, raw join-vs-parent counts, decimal calculations, date comparison, partial-result flags, and read/call-budget controls have dedicated evidence in [AUDIT](AUDIT.md) |
 
-## C. How to publish a defensible final score
+## C. 60-case plan and release evidence
 
-1. **Freeze one target commit SHA** after final candidate review; record provider, model, thinking settings, temperature, prompts, business reference date, ERP seed state, and limits.
+1. **First pass the FNL-02 / FNL-12 / purchase-safety targeted gates.** The 205-test candidate has not yet passed a fresh real-model FNL-12 replay. Do not merge solely on CI.
+3. **Freeze one target commit SHA** after final candidate review; record provider, model, thinking settings, temperature, prompts, business reference date, ERP seed state, and limits.
 2. Construct a numbered **single-version** bank: original homework questions, E/H/C regression questions, final independent FNL cases (if their source/oracle can be archived safely), and new **unseen** generalization cases. Record overlaps/duplicate wordings instead of counting them as separate independent coverage.
-3. Freeze business oracles and grading rubric *before* model calls. Only question text goes to Agent. Distinguish answer correctness from transport errors, script persistence failures and budget-unrun cases.
-4. One first pass for each case on the **same SHA** with no repeated sampling to select good answers; any targeted repair/retest is a separate phase, never silently spliced into the first-pass headline.
-5. Score core and whole-answer separately (PASS / PARTIAL / FAIL / not-run), and report invalid or missing evidence. Preserve attempts, tool traces, per-case ERP GET/POST, model requests, provider token usage (if supplied), time, read scope and purchase-name audit.
-6. Publish a compact summary with **denominator, commit, seed, executed count, result table, and raw evidence manifest**. Older E/H/C runs are regressions and historical context, not substitutes for running the final candidate.
+4. Freeze business oracles and grading rubric *before* model calls. Only question text goes to Agent. Distinguish answer correctness from transport errors, script persistence failures and budget-unrun cases.
+5. One first pass for each case on the **same SHA** with no repeated sampling to select good answers; any targeted repair/retest is a separate phase, never silently spliced into the first-pass headline.
+6. Score core and whole-answer separately (PASS / PARTIAL / FAIL / not-run), and report invalid or missing evidence. Preserve attempts, tool traces, per-case ERP GET/POST, model requests, provider token usage (if supplied), time, read scope and purchase-name audit.
+7. Publish a compact summary with **denominator, commit, seed, executed count, result table, and raw evidence manifest**. Older E/H/C runs are regressions and historical context, not substitutes for running the final candidate.
+
+
+**Resource gate:** The independent planning artifacts currently carry **80 model requests / 240 ERP GET / 1,800 seconds / $20 reservation** as historical campaign limits, while the provisional 60-case plan estimates roughly **240–360 model requests** (with 300–450 headroom) and **400–700 ERP GET**, excluding oracle reads. Those limits have **not** been increased or supplier balance verified. Do not launch or claim a 60-case campaign until a deliberate budget and run plan is agreed; report executed / unrun counts honestly.
+
+**Leakage gate:** Draft G01–G20 case questions, expected values, oracle extracts and hashes are intentionally **not published here ahead of evaluation**, nor sent to the model. Initial code repair work inspected some prior FNL oracle content; that targeted exercise must not be presented as a clean blind holdout. The future unified 60-case run can still be an auditable regression/coverage benchmark, with newly unseen questions separately identified.
 
 Current external FNL frozen-suite results have been discussed during final review, but its locally stored evidence has **not** been committed to this public repository. It is deliberately **excluded from the public-reproducible scores above**. The same applies to any old outside-worktree report until linked and inspected.
 
