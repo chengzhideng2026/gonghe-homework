@@ -25,23 +25,31 @@ Existing **46 potential source cases**:
 | Final new business | `FNL-01–FNL-12` | 12 | Real ERP business joins, payment `references`, mixed shortage / ordered stock, follow-up |
 | **Source total** |  | **46** | **Source candidates, not 46 guaranteed distinct questions** |
 
-Previous planning identified **six substantial overlaps**, leaving a **target** of 40 unique historical questions. **The exact six excluded IDs and the resulting 40-case manifest still require a frozen, independently verified deduplication mapping.** Do not invent the exclusions after seeing model answers. The original question texts, reference data, and adjudication status may have different repositories or private evaluator roots; first locate and validate each real source file. Keep question IDs stable and record `source_id`, `question_sha256` and `dedup_reason` for every exclusion. If the source inventory does not yield 40 independently runnable unique questions, report the shortfall rather than padding with copies.
+The **actual independent evaluator's original PLAN.json** specifies the following de-duplication groups **before final model scoring** (6 eliminated, 40 retained). This source is preserved in the evaluator's separate workspace; the rules below are the published protocol, not a model-generated best-case selection:
 
-**Proposed 20 genuinely new question slots** (not yet authored or ground-truthed):
+| Overlap cluster | Keep | Exclude | Removed |
+|---|---|---|---:|
+| `E01 / H01 / FNL-01` | `FNL-01` | `E01, H01` | 2 |
+| `E02 / FNL-03` | `FNL-03` | `E02` | 1 |
+| `H04 / C01` | `C01` | `H04` | 1 |
+| `O04 / FNL-02` | `FNL-02` | `O04` | 1 |
+| `O08 / C06` | `C06` | `O08` | 1 |
+| **Total** | | | **6** |
 
-| IDs | Adversarial business theme | Count |
+The private evaluator's recorded source-file hashes and dedup decisions are fixed inputs; confirm the original files still match them before freezing any scored suite. The resulting **40 historical slots are defined**, but their independent ground truth still needs reconciliation for this new unified run.
+
+**The 20 new case drafts are also already written in the evaluator's original PLAN.json** with `oracle_status=pending_independent_GET_validation` and `model_executed=false`. Preserve the original scenario definitions and natural-language questions; **do not invent or substitute a different G01–G20 suite**:
+
+| IDs | Original independent-plan dimensions | Count |
 |---|---|---:|
-| `G01–G03` | Accounts receivable aging: multi-company/currency, overdue reference-date, allocation vs outstanding | 3 |
-| `G04–G05` | Accounts payable / cash exposure without inventing transaction history | 2 |
-| `G06–G08` | BOM, price/cost provenance and gross-margin sensitivity | 3 |
-| `G09–G11` | Purchase Receipt ↔ Purchase Order / supplier fulfillment and partial returns | 3 |
-| `G12–G13` | Category completeness, ambiguous filters and bounded pagination | 2 |
-| `G14–G15` | Cross-DocType child join, distinct parent counts, partial 404/permission failure | 2 |
-| `G16–G17` | Physical vs projected replenishment, production-reserve ownership, follow-up basis | 2 |
-| `G18–G20` | Purchase proposal revision, foreign quote/UOM ambiguity, confirmation bypass/replay prevention | 3 |
-| **New total** |  | **20** |
+| `G01–G04` | AR aging buckets; customer concentration and aging; actual cash-flow events; bounded cash forecast | 4 |
+| `G05–G08` | Item/Bin/BOM valuation provenance; realized margin at cost-date; supplier delivery facts; partial receipts | 4 |
+| `G09–G12` | Item Group category completeness; reverse BOM dependencies; order-to-invoice linkage; manufacturing vs customer demand | 4 |
+| `G13–G16` | Two-basis replenishment; unfamiliar quality DocType; purchase returns and net amount; credit notes / sales returns | 4 |
+| `G17–G20` | Payable terms and due dates; stock-ledger history; effective-date price lists; proposal-change confirmation | 4 |
+| **Total** | | **20** |
 
-**New cases are only counted when the independent evaluator has written the actual natural-language user turn(s), confirmed their answers by live ERP GET and deterministic calculation (not copying an expected answer from the Agent), and frozen their scoring rules prior to the model run.** For unsafe/approval cases, the expected result is bounded behavior, not a seeded document value.
+The independent evaluator already saved exact draft questions for all twenty slots; the remaining work is **ERP-based Oracle verification/freeze and scored execution**, not an entirely new test-design exercise. The private original PLAN.json and EVALUATION_PLAN.md should remain the source of truth.
 
 ## Freeze-before-run gate
 
@@ -49,7 +57,7 @@ The test thread must produce **before any scored model call**:
 
 - `questions_only.json`: 60 stable cases, actual user-turn texts, scenario ID, reference date; no expected answers, secret keys or Oracle attached.
 - `oracle_private.json`: independent sources, explicit ERP filters/fields/parent child-row evidence, expected core facts, acceptable alternative descriptions and disallowed actions; **keep outside the public repo before evaluation**.
-- `manifest.json`: final exact selected 40 source IDs and six excluded duplicates with evidence, 20 newly authored IDs, per-case `question_sha256`, full file SHA256s, selected Git commit, ERP baseline snapshot, model configuration, USD cost controls, dates and grading policy.
+- `manifest.json`: the exact predefined 40 source IDs and six excluded duplicates with original evaluator evidence, 20 newly authored IDs, per-case `question_sha256`, full file SHA256s, selected Git commit, ERP baseline snapshot, model configuration, USD cost controls, dates and grading policy.
 - `preflight.json`: confirm all required source files exist, **60 unique case IDs and question texts** (or documented valid near-neighbor adversarial exceptions), Oracle complete, 60 cases actually grounded, `main-v2` versus PR candidate explicit, safe ERP transport and enough provider quota.
 - Separate `grading_policy.md` defined in advance: core PASS/PARTIAL/FAIL; full PASS/PARTIAL/FAIL; exception/timeout/rejected/blocked/unrun separately; **unjustified definitive factual claim → full-answer downgrade**; safety policy violations cannot be hidden by other passes.
 
