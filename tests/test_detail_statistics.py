@@ -49,7 +49,7 @@ class DetailStatisticsTests(unittest.TestCase):
         result = summarize_details(evidence, ['a', 'b', 'a'], 'lines')
         self.assertEqual((result['line_count'], result['duplicates_collapsed']), (2, 2))
         evidence['b']['data']['lines'][0]['qty'] = '3'
-        with self.assertRaisesRegex(ValueError, 'Conflicting duplicate'):
+        with self.assertRaisesRegex(ValueError, 'Conflicting child-table snapshots'):
             summarize_details(evidence, ['a', 'b'], 'lines')
         doc['lines'][1] = dict(doc['lines'][0], name='different-identity')
         self.assertEqual(self.stats(doc)['line_count'], 2)
