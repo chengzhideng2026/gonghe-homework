@@ -16,6 +16,23 @@ def bin_trace(doctype='Bin', records=None, call_id='c'):
 
 
 class TestEvidenceChecks(unittest.TestCase):
+    def test_currency_amount_requires_matching_returned_currency(self):
+        no_currency = bin_trace(records=[{'name': 'BIN-1', 'stock_value': '11400'}])
+        self.assertTrue(evidence_issues('库存金额为 USD 11,400。', no_currency))
+        self.assertTrue(evidence_issues('库存金额为 $11,400。', no_currency))
+        self.assertFalse(evidence_issues('库存金额为 11,400；Bin 未返回币种。', no_currency))
+
+        usd = bin_trace(records=[{'name': 'BIN-1', 'stock_value': '11400', 'currency': 'USD'}])
+        self.assertFalse(evidence_issues('库存金额为 USD 11,400。', usd))
+        self.assertTrue(evidence_issues('库存金额为 EUR 11,400。', usd))
+
+    def test_currency_boundary_does_not_treat_unrelated_words_as_amount_claims(self):
+        no_currency = bin_trace(records=[{'name': 'BIN-1', 'stock_value': '11400'}])
+        for answer in ('币种未知。', '按 ERP 原值列示，不能证明是 USD。',
+                       'USD 是公司默认币种，但本次返回的 Bin 没有币种字段。'):
+            with self.subTest(answer=answer):
+                self.assertFalse(evidence_issues(answer, no_currency))
+
     def test_snapshot_rejects_movement_assertion_but_allows_location_and_uncertainty(self):
         self.assertTrue(evidence_issues('WIP仓20件已发到生产线。', bin_trace()))
         self.assertTrue(evidence_issues('20 were transferred to production.', bin_trace()))
@@ -95,6 +112,23 @@ class TestEvidenceChecks(unittest.TestCase):
                 self.assertRaisesRegex(RuntimeError, 'after one repair'):
             runner.ask('库存多少？', history)
         self.assertEqual(history, [])
+
+    def test_runner_repairs_currency_claim_when_snapshot_has_no_currency(self):
+        runner = LLMRunner(Agent(Mock()))
+        runner.base, runner.key, runner.model = 'https://example.invalid/v1', 'test-key', 'test-model'
+        replies = [
+            {'role': 'assistant', 'content': '库存金额为 USD 11,400。'},
+            {'role': 'assistant', 'content': '库存金额为 11,400；Bin 未返回币种。'},
+        ]
+        def respond(request, timeout):
+            return io.BytesIO(json.dumps({'choices': [{'message': replies.pop(0), 'finish_reason': 'stop'}]}).encode())
+        with patch('agent.urlopen', side_effect=respond):
+            answer, _ = runner.ask('哪个物料库存金额最大？')
+        self.assertEqual(answer, '库存金额为 11,400；Bin 未返回币种。')
+        feedback = [m.get('content', '') for m in runner.last_trace
+                    if m.get('role') == 'user' and 'PROGRAM EVIDENCE CHECK' in m.get('content', '')]
+        self.assertEqual(len(feedback), 1)
+        self.assertIn('currency evidence', feedback[0])
 
     def test_runner_checks_prior_turn_snapshot_when_followup_reuses_it(self):
         runner = LLMRunner(Agent(Mock()))
