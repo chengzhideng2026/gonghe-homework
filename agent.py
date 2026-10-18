@@ -622,7 +622,8 @@ class LLMRunner:
     def __init__(self, agent, registry=None):
         self.agent = agent
         self.registry = BUILTIN_TOOLS.clone() if registry is None else registry
-        self.tool_context = ToolContext(agent, calculate, has_child_join)
+        self._detail_evidence = {}
+        self.tool_context = ToolContext(agent, calculate, has_child_join, self._detail_evidence)
         self.base = validate_url(os.getenv("LLM_BASE_URL", "https://api.openai.com/v1"), endpoint=True)
         self.key = os.getenv("LLM_API_KEY", "")
         self.model = os.getenv("LLM_MODEL", "")
@@ -723,6 +724,7 @@ class LLMRunner:
             self.last_trace_write_error = str(exc)[:300]
 
     def ask(self, question, history=None):
+        self._detail_evidence.clear()
         self.turn_id = uuid.uuid4().hex
         self._trace_started = time.monotonic()
         self._trace_started_at = datetime.now(timezone.utc).isoformat()
@@ -934,6 +936,12 @@ class LLMRunner:
                     payload = {"ok": False, "error": str(exc)}
                 if measured:
                     payload['io'] = policy.report(mark)
+                if payload.get('ok') and name in ('get_document', 'get_documents'):
+                    # Only actual executed reads, never model arguments or caller-supplied history.
+                    self._detail_evidence[call_id] = copy.deepcopy({
+                        'tool': name, 'version': metadata.get('version'),
+                        'arguments': self._trace_arguments(raw_args), 'data': result,
+                        'io': payload.get('io', {})})
                 self._turn_calls.append({'call_id': call_id, 'tool': name,
                                          'version': metadata.get('version'), 'effect': metadata.get('effect'),
                                          'arguments': self._trace_arguments(raw_args),

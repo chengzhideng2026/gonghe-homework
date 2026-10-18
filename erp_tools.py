@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from tool_registry import ToolRegistry
 from query_policy import normalize_filters, validate_fields
 from aggregation_checks import aggregate_rollups
+from detail_statistics import summarize_details as compute_details
 
 
 @dataclass(frozen=True)
@@ -10,6 +11,7 @@ class ToolContext:
     agent: object
     calculate: object
     has_child_join: object
+    detail_evidence: object = None
 
 
 BUILTIN_TOOLS = ToolRegistry()
@@ -224,3 +226,24 @@ def aggregate_documents(context, args):
                              'required': ['expression']}}})
 def calculate(context, args):
     return context.calculate(args['expression'])
+
+
+@BUILTIN_TOOLS.tool({'type': 'function', 'function': {
+    'name': 'summarize_details',
+    'description': 'Compute all detail statistics locally in one call from actual current-turn '
+                   'get_document/get_documents evidence. Pass their tool call IDs, child Table field, '
+                   'optional field mapping and exact row_equals filters. No ERP requests or numeric arrays. '
+                   'Returns line/distinct-parent counts, Decimal quantity/line-amount sums, min/max rate '
+                   'and qty-weighted rate (numerator sum(qty*rate), denominator sum(qty), HALF_UP 2 decimals). '
+                   'Use for requested line statistics instead of transcribing numbers into calculate. '
+                   'Partitions currency/company/UOM. complete covers referenced reads only; verify upstream '
+                   'query pagination/filters separately before claiming a full business total. '
+                   'Missing current-turn evidence requires a read; never use chat summaries as evidence.',
+    'parameters': {'type': 'object', 'properties': {
+        'source_call_ids': {'type': 'array', 'items': {'type': 'string'}, 'minItems': 1, 'maxItems': 40},
+        'table_field': {'type': 'string'},
+        'fields': {'type': 'object', 'description': 'Optional mapping keys quantity, amount, rate, currency, unit, company to plain fields. Defaults qty, amount, rate, currency, uom, company. Currency is row field with parent fallback; company is parent field.'},
+        'row_equals': {'type': 'object', 'description': 'Exact AND equality on child row fields, e.g. item_code. Missing fields fail; no inferred match.'}},
+        'required': ['source_call_ids', 'table_field'], 'additionalProperties': False}}})
+def summarize_details(context, args):
+    return compute_details(context.detail_evidence or {}, **args)
