@@ -4,7 +4,7 @@
 
 ## 默认运行时工具
 
-仍为8个：`get_doctype_meta`、`count_documents`、`list_documents`、`get_document`、`get_documents`、`aggregate_documents`、`calculate`、`prepare_purchase_order`。它们是本项目的ERP API/算术适配器，没有接入外部MCP工具服务器或自动下载插件。`confirm/reconcile/discard`是人工CLI操作，不属于模型工具集合。
+原基线为8个：`get_doctype_meta`、`count_documents`、`list_documents`、`get_document`、`get_documents`、`aggregate_documents`、`calculate`、`prepare_purchase_order`；当前默认分支另增加 `summarize_details`，共9个。新工具仅接受当前轮真实 `get_document`/`get_documents` 返回正文的显式 `evidence_ref`，不允许模型自填数字或跨轮引用。它们是本项目的ERP API/算术适配器，没有接入外部MCP工具服务器或自动下载插件。`confirm/reconcile/discard`是人工CLI操作，不属于模型工具集合。
 
 未见过的只读DocType通常可以直接复用通用工具，无需每个单据新增一个函数。确实出现新的独立能力时再注册新工具。
 
@@ -35,7 +35,7 @@ Schema注册时复制，调用方修改原字典或发现结果不会改掉已�
 
 这些命令不请求模型、不修改ERP。停用后后续模型请求不携带该工具；即使模型照着历史工具名发起调用，执行器也会拒绝。每个Runner默认复制内置目录，A会话停用不改变B会话或全局默认。
 
-启停只保存在当前进程，不写入配置文件；重启恢复默认8个。`/reset`只清对话，当前进程的工具启停继续保留。同步CLI在问题之间接收命令；它不能在一个阻塞请求中同时接受下一条CLI输入。
+启停只保存在当前进程，不写入配置文件；重启恢复当前默认9个。`/reset`只清对话，当前进程的工具启停继续保留。同步CLI在问题之间接收命令；它不能在一个阻塞请求中同时接受下一条CLI输入。
 
 ## 新增与移除
 
@@ -90,6 +90,6 @@ runner.registry.unregister("count_items_extension")
 
 注册表阶段128项代码测试通过，新增13项覆盖注册发现、重复拒绝、Schema复制、停用、同名替换、会话隔离、Decimal解析、旧视图拒绝、空工具集合、收据和CLI控制；见`evidence/unit_registry.txt`。API效率阶段当前145项，新增请求预算与新鲜度保护见[API_EFFICIENCY](API_EFFICIENCY.md)。工具数量与实际HTTP请求量需分开统计。
 
-`evidence/registry_live.json`实际临时注册了第9个工具，模型调用它从真实ERP读取Item=18；移除回到8个后旧名字不可调用，停用/恢复calculate得到7→8。该演示没有持久修改默认工具集，没有ERP写入，也不是新的业务质量评分。
+原基线时期，`evidence/registry_live.json`实际临时注册了第9个工具，模型调用它从真实ERP读取Item=18；移除回到8个后旧名字不可调用，停用/恢复calculate得到7→8。该演示没有持久修改默认工具集，没有ERP写入，也不是新的业务质量评分。
 
-默认8工具的真实模型协议再次通过，见`evidence/registry_model_check.json`。8个内置handler的机械提取与原版本AST等价，见`evidence/registry_extraction.json`；新增注册校验和启停行为另由上述测试覆盖。
+原基线默认8工具的真实模型协议再次通过，见`evidence/registry_model_check.json`。原基线8个内置handler的机械提取与原版本AST等价，见`evidence/registry_extraction.json`；新增注册校验和启停行为另由上述测试覆盖。
