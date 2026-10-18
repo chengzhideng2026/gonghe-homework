@@ -71,7 +71,7 @@ python agent.py                # 进入交互式 Agent
 
 ## 4. 验证与证据边界
 
-- **当前已合并应用版本**：`main-v2` 的 [PR #2](https://github.com/chengzhideng2026/gonghe-homework/pull/2) 经 GitHub Actions **190/190 项离线测试通过**；当前分支后续如有新提交，以对应 SHA 的实际 CI 结果为准。
+- **当前已合并应用版本**：`main-v2` 的 [PR #2](https://github.com/chengzhideng2026/gonghe-homework/pull/2) 经 GitHub Actions **190/190 项离线测试通过**；当前分支后续如有新提交，以对应 SHA 的实际 CI 结果为准。历史真实模型业务题并非只有最新12题，按系列、结果及版本边界整理于 [评测证据索引](EVALUATION_EVIDENCE.md)。
 - **原始应用基线**：`5fe679e` 曾通过 170 项代码测试、248 项子测试和 `--demo`；此成绩不可自动套用到后续版本。
 - **真实业务评测**：已有开发复测、独立变式和失败回放；结果、原始轨迹及适用 SHA 必须分别对照 [业务验收说明](BUSINESS_ACCEPTANCE.md) 与 [历史审计](AUDIT.md)。仓库外的独立运行文件不冒充公开可下载证据。
 - **安全界限**：模型没有直接 ERP 写工具；`/confirm` 的写入回路有专门代码与测试，但现有用户手动演示到采购**预览**为止。单机 SQLite 幂等不等于 ERP 服务端 exactly-once。
@@ -89,6 +89,6 @@ python -m unittest discover -s tests -v
 - **先看**：[一页设计说明](WRITEUP.md)（按原题六项评审指标组织）· [原始作业要求](ORIGINAL_README.md)
 - **代码与操作**：[项目接手指南](PROJECT_GUIDE.md) · [工具注册](TOOL_REGISTRY.md) · [架构](ARCHITECTURE.md)
 - **正确性与安全**：[业务验收](BUSINESS_ACCEPTANCE.md) · [请求成本](API_EFFICIENCY.md) · [采购恢复设计](RECOVERY_AND_DESIGN.md)
-- **历史证据**：[审计记录](AUDIT.md) · [原始明细统计实验](https://github.com/chengzhideng2026/gonghe-homework/tree/experiment/detail-statistics/experiment)
+- **历史证据**：[评测证据索引](EVALUATION_EVIDENCE.md) · [审计记录](AUDIT.md) · [原始明细统计实验](https://github.com/chengzhideng2026/gonghe-homework/tree/experiment/detail-statistics/experiment)
 
 **评审入口始终是公开仓库默认分支 [`main-v2`](https://github.com/chengzhideng2026/gonghe-homework/tree/main-v2)**；其他实验及待审 PR 不代表已交付能力。
