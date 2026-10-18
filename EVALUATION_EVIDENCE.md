@@ -7,8 +7,8 @@
 | 层级 | 结果 | 代码版本与证明范围 |
 |---|---|---|
 | **正式版离线回归** | **190 / 190 PASS** | `main-v2`，已合并 [PR #2](https://github.com/chengzhideng2026/gonghe-homework/pull/2)，[GitHub Actions](https://github.com/chengzhideng2026/gonghe-homework/actions) |
-| **定向修复候选离线回归** | **227 / 227 PASS** | `59339c7d850cfccd0b144fda694b94fac246ecc8`，[PR #4](https://github.com/chengzhideng2026/gonghe-homework/pull/4)；**尚未合入**；该新 SHA 尚未进行真实模型复测 |
-| **已完成的定向真实模型试验** | **6 题：核心 5 PASS / 1 PARTIAL，完整 3 PASS / 1 PARTIAL / 2 FAIL** | **旧候选** `571f52e`，26 次模型请求、24 次 ERP GET、0 写入。FNL-12 通过，付款核销与 EUR 报价仍有缺陷；见 [脱敏报告](evidence/TARGETED_REAL_MODEL_REVIEW_20261018.md)。不能直接算作最新 `59339c7d` 的成绩 |
+| **定向修复候选离线回归** | **229 / 229 PASS** | `bd86c939a8043a9ebab135dc337e6d86b9ce74fd`，[PR #4](https://github.com/chengzhideng2026/gonghe-homework/pull/4)；**尚未合入**；该新 SHA 尚未完成真实模型验证；前一 SHA 的本地 H08 冒烟曾因报价来源跨 Markdown 标题误报而拒答，现增加对应离线正反测试 |
+| **已完成的定向真实模型试验** | **6 题：核心 5 PASS / 1 PARTIAL，完整 3 PASS / 1 PARTIAL / 2 FAIL** | **旧候选** `571f52e`，26 次模型请求、24 次 ERP GET、0 写入。FNL-12 通过，付款核销与 EUR 报价仍有缺陷；见 [脱敏报告](evidence/TARGETED_REAL_MODEL_REVIEW_20261018.md)。不能直接算作最新 `bd86c939` 的成绩 |
 | **真实 ERP REST 兼容性** | 历史阶段多次 **19 项检查通过** | [只读 REST 原始记录](evidence/live_read.json)；验证数据/接口，不计入模型回答通过率 |
 | **FNL 独立业务基线** | 测试线程报告 **12 题、核心 10/12、完整 9/12** | 基线 `2d6ce5c`；原始测试文件目前保存在独立本地工作区，**尚未提交到公开仓库** |
 | **统一业务评测** | **60 道计划题，尚无总成绩** | 初步去重后 40 道历史候选题 + 20 道新泛化题；Oracle 尚未冻结、模型尚未执行 |
@@ -39,7 +39,7 @@
 
 ## 4. 最终发布门槛
 
-1. 在 **最新候选 SHA** `59339c7d` 上复核 FNL-07、H08、FNL-02、FNL-12、E07/E08；不得仅凭 227 项 CI 就合并代码。
+1. 在 **最新候选 SHA** `bd86c939` 上复核 FNL-07、H08、FNL-02、FNL-12、E07/E08；不得仅凭 227 项 CI 就合并代码。
 2. 冻结评测题、Oracle、判分标准和 SHA256；记录模型/参数、ERP seed 与参考日。
 3. 对最终候选的每题保留首次回答、工具收据、HTTP 方法、真实 usage 和人工/AI 审核说明；核心、完整、PARTIAL、FAIL、未运行分别计数。
 4. 发布首页成绩摘要及可核查的**脱敏**原始证据。历史结果只用于证明修复过程，不能冒充同 SHA 的最终 60 题成绩。
