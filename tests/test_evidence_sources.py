@@ -49,6 +49,37 @@ class TestCurrencySources(unittest.TestCase):
             with self.subTest(question=question):
                 self.assertFalse(evidence_issues(answer, [{'role': 'user', 'content': question}]))
 
+    def test_quote_and_calculated_total_under_separate_markdown_headings(self):
+        question = ('只准备初步采购方案：供应商每米报价29欧元，买10米。'
+                    '公司以美元记账，尚未决定汇率。')
+        trace = [{'role': 'user', 'content': question}, *calculation_trace('10 * 29')]
+        answer = ('**已核实的 ERP 事实**\\n- 物料单位 Meter\\n'
+                  '**用户提供的条件（非 ERP 数据）**\\n'
+                  '- 数量：10 Meter\\n- 报价单价：29 EUR/米\\n'
+                  '- 公司本位币：USD；汇率未定\\n'
+                  '**金额（按 calculate 计算，币种为欧元）**\\n'
+                  '- 10 × 29 = **290 EUR**（欧元报价合计，未做美元换算）\\n'
+                  '**缺失/待定项**\\n- 需确定汇率')
+        self.assertFalse(evidence_issues(answer, trace))
+        # The section heading cannot invent a price or a computed total.
+        self.assertTrue(evidence_issues(answer.replace('29 EUR/米', '28 EUR/米'), trace))
+        self.assertTrue(evidence_issues(answer.replace('290 EUR', '291 EUR'), trace))
+        self.assertTrue(evidence_issues(answer, trace[:1]))
+        # A later ERP heading resets the user quote/derivation provenance.
+        self.assertTrue(evidence_issues(
+            answer + '\\n**ERP事实**\\n- ERP库存金额290 EUR。', trace))
+
+    def test_section_provenance_cannot_borrow_an_unrelated_erp_currency(self):
+        trace = [{'role': 'user', 'content': '用户报价27欧元每米，买4米。'},
+                 *bin_trace('Company', [{'name': 'ORG', 'default_currency': 'USD'}]),
+                 *calculation_trace('27 * 4')]
+        answer = ('**用户提供的条件**\\n- 单价 27 EUR\\n'
+                  '**计算金额**\\n- 合计 108 EUR')
+        self.assertFalse(evidence_issues(answer, trace))
+        self.assertTrue(evidence_issues(answer.replace('108 EUR', '108 USD'), trace))
+        self.assertTrue(evidence_issues('**ERP事实**\\n- 账上金额108 EUR', trace))
+        self.assertFalse(evidence_issues('您陈述的供应商报价是27 EUR。', trace))
+
     def test_user_quote_does_not_become_erp_fact_or_global_currency_permission(self):
         trace = [{'role': 'user', 'content': '预算是USD10。'},
                  *bin_trace(records=[{'name': 'B', 'stock_value': 10}])]
