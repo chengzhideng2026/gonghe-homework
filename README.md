@@ -2,9 +2,9 @@
 
 ## 项目能力
 
-通过实时 ERPNext API 回答库存、采购、工单、BOM 和财务问题，并在人工确认后创建采购草稿。Python 标准库 CLI 提供八个模型工具：元数据、计数、列表、单单详情、批量详情、完整聚合、Decimal 算术及采购预览。工具收据、上下文预算和执行轨迹帮助追溯查询与计算来源。
+通过实时 ERPNext API 回答库存、采购、工单、BOM 和财务问题，并在人工确认后创建采购草稿。Python 标准库 CLI 默认提供九个模型工具：元数据、计数、列表、单单详情、批量详情、完整聚合、Decimal 算术、证据绑定的明细统计及采购预览。工具收据、上下文预算和执行轨迹帮助追溯查询与计算来源。
 
-**已提交评审的应用验收基线为 `5fe679ea3aaffd53042518238acf09866e56bc4b`（`5fe679e`）。后续本次提交仅整理文档，应用代码不变。** 公开仓库默认分支为 [main-v2](https://github.com/chengzhideng2026/gonghe-homework/tree/main-v2)。
+**原始已交付应用验收基线为 `5fe679ea3aaffd53042518238acf09866e56bc4b`（`5fe679e`）。本增强版在该应用基础上加入了只读统计工具和对应测试，属于后续代码变更，原始验收结果不能自动视为增强版测试结果。** 公开仓库默认分支为 [main-v2](https://github.com/chengzhideng2026/gonghe-homework/tree/main-v2)。
 
 ## 环境要求和启动步骤
 
@@ -76,6 +76,14 @@
 独立报告为单独保存的 `D:\work\gonghe-eval-runs\5fe679e_20261018\REPORT.md`，已读取核实，**尚未纳入本仓库**，这里不提供不存在的仓库链接。其余历史阶段和失败回答保留在 [AUDIT](AUDIT.md)、[业务验收说明](BUSINESS_ACCEPTANCE.md) 及其证据入口中，阶段结论不自动迁移到新版本。
 
 本地回归可运行 `python -m unittest discover -s tests -v`；有 pytest 环境也可运行 `python -m pytest -q tests`。这些测试不能替代独立真实业务评测。
+
+## 明细统计工具（增强版）
+
+新增只读 `summarize_details`：先使用 `get_document` / `get_documents` 获取父单，复制成功读取结果正文的 `evidence_ref`，然后指定子表字段（例如 `items`）和需要的精确行筛选（例如 `{"item_code":"..."}`）。工具在本地利用 Decimal 计算匹配行数、不同父单数、数量合计、行金额合计、单价极值和按数量加权单价，不发起新的 ERP 请求。统计结果按公司、币种和单位分组，不进行自动换算。
+
+**证据限制**：同一父单重复读取的子表快照必须一致，行顺序不同不算冲突；发现行增删、字段变化或同一快照重复子行身份会拒绝汇总，不拼接跨时刻结果。即使返回 `complete=true`，也只表示引用的父单读取成功；上游父单列表过滤、分页是否完整仍需独立确认。顺序读取并不等于 ERP 事务快照。
+
+历史实验记录保留在 [实验分支](https://github.com/chengzhideng2026/gonghe-homework/tree/experiment/detail-statistics/experiment)；初次比较存在来源引用失败，修复后 D02 只有一组真实成功案例，不能宣称统计工具稳定降低 token、延迟或 HTTP 次数。最终验证以本分支上的实际完整离线回归为准，不把旧版测试记录当成新提交的验收结果。
 
 ## 主要限制
 
