@@ -7,12 +7,13 @@
 | 层级 | 结果 | 代码版本与证明范围 |
 |---|---|---|
 | **正式版离线回归** | **190 / 190 PASS** | `main-v2`，已合并 [PR #2](https://github.com/chengzhideng2026/gonghe-homework/pull/2)，[GitHub Actions](https://github.com/chengzhideng2026/gonghe-homework/actions) |
-| **定向修复候选离线回归** | **231 / 231 PASS** | `f11d6c09e9c3e328a191bd532f7b85e822b6db76`，[PR #4](https://github.com/chengzhideng2026/gonghe-homework/pull/4)；**尚未合入**；该新 SHA 尚未完成真实模型验证；前一 SHA 的本地 H08 冒烟曾因报价来源跨 Markdown 标题误报而拒答，现增加对应离线正反测试 |
-| **已完成的定向真实模型试验** | **6 题：核心 5 PASS / 1 PARTIAL，完整 3 PASS / 1 PARTIAL / 2 FAIL** | **旧候选** `571f52e`，26 次模型请求、24 次 ERP GET、0 写入。FNL-12 通过，付款核销与 EUR 报价仍有缺陷；见 [脱敏报告](evidence/TARGETED_REAL_MODEL_REVIEW_20261018.md)。不能直接算作最新 `f11d6c09` 的成绩 |
+| **定向修复候选离线回归** | **234 / 234 PASS** | `3636ddb2e10a285421c5580891fd50e6d09939c9`，[PR #4](https://github.com/chengzhideng2026/gonghe-homework/pull/4)；**尚未合入**；该新 SHA 尚未完成真实模型验证；前一 SHA 的本地 H08 冒烟曾因报价来源跨 Markdown 标题误报而拒答，现增加对应离线正反测试 |
+| **已完成的定向真实模型试验** | **6 题：核心 5 PASS / 1 PARTIAL，完整 3 PASS / 1 PARTIAL / 2 FAIL** | **旧候选** `571f52e`，26 次模型请求、24 次 ERP GET、0 写入。FNL-12 通过，付款核销与 EUR 报价仍有缺陷；见 [脱敏报告](evidence/TARGETED_REAL_MODEL_REVIEW_20261018.md)。不能直接算作最新 `3636ddb2` 的成绩 |
 | **最新 Windows 实际模型冒烟** | **4 组均返回回答，无证据检查或传输错误** | 旧候选 `bd86c939`，H08/E07/E08 与一题 ad hoc 付款核销；[运行摘要](evidence/WINDOWS_SMOKE_REVIEW_20261018.md)；**尚非人工评分的 4/4 PASS**，也不是同 SHA 的 FNL 冻结结果 |
 | **真实 ERP REST 兼容性** | 历史阶段多次 **19 项检查通过** | [只读 REST 原始记录](evidence/live_read.json)；验证数据/接口，不计入模型回答通过率 |
 | **FNL 独立业务基线** | 测试线程报告 **12 题、核心 10/12、完整 9/12** | 基线 `2d6ce5c`；原始测试文件目前保存在独立本地工作区，**尚未提交到公开仓库** |
-| **冻结六题定向首次评测** | **旧候选核心 4 PASS / 2 PARTIAL，完整 4 PASS / 2 FAIL（人工审查）** | `bd86c939`，22 模型请求 / 18 ERP GET / 0 写入；FNL-12 第二轮异常和 FNL-07 检查误报均保留，[完整审查摘要](evidence/DIRECTED_SIX_CASE_BD86_REVIEW_20261018.md)。新候选 `f11d6c09` 仅有离线回归，**没有同 SHA 实际模型得分** |
+| **冻结六题定向首次评测** | **旧候选核心 4 PASS / 2 PARTIAL，完整 4 PASS / 2 FAIL（人工审查）** | `bd86c939`，22 模型请求 / 18 ERP GET / 0 写入；FNL-12 第二轮异常和 FNL-07 检查误报均保留，[完整审查摘要](evidence/DIRECTED_SIX_CASE_BD86_REVIEW_20261018.md)。新候选 `3636ddb2` 仅有离线回归，**没有同 SHA 实际模型得分** |
+| **最近一次冻结六题实际运行** | **5 个最终回答可接受、H08 exception**（人工判读，非 Oracle 官方评分） | 实测旧候选 `f11d6c09`，24 模型调用 / 21 ERP GET / 0 写入；FNL-12 与 FNL-07 旧阻断修复成功，H08 否定币种语句被证据检查器错误拦截。见 [最新实际运行审查](evidence/DIRECTED_SIX_CASE_F11_REVIEW_20261018.md)。候选 `3636ddb2` 暂无实测结果 |
 | **统一业务评测** | **60 道计划题，尚无总成绩** | 初步去重后 40 道历史候选题 + 20 道新泛化题；Oracle 尚未冻结、模型尚未执行 |
 
 **阅读规则：**代码测试的数量不等于业务题数量；候选 CI 通过也不等于它已经提升了真实业务回答准确率。最终结论必须带提交 SHA、题数分母、首次运行轨迹。
@@ -41,7 +42,7 @@
 
 ## 4. 最终发布门槛
 
-1. 在 **最新候选 SHA** `f11d6c09` 上复核 FNL-07、H08、FNL-02、FNL-12、E07/E08；不得仅凭 231 项 CI 就合并代码。
+1. 在 **最新候选 SHA** `3636ddb2` 上复核 FNL-07、H08、FNL-02、FNL-12、E07/E08；不得仅凭 234 项 CI 就合并代码。
 2. 冻结评测题、Oracle、判分标准和 SHA256；记录模型/参数、ERP seed 与参考日。
 3. 对最终候选的每题保留首次回答、工具收据、HTTP 方法、真实 usage 和人工/AI 审核说明；核心、完整、PARTIAL、FAIL、未运行分别计数。
 4. 发布首页成绩摘要及可核查的**脱敏**原始证据。历史结果只用于证明修复过程，不能冒充同 SHA 的最终 60 题成绩。
