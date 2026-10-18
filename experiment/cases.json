@@ -1,0 +1,20 @@
+{
+  "baseline": "5fe679ea3aaffd53042518238acf09866e56bc4b",
+  "scope": "Two frozen new detail-statistics cases; one ask per variant per case, no retries. No ERP writes. Not hidden or full acceptance.",
+  "cases": [
+    {
+      "id": "D01",
+      "doctype": "Purchase Order",
+      "child_doctype": "Purchase Order Item",
+      "item": "RM-COIL-CU-2.0",
+      "question": "以2025-10-15为参考日，统计Crestwind Compressor Manufacturing Co.所有交易日不晚于参考日、已提交采购订单中RM-COIL-CU-2.0的明细。只回答匹配行数、不同父单数、数量合计、行amount合计、rate最低和最高值、按qty加权的rate均价。加权均价保留两位小数、四舍五入，给出计算分子和分母。说明币种、单位及查询覆盖范围，不混合币种或单位。只读，不生成采购预览。"
+    },
+    {
+      "id": "D02",
+      "doctype": "Sales Order",
+      "child_doctype": "Sales Order Item",
+      "item": "FG-COMP-1.5HP-R32",
+      "question": "以2025-10-15为参考日，统计Crestwind Compressor Manufacturing Co.所有交易日不晚于参考日、已提交销售订单中FG-COMP-1.5HP-R32的明细。只回答匹配行数、不同父单数、数量合计、行amount合计、rate最低和最高值、按qty加权的rate均价。加权均价保留两位小数、四舍五入，给出计算分子和分母。说明币种、单位及查询覆盖范围，不混合币种或单位。只读，不生成采购预览。"
+    }
+  ]
+}

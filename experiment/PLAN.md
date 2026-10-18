@@ -1,0 +1,9 @@
+# Isolated detail statistics experiment
+
+Baseline: `5fe679ea3aaffd53042518238acf09866e56bc4b`. Original checkout at `0a7e328a0eb6dd63d29dc3ba18bfe240c5d63dc5` is clean and must remain unchanged. Only this experiment branch may change. No push/merge or history edits.
+
+Cases in `cases.json` are frozen before implementation. D01 and D02 are different from the previous N05/N07 questions. Exactly four real-model asks are allowed: baseline and experiment once each for both cases, no retries or favorable selection. Same configuration and limits for both variants. Cold client per ask. Model calls within each ask are measured separately. Unknown usage is not zero. Expected values will come from independently retained raw ERP reads and Decimal calculation, never runtime constants.
+
+Reuse assessment: aggregate_documents computes distinct-parent grouped sums, not child-row rates/min/max/weighted means. calculate evaluates Decimal expressions but requires the model to transcribe numbers. Existing receipts preserve call identity and scope, but detail receipts omit child rows. A small local tool on the existing registry can consume actual successful get_document/get_documents results by call ID; no new dispatcher, HTTP client, memory store or execution framework. Scope of complete is only the referenced reads.
+
+Offline checks: unequal quantities, Decimal rounding, duplicate identity/conflicts, mixed currency/UOM, missing fields, zero denominator, partial reads, missing evidence, and actual ask dispatch/source binding. Existing regression suite remains required. Real-model review checks each requested number against source/computation, scope and unsupported claims; successful script exit is only an execution check. AI review and human operation are recorded separately. If there is no clear benefit, stop without expanding the experiment.
