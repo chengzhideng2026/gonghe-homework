@@ -138,11 +138,71 @@ def _currency_answer_sentences(answer):
             yield sentence, section
 
 
+def _qualified_historical_currency_estimate(answer, sentence, code, amount,
+                                            current, earlier, calculations):
+    """Allow a conditional budget display, not a verified ERP/quote currency.
+
+    The user must explicitly request the currency; the rate must originate in
+    an earlier successful ERP Item read, and a current calculate must use that
+    rate and produce this exact amount. Attribution and lack of verified rate
+    currency must be visible. No PO preview/confirm authorization follows.
+    """
+    if amount is None or _quoted_amounts(current):
+        return False
+    user_text = ' '.join(m.get('content') or '' for m in current if m.get('role') == 'user'
+                         and not (m.get('content') or '').startswith('[PROGRAM EVIDENCE CHECK'))
+    requested = {CURRENCY_ALIASES.get(m.group().upper(), m.group().upper())
+                 for m in re.finditer(CURRENCY_CODES, user_text, re.I)}
+    if code not in requested:
+        return False
+    if not re.search(r'假设|条件(?:性)?|预算|按(?:您|你|用户).{0,12}(?:指定|要求)', sentence):
+        return False
+    if ERP_BASIS.search(sentence) or not re.search(r'不可执行|仅为.{0,8}草案|初步采购计划', answer):
+        return False
+    if not (re.search(r'ERP', answer, re.I)
+            and re.search(r'未.{0,20}币种|币种.{0,20}(?:未|无)|无对应币种', answer)):
+        return False
+
+    rates = set()
+    def visit(value):
+        if isinstance(value, dict):
+            if 'last_purchase_rate' in value:
+                rate = _first_decimal(str(value['last_purchase_rate']))
+                if rate is not None:
+                    rates.add(rate)
+            for child in value.values():
+                visit(child)
+        elif isinstance(value, list):
+            for child in value:
+                visit(child)
+    for message in earlier:
+        if message.get('role') != 'tool':
+            continue
+        try:
+            payload = json.loads(message.get('content') or '{}')
+        except (ValueError, TypeError):
+            continue
+        if payload.get('ok') is True:
+            visit(payload.get('data'))
+    if not rates:
+        return False
+    for calculation in calculations:
+        if _first_decimal(str(calculation.get('result', ''))) != amount:
+            continue
+        operands = {Decimal(number) for number in re.findall(
+            r'(?<![\\w.])\\d+(?:\\.\\d+)?(?:[eE][-+]?\\d+)?',
+            str(calculation.get('expression', '')))}
+        if rates & operands:
+            return True
+    return False
+
+
 def _currency_issues(answer, messages):
     current = _current_turn_messages(messages)
     observed = _currency_values(current)
     quotes = _quoted_amounts(current)
     earlier_quotes = _quoted_amounts(messages[:len(messages) - len(current)])
+    earlier = messages[:len(messages) - len(current)]
     calculations = []
     prepared_totals = set()
     for receipt in tool_receipts(current):
@@ -171,7 +231,14 @@ def _currency_issues(answer, messages):
                 continue
             attribution = re.sub(r'(?:非|不是|并非|未经|未由|not\s+(?:from\s+|verified\s+by\s+)?)ERP',
                                  '', sentence, flags=re.I)
-            if (USER_BASIS.search(sentence) or section in {'user', 'derived'}) and not ERP_BASIS.search(attribution):
+            if _qualified_historical_currency_estimate(
+                    answer, sentence, claimed, amount, current, earlier, calculations):
+                continue
+            # A generic "### Totals" heading is also used for ERP calculations.
+            # It is not user-sourced currency evidence without a user price.
+            has_user_quote = bool(quotes or earlier_quotes)
+            if (USER_BASIS.search(sentence) or section == 'user'
+                    or (section == 'derived' and has_user_quote)) and not ERP_BASIS.search(attribution):
                 source_quotes = earlier_quotes if EARLIER_SOURCE.search(sentence) else quotes
                 # A direct quoted price must match actual user input; a derived
                 # total must also match a successful current-turn calculation.
