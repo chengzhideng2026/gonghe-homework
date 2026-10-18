@@ -1,111 +1,94 @@
 # Plantcore ERPNext Agent
 
-**基于真实 ERPNext API 的工业业务 Agent：可追溯查询、确定性统计、受控采购。**
+**An ERP-grounded industrial AI agent that answers from live business records, computes with deterministic tools, and never lets an LLM authorize a purchase.**
 
-本项目使用 Python 标准库实现 CLI 与模型工具循环，连接题目提供的 Crestwind Compressor Manufacturing Co.（CCM）ERPNext。Agent 能查询库存、采购/销售订单、工单、BOM 和发票；处理未知 DocType 与父子表关联；计算有来源的小计；并在用户**独立确认后**创建采购草稿。业务参考日固定为 **2025-10-15**，不以机器时钟或单号年份替代。
+Built on the supplied **Crestwind Compressor Manufacturing Co.** ERPNext seed. Python standard-library CLI, OpenAI-compatible LLM, Docker ERPNext. No copied answers in the prompt, SQL agent, vector database, frontend framework, or generic write tool.
 
-**设计原则：业务事实从 ERP 读取，计算与权限约束由代码执行，模型负责理解问题和选择工具。** 不把 `DATASET.md` 中的答案装进模型提示，也不开放 SQL、Shell 或通用写入工具。
+> **Review in this order:** [run it](#run-locally) → [try three workflows](#three-review-workflows) → [examine the design](WRITEUP.md) → [inspect test evidence](EVALUATION_EVIDENCE.md). Original assignment: [ORIGINAL_README.md](ORIGINAL_README.md).
 
-**工程验证与业务评测（按版本区分）**
+## Run locally
 
-| 已验证的结果 | 适用范围 |
-|---|---|
-| **190 / 190** 离线回归通过 | 当前已交付 `main-v2`，见 [合并 PR #2](https://github.com/chengzhideng2026/gonghe-homework/pull/2) |
-| **234 / 234** 离线回归通过 | [定向修复 PR #4](https://github.com/chengzhideng2026/gonghe-homework/pull/4) 的最新候选 SHA `3636ddb2`，**尚未合并；尚待在该 SHA 上进行真实模型定向回归（前一提交的 H08 冒烟暴露币种来源误报，新提交已做离线修复）** |
-| **6 道真实模型定向题** | 旧候选 `571f52e` 核心 5 PASS/1 PARTIAL；完整 3 PASS/1 PARTIAL/2 FAIL。FNL-12 已修复，核销关联与 EUR 报价暴露未解决问题；见 [脱敏复盘](evidence/TARGETED_REAL_MODEL_REVIEW_20261018.md)。**这不是最新 `3636ddb2` 的成绩** |
-| 多系列真实 ERP + 模型历史评测 | E/H/C 等已保存原始轨迹、部分失败和复测结论；详见 [评测证据索引](EVALUATION_EVIDENCE.md)，不能拼成一个最终版本的通过率 |
-| **旧候选的 Windows 真实模型冒烟** | `bd86c939` 上 H08、E07、E08 与一题临时付款核销测试均产生有效回答；原始业务判分仍待人工核验，见 [冒烟记录](evidence/WINDOWS_SMOKE_REVIEW_20261018.md)。不代替冻结 FNL 评测 |
-| **冻结六题独立首次评测** | 前一候选 `bd86c939`：核心人工审查 4 PASS / 2 PARTIAL，完整 4 PASS / 2 FAIL；FNL-12 第二轮 exception，FNL-07 回答被证据检查误改；见 [逐题复盘](evidence/DIRECTED_SIX_CASE_BD86_REVIEW_20261018.md)。**新 `3636ddb2` 尚未实测** |
-| **冻结六题最新已运行版本** | 旧候选 `f11d6c09` 逐题人工审查 **5 题有可接受的最终业务回答、H08 发生程序拒答**；参见 [逐题审查](evidence/DIRECTED_SIX_CASE_F11_REVIEW_20261018.md)。**新候选 `3636ddb2` 仅通过离线回归，尚未完成真实模型复测** |
-| **60 题统一评测** | 40 道去重历史候选题 + 20 道新题，**规划中，未冻结 Oracle、未执行，不展示通过率** |
+**Requirements:** Python 3.10+, Docker Engine/Desktop, Docker Compose 2.24.4+, Git, a working OpenAI-compatible model API key. After images are present, the commands are short; the **first** ERP restore may exceed five minutes while images download and migrations complete.
 
-这些数字分属代码级回归和真实模型业务评测，不可互相代替。
-
-## 1. 快速启动
-
-需要 Git、Python **3.10+**、Docker Engine/Desktop、Compose **2.24.4+** 及可用的 OpenAI-compatible 模型 API。Agent 自身无需第三方 Python 包；首次下载镜像、ERP 恢复和模型配置可能使总启动时间超过五分钟。
-
-在终端执行：
-
-```bash
+~~~bash
 git clone --branch main-v2 https://github.com/chengzhideng2026/gonghe-homework.git
 cd gonghe-homework
-
-# 从项目根目录启动题目 ERPNext（端口仅绑定本机回环）
 docker compose -f erpnext/compose.yml -f compose.local.yml up -d
 docker compose -f erpnext/compose.yml -f compose.local.yml logs -f restore-site
-```
+~~~
 
-首次恢复看到 `Restore complete.` 后按 Ctrl+C 退出日志查看（不是停止容器）。已存在的站点可能跳过恢复。ERP 管理页面：http://localhost:8080；题目 seed 的演示账户见 [原题](ORIGINAL_README.md)。**不要为了普通重启执行 `docker compose down -v`，那会删除数据卷。**
+Once you see \`Restore complete.\`, stop following logs with Ctrl+C (this does **not** stop Docker). The site is at [http://localhost:8080](http://localhost:8080); the Compose overlay binds only loopback interfaces. Do **not** use \`docker compose down -v\` for a routine restart: it removes ERP data volumes.
 
-仅当项目根目录没有 `.env` 时，复制示例文件：
+Copy \`.env.example\` to \`.env\` and set **\`LLM_API_KEY\`** (and adjust the model URL/name if needed). The ERP API demo values are pre-provisioned in the supplied seed. Never commit \`.env\`.
 
-```powershell
-# Windows PowerShell
-Copy-Item .env.example .env
-```
+~~~bash
+# Windows PowerShell: Copy-Item .env.example .env
+# Linux / macOS:     cp .env.example .env
+python agent.py --demo          # code/config demo; no model call
+python agent.py --check         # ERP read connectivity; no model API call
+python agent.py                 # interactive natural-language CLI
+~~~
 
-```bash
-# Linux / macOS
-cp .env.example .env
-```
+The **business reference date is 2025-10-15**. The system clock and ERP invoice \`status\` can disagree with this date; due-date decisions must use the requested reference date.
 
-在本地 `.env` 中填写模型服务的 `LLM_API_KEY`、`LLM_BASE_URL`、`LLM_MODEL`；核对 `ERPNEXT_URL`、`ERPNEXT_API_KEY`、`ERPNEXT_API_SECRET`。题目 seed 提供了 ERP API 的演示配置。**不要提交真实密钥或 `.env`。**
+## Three review workflows
 
-```bash
-python agent.py --demo         # 加载检查：无需模型/ERP
-python agent.py --check        # ERP 连接 + 模型配置检查：不调用模型
-python agent.py                # 进入交互式 Agent
-```
+Ask these in the CLI. Each is a *question*, not a hard-coded response; use \`/trace\` to inspect the actual tool calls, scope, calculations, and receipts.
 
-`python agent.py --check-model` 为可选的真实模型与只读工具协议检查，会消耗模型额度；它不代表业务题已验收。Linux/macOS 可按环境将 `python` 改为 `python3`。
-
-## 2. 三个评审场景
-
-以下问题可直接输入到 `python agent.py`。请用 `/trace` 核对实际工具调用、过滤范围、分页与数值来源；不同 ERP 状态下以实时读取为准。
-
-| 场景 | 推荐问题 | 评审重点 |
+| Workflow | Try this | What to verify |
 |---|---|---|
-| 库存与跨轮计算 | “铜线的现货、在途和生产预留分别是多少？列出物料、仓库、单位。”随后问：“以刚才同一物料及仓库的现货为依据，目标 180 Meter，缺口是多少？” | 实物与在途不混算；沿用正确物料身份；单位一致；计算留有来源 |
-| 参考日期与财务 | “以 2025-10-15 为参考日，列出已提交、尚未付清且已逾期的销售发票，包含币种、到期日、未结余额。” | 按日期字段判断，而不是直接相信宿主时钟生成的原始 `status` |
-| 采购预览（不写 ERP） | “按已核验的供应商、物料、数量、单位、单价/币种和日期，仅准备一张采购草稿预览，不执行创建。” | 本地预览与 ERP 实际单据分离；必须人工 `/confirm <proposal_id>` 才能创建 |
+| **Work order → material shortage** | “Which components block Work Order MFG-WO-2026-00020? Compare requirements with Stores stock, respecting UOM.” | Reads Work Order and Bin; distinguishes missing components, physical stock and warehouse-level reservations without inventing ownership. |
+| **Invoices → actual allocations** | “For GreenAir HVAC Solutions, show submitted sales invoices, outstanding balances, and which payments were actually allocated to each invoice.” | Reads \`Payment Entry.references\` child rows; never equates free-text \`reference_no\` or \`paid_amount\` to an invoice allocation; separates balance from payment history. |
+| **Purchase → gated preview** | “Prepare, but do not create, a PO for 3 Nos of RM-BRG-NSK-6203 from Hangzhou Precision Bearings at USD 4.20 each.” | \`prepare_purchase_order\` creates only **local pending state**; USD 12.60 is a preview estimate. An actual ERP Draft requires an independent user-entered \`/confirm <proposal_id>\`. Do **not** confirm during read-only review. |
 
-`/pending` 查看本地预览，`/discard <proposal_id>` 放弃预览，`/reconcile <proposal_id>` 只读核查已记录单号；`/quit` 退出。预览默认有效期 15 分钟，并绑定 ERP 连接配置。**预览成功不表示订单已创建。** 不建议在只读评审中输入 `/confirm`。
+Also try an ambiguous supplier, an unknown DocType, partial/404 results, cross-currency pricing, and a multi-turn stock calculation. See the [case-by-case evaluation matrix](EVALUATION_EVIDENCE.md) and [business acceptance criteria](BUSINESS_ACCEPTANCE.md).
 
-## 3. 为什么采用这套架构
+## Architecture: what is enforced outside the model?
 
-| 设计选择 | 解决的业务风险 |
+\`\`\`text
+CLI / user
+  → LLM planning + typed ToolRegistry (9 built-in tools)
+  → ERPNextClient (scoped GET; bounded pagination, cache-age receipts)
+  → metadata, count/list, get/get-many, aggregate, calculate, summarize_details
+  → provenance / arithmetic checks → sourced answer + /trace
+
+  [purchase preview only] → validate → local SQLite pending proposal
+  [separate human /confirm] → revalidate → state claim → ERP POST → GET read-back
+  [uncertain write outcome] → preserve journal and reconcile, never blind retry
+\`\`\`
+
+| Engineering choice | Why it matters in ERPNext |
 |---|---|
-| **9 个注册式工具**：元数据、计数、列表、单单/批量详情、完整聚合、Decimal 算术、明细统计、采购预览 | 未知 DocType 先发现结构再查询；Schema 与执行 handler 同源；模型不能调用任意代码 |
-| **来源与完整性**：`query_scope`、分页、父单去重、部分失败、`/trace` | 区分父单数与子表连接行数、空结果与接口错误，以及完整查询与部分查询 |
-| **确定性数值**：`aggregate_documents`、`calculate`、`summarize_details` | 避免模型手算造成小计和加权统计错误；金额按公司/币种、数量按单位区分 |
-| **证据绑定明细**：仅引用当前轮真实 `get_document(s)` 读取的 `evidence_ref` | 不让模型自行提交虚构数值；同一父单两次读取的子表快照不一致时拒绝拼接 |
-| **独立写入闸门**：本地 SQLite 预览 → 用户 `/confirm` → ERP POST → GET 回读 | 模型不能自行授权采购；未知提交结果不盲目重发；支持已知单号只读对账 |
+| **Generic typed tools** | Discover unfamiliar DocTypes and Link/Table relations at runtime; adding a new read-only DocType normally needs no new tool. Schema and handler are registered together, with revocation checks. |
+| **Scoped, complete-enough evidence** | Pagination, join-induced duplicate parent rows, partial successes and stale reads are reported explicitly; empty search is not the same as unavailable or non-existent. |
+| **Deterministic arithmetic** | \`Decimal\` calculation, grouping by company/currency/UOM, evidence-bound child-row statistics and subtotal checks reduce plausible-looking wrong totals. |
+| **Purchase effect barrier** | Model can request a *proposal*, not approval. The CLI—not model text—owns confirmation, persistence, state transitions, and post-write read-back. |
+| **Fail closed, with known limits** | Unsupported FX, missing agreed prices and uncertain source claims block execution. This can also conservatively reject a valid answer; limitations are documented, not hidden. |
 
-新增只读业务类型通常无需新增工具；新业务能力可在 [`erp_tools.py`](erp_tools.py) 注册 Schema、handler 与契约测试。涉及写入的能力必须另设专用校验与人工确认，不应由通用工具绕过。
+Deep dive: [one-page design write-up](WRITEUP.md) · [architecture](ARCHITECTURE.md) · [tool contract](TOOL_REGISTRY.md) · [recovery](RECOVERY_AND_DESIGN.md).
 
-## 4. 验证与证据边界
+## Verification: code tests ≠ business accuracy
 
-- **当前已合并应用版本**：`main-v2` 的 [PR #2](https://github.com/chengzhideng2026/gonghe-homework/pull/2) 经 GitHub Actions **190/190 项离线测试通过**；当前分支后续如有新提交，以对应 SHA 的实际 CI 结果为准。历史真实模型业务题并非只有最新12题，按系列、结果及版本边界整理于 [评测证据索引](EVALUATION_EVIDENCE.md)。
-- **原始应用基线**：`5fe679e` 曾通过 170 项代码测试、248 项子测试和 `--demo`；此成绩不可自动套用到后续版本。
-- **真实业务评测**：已有开发复测、独立变式和失败回放；结果、原始轨迹及适用 SHA 必须分别对照 [业务验收说明](BUSINESS_ACCEPTANCE.md) 与 [历史审计](AUDIT.md)。仓库外的独立运行文件不冒充公开可下载证据。
-- **安全界限**：模型没有直接 ERP 写工具；`/confirm` 的写入回路有专门代码与测试，但现有用户手动演示到采购**预览**为止。单机 SQLite 幂等不等于 ERP 服务端 exactly-once。
+| Version / evidence | Verified observation |
+|---|---|
+| **Current published \`main-v2\` baseline** | **190/190 offline tests**, from [PR #2](https://github.com/chengzhideng2026/gonghe-homework/pull/2). |
+| **Proposed hardening, [PR #4](https://github.com/chengzhideng2026/gonghe-homework/pull/4)** | SHA \`3636ddb2\`: **234/234 offline tests**, GitHub Actions passed; **not yet merged**. |
+| **Prior directed real-model run** | At \`f11d6c09\`, five of six known cases had supported final business answers; H08 foreign-currency case ended in a program evidence-check exception. **Not a score for PR #4.** |
+| **Latest H08-only test** | At \`3636ddb2\`, the model correctly refused unsupported EUR→USD conversion and ERP writes, **but the final answer was rejected by a conservative provenance check**. This is an open **answer-availability** defect; not a safety bypass. |
+| **Other real-model suites** | E01–08, H01–10, C01–06, S01–03, J01/B01, R and N-series have separate retained results, including partial/fail cases. **Not one combined pass rate.** |
 
-运行离线回归：
+Run all offline tests in whichever SHA you have checked out:
 
-```bash
+~~~bash
 python -m unittest discover -s tests -v
-```
+~~~
 
-离线单测不是实际模型回答正确率；一次模型案例成功也不是隐藏题保证。系统仍有开放问题：当前轮超大工具响应、自然语言中未受结构化检查覆盖的附加断言、上游分页/事务快照完整性、多行/外币采购及生产环境租户授权。这些限制不会被 `complete=true`、`temperature=0` 或较高的测试数掩盖。
+Full evidence and links: **[EVALUATION_EVIDENCE.md](EVALUATION_EVIDENCE.md)**. A proposed 60-case bank is **not** a completed 60-case benchmark. Model tests do not exercise the full live \`/confirm\` write path; separate historical write/read-back and offline recovery tests exist.
 
-## 5. 设计与深入资料
+## Scope and limits
 
-- **先看**：[一页设计说明](WRITEUP.md)（按原题六项评审指标组织）· [原始作业要求](ORIGINAL_README.md)
-- **代码与操作**：[项目接手指南](PROJECT_GUIDE.md) · [工具注册](TOOL_REGISTRY.md) · [架构](ARCHITECTURE.md)
-- **正确性与安全**：[业务验收](BUSINESS_ACCEPTANCE.md) · [请求成本](API_EFFICIENCY.md) · [采购恢复设计](RECOVERY_AND_DESIGN.md)
-- **历史证据**：[评测证据索引](EVALUATION_EVIDENCE.md) · [审计记录](AUDIT.md) · [原始明细统计实验](https://github.com/chengzhideng2026/gonghe-homework/tree/experiment/detail-statistics/experiment)
+Deliberate omissions: frontend, RAG/Milvus, multi-agent orchestration, cloud deployment, bulk/multi-line and FX-converting purchases. Current preview is **single line, agreed company currency**. The local SQLite journal is **not** a distributed ERP server-side exactly-once guarantee; complete pagination is **not** a transaction snapshot; heuristic wording checks are **not** a general proof of truth.
 
-**发布说明：**本 README 在 PR #5 的文档草稿分支上，所列 `234/234` 对应未合并的 PR #4 候选。正式合并后须以新的 `main-v2` SHA 和 CI 再确认版本状态。以下评审入口仍是公开仓库默认分支。
+**Start here for judging:** [WRITEUP](WRITEUP.md) · [Evaluation Evidence](EVALUATION_EVIDENCE.md) · [Original Homework](ORIGINAL_README.md) · [Implementation Guide](PROJECT_GUIDE.md). Historical experiments and failures remain in \`evidence/\` and \`AUDIT.md\` for reproducibility; they are not all claims about the current SHA.
 
-**评审入口始终是公开仓库默认分支 [`main-v2`](https://github.com/chengzhideng2026/gonghe-homework/tree/main-v2)**；其他实验及待审 PR 不代表已交付能力。
+**Release state:** The public default branch is [\`main-v2\`](https://github.com/chengzhideng2026/gonghe-homework/tree/main-v2). PR #4 is the code-hardening candidate; this revised README is being prepared in [docs PR #5](https://github.com/chengzhideng2026/gonghe-homework/pull/5). Neither PR is merged as of this version of the document.
