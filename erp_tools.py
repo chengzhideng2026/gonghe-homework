@@ -165,7 +165,10 @@ def get_documents(context, args):
                              'or convert a foreign quote. Never creates it; returns a proposal '
                              'requiring explicit user /confirm. local_state=pending describes only '
                              'the local proposal; doc.docstatus is a prospective value and '
-                             'erp_document=null means no ERP document was created by this preview.',
+                             'erp_document=null means no ERP document was created by this preview. '
+                             'With missing supplier or unagreed price/currency, give a clearly '
+                             'non-executable preliminary plan in chat instead; do not call this tool '
+                             'or invent a proposal ID.',
               'parameters': {'type': 'object',
                              'properties': {'supplier': {'type': 'string'},
                                             'item': {'type': 'string'},

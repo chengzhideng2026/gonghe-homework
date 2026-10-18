@@ -831,6 +831,22 @@ class LLMRunner:
             'unrequested history, other reservation types or additional state explanations.')
         if '[ANSWER EVIDENCE BOUNDARIES v1]' not in messages[0]['content']:
             messages[0]['content'] += answer_boundaries
+        if '[REPLENISHMENT BASIS v1]' not in messages[0]['content']:
+            messages[0]['content'] += (
+                ' [REPLENISHMENT BASIS v1] Physical targets use actual_qty; free-stock targets deduct '
+                'relevant reservations once, without double-counting target demand. Incoming ordered_qty '
+                'is not available now: include it only for an explicitly chosen future-supply basis, '
+                'conditional on arrival. Unknown incoming is not zero; projected_qty is not physical stock. '
+                'For unspecified target basis, label physical shortfall as primary and future supply '
+                'as a separate scenario, not procurement advice. In follow-ups preserve the chosen basis, '
+                'not the last number mentioned; clarify ambiguity before confirmable proposals. '
+                'If missing fields are permitted, give a non-executable preliminary plan with known inputs, '
+                'basis, assumptions and missing fields, rather than refusing all previews. Historical '
+                'last_purchase_rate is not an agreed quote and has no implied currency. Requested budget '
+                'currency is an unverified assumption only: qualify each conditional amount and use calculate. '
+                'No invented fields, proposal_id, pending state or /confirm instruction for that plan. '
+                'Complete agreed inputs still require prepare_purchase_order validation and explicit /confirm. '
+                'Preview permission never authorizes ERP writes.')
         if '[REFERENCE DATE EVIDENCE v2]' not in messages[0]['content']:
             messages[0]['content'] += (
                 ' [REFERENCE DATE EVIDENCE v2] For overdue invoice questions, set the read tool '

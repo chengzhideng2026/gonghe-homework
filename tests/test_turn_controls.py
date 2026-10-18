@@ -127,9 +127,10 @@ class TestAskTurnControls(unittest.TestCase):
         # Register the real built-in count after making a small isolated runner.
         from erp_tools import BUILTIN_TOOLS
         runner.registry = BUILTIN_TOOLS.clone()
-        # Leave room for the current system evidence rules while forcing old
-        # turns out of context. This is a byte budget, not a token estimate.
-        runner.context_max_bytes = 5000
+        # Fixture allowance for immutable evidence/replenishment rules plus a
+        # historical summary, still forcing old turns out. Not a runtime budget
+        # change: 5000 no longer fits these system rules plus summary overhead.
+        runner.context_max_bytes = 6500
         history = [{'role': 'system', 'content': 'rules'}]
         for index in range(8):
             call_id = f'old-{index}'
