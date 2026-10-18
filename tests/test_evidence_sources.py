@@ -80,6 +80,41 @@ class TestCurrencySources(unittest.TestCase):
         self.assertTrue(evidence_issues('**ERP事实**\n- 账上金额108 EUR', trace))
         self.assertFalse(evidence_issues('您陈述的供应商报价是27 EUR。', trace))
 
+    def test_erp_invoice_usd_totals_under_generic_summary_heading(self):
+        trace = [{'role': 'user', 'content': '按USD列出所有发票及逾期未结小计。'},
+                 *bin_trace('Sales Invoice', [
+                     {'name': 'BILL-A', 'currency': 'USD', 'outstanding_amount': 110},
+                     {'name': 'BILL-B', 'currency': 'USD', 'outstanding_amount': 220}]),
+                 *calculation_trace('110 + 220')]
+        answer = ('## 发票关联\n- BILL-A 和 BILL-B 属于已提交发票。\n'
+                  '### 合计\n- **逾期小计：USD 330**')
+        # Generic "Totals" headings are not evidence of user-quoted money.
+        self.assertFalse(evidence_issues(answer, trace))
+        self.assertTrue(evidence_issues(answer.replace('USD 330', 'EUR 330'), trace))
+
+    def test_qualified_historical_price_budget_across_turns(self):
+        prior = [{'role': 'user', 'content': '查询库存和物料主档最近历史价。'},
+                 *bin_trace('Item', [
+                     {'name': 'PART-Y', 'last_purchase_rate': 17}]),
+                 final('该物料历史价格数字17；未核实币种。')]
+        current = [{'role': 'user', 'content': '沿用已核实数据，补28件，按USD列条件性预算；不创建采购单。'},
+                   *calculation_trace('28 * 17')]
+        answer = ('**初步采购计划（不可执行）**\n'
+                  '- 数量：28 Nos；历史价数字17，ERP未返回该价格的币种。\n'
+                  '按你指定的 USD 表述，条件性总额即 476 USD；只是预算假设。')
+        self.assertFalse(evidence_issues(answer, prior + current))
+        self.assertTrue(evidence_issues(answer.replace('476 USD', '477 USD'), prior + current))
+        self.assertTrue(evidence_issues(answer, current))  # No ERP historical-rate evidence.
+        self.assertTrue(evidence_issues(answer, prior + current[:1]))  # No current calculate.
+        without_budget_label = answer.replace('按你指定的 USD 表述，条件性总额即',
+                                              '已入账ERP金额')
+        self.assertTrue(evidence_issues(without_budget_label, prior + current))
+        no_disclaimer = answer.replace('ERP未返回该价格的币种', '历史价已明确为USD')
+        self.assertTrue(evidence_issues(no_disclaimer, prior + current))
+        not_requested = prior + [{'role': 'user', 'content': '沿用数据，给出总额。'},
+                                 *calculation_trace('28 * 17')]
+        self.assertTrue(evidence_issues(answer, not_requested))
+
     def test_user_quote_does_not_become_erp_fact_or_global_currency_permission(self):
         trace = [{'role': 'user', 'content': '预算是USD10。'},
                  *bin_trace(records=[{'name': 'B', 'stock_value': 10}])]
