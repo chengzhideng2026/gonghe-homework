@@ -257,7 +257,8 @@ def _currency_issues(answer, messages):
             suffix = sentence[match.end():match.end()+96]
             if QUALIFIED.search(prefix) or QUALIFIED.search(suffix):
                 continue
-            attribution = re.sub(r'(?:非|不是|并非|未经|未由|not\s+(?:from\s+|verified\s+by\s+)?)ERP',
+            attribution = re.sub(r'(?:非|不是|并非|未经|未由)[\s*_]*ERP|'
+                                 r'\bnot\s+(?:from\s+|verified\s+by\s+)?ERP\b',
                                  '', sentence, flags=re.I)
             if _qualified_historical_currency_estimate(
                     answer, sentence, claimed, amount, current, earlier, calculations):
