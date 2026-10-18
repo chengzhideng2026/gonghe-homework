@@ -1,27 +1,41 @@
-# WRITEUP
+# Design Write-up — Plantcore ERPNext Agent
 
-原始应用验收基线为 `5fe679e`。当前默认分支 `main-v2` 后续已合入只读 `summarize_details`（九工具）、来源引用协议及重复父单快照一致性修复；GitHub Actions 对增强版运行了 **190 项离线测试，全部通过**。原有独立业务评测仍只适用于原记录的 SHA，不能算成增强版完整业务验收。以下按 [原题的六项要求](ORIGINAL_README.md) 说明设计及取舍。
+**Principle:** The LLM selects **what to investigate**; typed tools and deterministic code control **what is true, how it is computed, and who may cause a side effect**. [Run instructions](README.md) · [Evidence matrix](EVALUATION_EVIDENCE.md).
 
-## 1. 工具设计
+### 1. Tool-layer design
 
-原基线八工具覆盖元数据、计数、列表、单单/批量详情、完整聚合、Decimal 算术和采购预览。当前增强版另增第九个 `summarize_details`：仅对当轮实际父单读取结果的 `evidence_ref` 作 Decimal 明细统计；按币种/公司/单位分组，并在同一父单的子表快照不一致时拒绝计算。通用读工具支持未知 DocType 的字段发现与父子表查询，避免按题目硬编码答案；聚合检查分页、重复父单及币种/公司/单位分区，并给出本地小计。Schema 与 handler 一起注册，按请求快照执行；模型没有 SQL、Shell、通用创建或工具管理入口，写权限留在人工确认路径。详见 [工具注册](TOOL_REGISTRY.md)。
+**Nine registered tools:** `get_doctype_meta`, `count_documents`, `list_documents`, `get_document`, `get_documents`, `aggregate_documents`, `calculate`, `summarize_details`, `prepare_purchase_order`. Schemas, handlers and effect metadata are registered together; no arbitrary SQL, shell or generic ERP-write tool is exposed.
 
-## 2. 不确定性
+For **unseen DocTypes**, the Agent discovers fields and Link/Table relations, then filters/paginates ERP parents and reads their child rows. It distinguishes joined raw rows from distinct parents, detects conflicting projections and represents partial failures. Math runs via `Decimal` or evidence-bound child-row statistics, not free-form LLM arithmetic.
 
-歧义先澄清；空结果、404、权限/查询错误、分页或批量部分失败分别说明，不能一律回答“不存在”。库存区分快照与历史，金额注明币种、公司和口径；逾期按固定参考日 2025-10-15 计算，原始 ERP 状态不被改写。派生数字来自算术或完整聚合证据。有限格式小计和已知措辞检查只能覆盖特定风险，不能保证所有自然语言断言。验收标准见 [BUSINESS_ACCEPTANCE](BUSINESS_ACCEPTANCE.md)。
+### 2. Uncertainty and source boundaries
 
-## 3. 写入路径
+An empty filtered result is not a failed read; a warehouse snapshot does not establish historical stock transfer; a payment `reference_no` is not invoice allocation evidence. The Agent uses `Payment Entry.references`, reports stock/on-order/reserved bases separately, and assesses overdue against **2025-10-15** rather than blindly trusting ERP `status`.
 
-模型只能准备单行、本位币采购预览。程序校验物料、供应商、单位、数值、日期和公司币种，保存不可变载荷；预览 15 分钟有效、绑定连接。人工 `/confirm <proposal_id>` 后复验，经 SQLite 原子领取再 POST 草稿并 GET 回读。错误保留状态和已知单号；`/reconcile` 只读核查，无单号禁止盲重发。客户端幂等键不等于原生 ERP 服务端全局去重；用户本人只验证到预览，不能据此声称确认写入已获用户验收。详见 [恢复设计](RECOVERY_AND_DESIGN.md)。
+Tool receipts expose scope, pagination, freshness and calculation outputs. Narrow source/wording checks can request **one** repair and then refuse an unsupported answer. They are **not** a formal natural-language truth verifier: an independently tested EUR-quote case still produced a conservative false rejection, documented as a real failure.
 
-## 4. 扩展方式
+### 3. Write path and errors
 
-新增只读 DocType 先复用元数据、过滤、父单详情和聚合；真正新增能力时，在 `erp_tools.py` 注册 Schema、handler、effect/version 并补契约及业务边界测试，无需重构 Runner。运行时启停按会话隔离，旧视图调用被撤销或替换的工具会拒绝。新写入需专用校验和人工确认；可信代码注册表不是不可信插件沙箱。详见 [架构](ARCHITECTURE.md)。
+`prepare_purchase_order` produces a **validated, single-line, local SQLite pending proposal**, not an ERP document. The LLM cannot execute `/confirm`; a human must enter `/confirm <proposal_id>` separately. Code then revalidates inputs and connection scope, atomically claims the proposal, POSTs the ERP draft and GETs its actual state.
 
-## 5. 约束下取舍与时间分配
+If a response is lost, the journal preserves uncertainty; `/reconcile` checks only a known ERP identity instead of blindly retrying the POST. This is local duplicate-prevention, **not** ERP-server global exactly-once. Unagreed foreign-currency prices remain non-executable.
 
-保留标准库 CLI、SQLite 和题目 seed，优先实现实时证据、受控写入与可核查错误；不做网页、向量库、运行时多 Agent、多行/外币采购或生产平台。客户 API 约束通过缩小查询范围、短时 GET 复用、HTTP 预算/节流处理；完整聚合及采购校验回源，不要求改客户接口。原题预算为 6 小时，但没有精确工时或分阶段计时，无法提供可信的六小时分配表。Git 提交日期只能证明先后：`ac157dd` 为 10 月 17 日 17:02，`5fe679e` 为 10 月 18 日 01:24（UTC+8），不等于连续投入或总工时，也不宣称在预算内完成。详细演进见 [AUDIT](AUDIT.md)。
+### 4. Extensibility
 
-## 6. AI coding 工作流
+A new **read-only** DocType normally uses existing discovery/query tools. New calculations require a typed registry handler plus source, error and contract tests. Each new **write** operation needs its own business validation and human-confirmation boundary. The registry loads trusted code; it is not a sandbox or tenant-authorization layer.
 
-Codex 用于读题、代码实现、回归和证据整理；已有记录描述了架构、代码边界和业务变式审查，开发主线程整合修复，独立测试线程在固定副本评测。用户亲自操作库存、跨轮计算、日期查询和采购预览。Mock 曾漏过真实接口/字段差异；实际模型也出现工具分组正确、正文小计错误，以及查询耗尽预算的问题，因而补充本地计算证据和有界查询恢复，保留失败原文而非只取成功样本。原基线全新克隆为 170 项测试、248 项子测试及 `--demo` 通过；当前增强版的 190 项离线回归由 GitHub Actions 验证；开发 [N05/N07 复测](evidence/N05_N07_REVIEW.md) 与独立首次复测分开统计。独立报告位于仓库外，存在性及范围见 [README](README.md)：新 SHA 仅两题通过，不能和旧版另八题拼成 10/10；F01/F02 未覆盖，不保证隐藏题全过。
+### 5. Judgment and time constraint
+
+Under the assignment's **six-hour framing**, priority was: (1) live and correctly scoped ERP facts; (2) deterministic numbers and uncertainty; (3) guarded write/recovery; (4) adversarial read-only validation. I cut a frontend, RAG/vector store, multi-agent runtime, cloud deployment, automated FX and multi-line PO support because none improved the specified core evaluation risks.
+
+I did not maintain a reliable hour-by-hour log, so this is a **qualitative allocation**, not an invented six-hour timesheet. Later audit/hardening is visible in dated commits and evidence.
+
+### 6. Coding-agent workflow and evidence
+
+Coding agents helped implement bounded changes, write negative tests and inspect tool traces. I retained scope/permission decisions and reviewed first-sample failures in **separate code, evaluator and documentation workspaces**, pinned to exact SHAs. A real-model trace exposed a mistaken payment-allocation shortcut; another found a safe currency answer rejected by the provenance checker. Failed first attempts remain in the record.
+
+**What is demonstrably tested:** merged code source SHA `3636ddb2` (PR #4 merged as `f806519b`) passes **234/234 offline tests**. An **independent, same-SHA 60-case actual-model evaluation** attempted every frozen case once: **55/60 core business PASS (91.7%)** and **50/60 complete-answer PASS (83.3%)**, with four core PARTIAL, three complete FAIL and one timed-out case. The evaluator performed **271 independent ERP GET before scoring**, then observed **209 model calls, 298 Agent ERP GET and zero ERP writes**. All failures are preserved with case IDs and evidence, not cherry-picked; the suite is not an employer hidden-set benchmark. [Per-case evidence](evidence/UNIFIED_60_FIRST_RUN_20261018.md) · [Evaluation index](EVALUATION_EVIDENCE.md).
+
+**Observed limits:** O05 applied a future-effective price to the 2025 valuation context; FNL-04 asserted a finance link without reading Purchase Invoice; G13 asserted a false universal shortage comparison; G16 reversed a return flag and inferred unverified payment history; G11 timed out on a wide join. An earlier H08-only run falsely rejected a safe answer, whereas the same-SHA unified 60-case H08 passed; source/format variance remains an answer-availability consideration.
+
+**Remaining limits:** language checks can over/under-block; scans are not transaction snapshots; SQLite does not give distributed exactly-once, and ERP permissions still depend on the configured API identity.
