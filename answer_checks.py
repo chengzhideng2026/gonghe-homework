@@ -190,7 +190,7 @@ def _qualified_historical_currency_estimate(answer, sentence, code, amount,
         if _first_decimal(str(calculation.get('result', ''))) != amount:
             continue
         operands = {Decimal(number) for number in re.findall(
-            r'(?<![\\w.])\\d+(?:\\.\\d+)?(?:[eE][-+]?\\d+)?',
+            r'(?<![\w.])\d+(?:\.\d+)?(?:[eE][-+]?\d+)?',
             str(calculation.get('expression', '')))}
         if rates & operands:
             return True
