@@ -133,6 +133,20 @@ class TestCurrencySources(unittest.TestCase):
         self.assertFalse(evidence_issues(
             '用户报价29 EUR，I will never treat 29 EUR as 29 USD.', user))
 
+    def test_spaced_non_erp_attribution_does_not_turn_user_quote_into_erp_fact(self):
+        user = [{'role': 'user', 'content': '用户给出供应商报价29欧元每米。'}]
+        for qualifier in ['非ERP数据', '非 ERP 数据', '不是 ERP 记录',
+                          '并非 **ERP** 报价', 'not verified by ERP']:
+            with self.subTest(qualifier=qualifier):
+                answer = f'用户提供报价29 EUR/Meter，{qualifier}。'
+                self.assertFalse(evidence_issues(answer, user))
+        for answer in [
+                '用户提供报价29 EUR；ERP记录币种为EUR且单价29 EUR。',
+                'ERP系统的金额是29 EUR，用户报价也是29 EUR。',
+                '用户提供报价29 EUR，但ERP记录单价29 EUR。']:
+            with self.subTest(answer=answer):
+                self.assertTrue(evidence_issues(answer, user))
+
     def test_negated_currency_exception_does_not_hide_positive_erp_claim(self):
         user = [{'role': 'user', 'content': '供应商报价每米29欧元。'}]
         self.assertTrue(evidence_issues(
