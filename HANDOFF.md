@@ -6,11 +6,11 @@
 
 | Branch | Current role | Validation |
 |---|---|---|
-| `main-v2` | Public default/released code at the time of this handoff; baseline `2d6ce5c` | **190/190** offline CI |
-| `fix/targeted-business-robustness` / [PR #4](https://github.com/chengzhideng2026/gonghe-homework/pull/4) | Proposed code hardening at `3636ddb2`; **not merged** | **234/234** offline CI; **unified 60-case 55/60 core PASS, 50/60 full PASS**, 0 ERP writes; prior isolated H08 refusal retained |
-| `docs/review-final-20261018` / [PR #5](https://github.com/chengzhideng2026/gonghe-homework/pull/5) | Reviewer-facing documentation; **not merged** | Documentation checks only |
+| `main-v2` | Public default branch; code PR #4 merged at `f806519b` (source `3636ddb2`) and final docs from PR #5 | **234/234** offline CI on evaluated code SHA; **55/60 core, 50/60 full** in independent model benchmark |
+| `fix/targeted-business-robustness` / [PR #4](https://github.com/chengzhideng2026/gonghe-homework/pull/4) | **Merged** code lineage; tested source SHA `3636ddb2` | **234/234** offline CI; 60-case **55 core PASS, 50 full PASS**; zero ERP writes during scored test |
+| `docs/review-final-20261018` / [PR #5](https://github.com/chengzhideng2026/gonghe-homework/pull/5) | Reviewer-facing documentation release, merged after code PR #4 | Documentation CI passed; runtime code unchanged by this PR |
 
-Do not assume code/docs PR results apply to default `main-v2` until both are merged. After a merge, verify **new main SHA + CI**, then update this table.
+The **evaluated source code** is `3636ddb2`; the code-only merge was `f806519b`, and the final default branch HEAD advances again upon this docs-only merge. Keep those three commit identities separate. Verify [default branch](https://github.com/chengzhideng2026/gonghe-homework/tree/main-v2) and CI.
 
 Operator's Windows repository `D:\work\gonghe-targeted-fix` was confirmed at **`3636ddb2`** after `git pull --ff-only`. Independent evaluator checkouts and results reside elsewhere under `D:\work\gonghe-eval-*` and `D:\work\gonghe-targeted-*`; they are not interchangeable with the developer branch. Private `.env`, raw `.local` traces, seeded ERP state and evaluator Oracle **must not** be committed.
 
@@ -56,4 +56,4 @@ For review, prioritise a **stable fixed SHA, clean/secret-free public repo, shor
 
 Do not suppress the main defects: O05 wrong price effective-date assumption; FNL-04 claimed Purchase Invoice association without fetching it; G13 false universal shortage inequality; G16 return-flag inversion and unverified payment inference; G11 wide-join timeout. The earlier isolated H08 failure persists as historical evidence, but the unified run H08 itself passed. This is **not** a production autonomous accounting/purchasing go-ahead.
 
-**Release sequencing:** merge code PR #4 only after go-ahead; verify actual merged `main-v2` SHA and CI; then reconcile README/WRITEUP/EVALUATION/HANDOFF release-state labels and merge documentation PR #5. Never advertise an unmerged candidate as the default branch.
+**Release record:** code PR #4 merged as `f806519b`; release documentation PR #5 follows with source-SHA-aligned independent 60-case review. Inspect the current `main-v2` HEAD and Actions checks for the final docs-only merge. Preserve private Oracle outside GitHub.
