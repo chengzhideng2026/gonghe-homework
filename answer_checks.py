@@ -55,8 +55,20 @@ def _currency_values(messages):
     return values
 
 
+def _current_turn_messages(messages):
+    """Exclude unrelated prior turns while retaining the current tool round."""
+    if not isinstance(messages, list):
+        return messages
+    for index in range(len(messages) - 1, -1, -1):
+        message = messages[index]
+        if (message.get('role') == 'user'
+                and not (message.get('content') or '').startswith('[PROGRAM EVIDENCE CHECK')):
+            return messages[index:]
+    return messages
+
+
 def _currency_issues(answer, messages):
-    observed = _currency_values(messages)
+    observed = _currency_values(_current_turn_messages(messages))
     for sentence in re.split(r'\n|(?<=[。！？!?])|(?<=[.!?])\s+', answer):
         for match in CURRENCY_AMOUNT.finditer(sentence):
             token = (match.group('left') or match.group('right') or '').upper()
@@ -102,6 +114,13 @@ def _shortage_table_issues(answer):
                          if '需求' in cell or 'required' in cell or 'need' in cell), None)
         actual = next((i for i, cell in enumerate(lowered)
                        if '实际库存' in cell or 'actual_qty' in cell or 'available' in cell), None)
+        required_unit = next((i for i, cell in enumerate(lowered)
+                              if '需求单位' in cell or 'required_uom' in cell or 'required uom' in cell
+                              or 'required unit' in cell), None)
+        actual_unit = next((i for i, cell in enumerate(lowered)
+                            if '库存单位' in cell or '实际单位' in cell or 'actual_uom' in cell
+                            or 'actual uom' in cell or 'available_uom' in cell
+                            or 'available uom' in cell or 'available unit' in cell), None)
         if shortage is None or required is None or actual is None:
             continue
         if index + 1 < len(lines) and all(re.fullmatch(r':?-{2,}:?', cell.replace(' ', ''))
@@ -113,6 +132,13 @@ def _shortage_table_issues(answer):
             row_cells = [cell.strip() for cell in row.strip('|').split('|')]
             if len(row_cells) <= max(shortage, required, actual):
                 continue
+            if (required_unit is not None and actual_unit is not None
+                    and max(required_unit, actual_unit) < len(row_cells)
+                    and row_cells[required_unit].strip().lower() != row_cells[actual_unit].strip().lower()):
+                return ['The shortage table mixes requirement and available quantities with different units. '
+                        'Do not calculate a shortage across UOMs; convert with verified ERP evidence or '
+                        'report the two unit values separately. WIP, reserved and projected quantities '
+                        'are not interchangeable with actual available stock.']
             if not any(re.search(r'\d', cell) for cell in row_cells):
                 continue
             need, have = _first_decimal(row_cells[required]), _first_decimal(row_cells[actual])

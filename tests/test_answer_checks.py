@@ -33,6 +33,22 @@ class TestEvidenceChecks(unittest.TestCase):
             with self.subTest(answer=answer):
                 self.assertFalse(evidence_issues(answer, no_currency))
 
+    def test_currency_does_not_leak_from_an_unrelated_prior_turn(self):
+        prior = bin_trace(records=[{'name': 'BIN-OLD', 'stock_value': '10', 'currency': 'USD'}], call_id='old')
+        current = [{'role': 'user', 'content': '本轮只查看当前库存快照。'},
+                   {'role': 'assistant', 'content': '库存金额为 USD 10。'}]
+        self.assertTrue(evidence_issues('本轮库存金额为 USD 10。', prior + current))
+
+        current_with_read = [
+            {'role': 'user', 'content': '本轮查询金额。'},
+            {'role': 'assistant', 'tool_calls': [{'id': 'now', 'function':
+                {'name': 'list_documents', 'arguments': '{"doctype":"Bin"}'}}]},
+            {'role': 'tool', 'tool_call_id': 'now', 'content': json.dumps({'ok': True, 'data': {
+                'records': [{'name': 'BIN-NOW', 'stock_value': '10', 'currency': 'USD'}]}})},
+            {'role': 'assistant', 'content': '本轮库存金额为 USD 10。'},
+        ]
+        self.assertFalse(evidence_issues(current_with_read[-1]['content'], prior + current_with_read))
+
     def test_shortage_table_uses_zero_shortage_for_surplus_rows(self):
         trace = bin_trace(records=[{'name': 'BIN-1', 'actual_qty': 205}])
         contradictory = ('| 物料 | 需求 | 实际库存 | 缺口 |\n'
@@ -50,6 +66,14 @@ class TestEvidenceChecks(unittest.TestCase):
         right = ('| Item | Required | actual_qty | shortage |\n'
                  '|---|---:|---:|---:|\n| X | 30 | 20 | 10 |')
         self.assertFalse(evidence_issues(right, trace))
+
+    def test_shortage_table_rejects_explicit_mixed_requirement_and_available_units(self):
+        trace = bin_trace(records=[{'name': 'BIN-1', 'actual_qty': 20}])
+        mixed = ('| Item | Required | Required UOM | Available | Available UOM | Shortage |\n'
+                 '|---|---:|---|---:|---|---:|\n| X | 30 | Nos | 20 | Meter | 10 |')
+        issues = evidence_issues(mixed, trace)
+        self.assertTrue(issues)
+        self.assertIn('different units', ' '.join(issues))
 
     def test_snapshot_rejects_movement_assertion_but_allows_location_and_uncertainty(self):
         self.assertTrue(evidence_issues('WIP仓20件已发到生产线。', bin_trace()))
