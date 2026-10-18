@@ -115,6 +115,33 @@ class TestCurrencySources(unittest.TestCase):
                                  *calculation_trace('28 * 17')]
         self.assertTrue(evidence_issues(answer, not_requested))
 
+    def test_negated_currency_substitution_preserves_h08_user_quote(self):
+        user = [{'role': 'user', 'content':
+                 '只准备采购预览，不要创建：向 Tongling Magnet Wire Co. 买10米 '
+                 'RM-COIL-CU-2.0，供应商报价是每米29欧元。'
+                 '我们公司用美元，汇率我还没确定。请别把29欧元直接当29美元。'}]
+        # These are denials of an exchange, NOT ERP currency assertions.
+        original = ('- **用户提供的条件**：供应商报价为 **29 EUR/米**，'
+                    '公司本位币为 **USD**，汇率尚未确定。\n'
+                    '- 我**不会**把 29 欧元当作 29 美元，也**不会**自行假设汇率。\n'
+                    '## 初步采购计划（非可执行预览，无 proposal ID）\n'
+                    '| 项目 | 内容 | 来源 |\n|---|---|---|\n'
+                    '| 单价 | 29 EUR/米 | 用户提供的报价，非 ERP 数据 |')
+        self.assertFalse(evidence_issues(original, user))
+        self.assertFalse(evidence_issues(
+            '用户提供报价29欧元；更不会把 29 EUR 当作 29 USD。', user))
+        self.assertFalse(evidence_issues(
+            '用户报价29 EUR，I will never treat 29 EUR as 29 USD.', user))
+
+    def test_negated_currency_exception_does_not_hide_positive_erp_claim(self):
+        user = [{'role': 'user', 'content': '供应商报价每米29欧元。'}]
+        self.assertTrue(evidence_issues(
+            'ERP现有价格29 USD。我不会把29 EUR当作29 USD。', user))
+        self.assertTrue(evidence_issues(
+            '我不会把29 EUR当作29 USD；ERP实际价格29 USD。', user))
+        self.assertTrue(evidence_issues('我会把29 EUR当作29 USD。', user))
+        self.assertTrue(evidence_issues('用户报价29 EUR，换算后为29 USD。', user))
+
     def test_user_quote_does_not_become_erp_fact_or_global_currency_permission(self):
         trace = [{'role': 'user', 'content': '预算是USD10。'},
                  *bin_trace(records=[{'name': 'B', 'stock_value': 10}])]
