@@ -9,6 +9,7 @@
 | **正式版离线回归** | **190 / 190 PASS** | `main-v2`，已合并 [PR #2](https://github.com/chengzhideng2026/gonghe-homework/pull/2)，[GitHub Actions](https://github.com/chengzhideng2026/gonghe-homework/actions) |
 | **定向修复候选离线回归** | **229 / 229 PASS** | `bd86c939a8043a9ebab135dc337e6d86b9ce74fd`，[PR #4](https://github.com/chengzhideng2026/gonghe-homework/pull/4)；**尚未合入**；该新 SHA 尚未完成真实模型验证；前一 SHA 的本地 H08 冒烟曾因报价来源跨 Markdown 标题误报而拒答，现增加对应离线正反测试 |
 | **已完成的定向真实模型试验** | **6 题：核心 5 PASS / 1 PARTIAL，完整 3 PASS / 1 PARTIAL / 2 FAIL** | **旧候选** `571f52e`，26 次模型请求、24 次 ERP GET、0 写入。FNL-12 通过，付款核销与 EUR 报价仍有缺陷；见 [脱敏报告](evidence/TARGETED_REAL_MODEL_REVIEW_20261018.md)。不能直接算作最新 `bd86c939` 的成绩 |
+| **最新 Windows 实际模型冒烟** | **4 组均返回回答，无证据检查或传输错误** | 最新候选 `bd86c939`，H08/E07/E08 与一题 ad hoc 付款核销；[运行摘要](evidence/WINDOWS_SMOKE_REVIEW_20261018.md)；**尚非人工评分的 4/4 PASS**，也不是同 SHA 的 FNL 冻结结果 |
 | **真实 ERP REST 兼容性** | 历史阶段多次 **19 项检查通过** | [只读 REST 原始记录](evidence/live_read.json)；验证数据/接口，不计入模型回答通过率 |
 | **FNL 独立业务基线** | 测试线程报告 **12 题、核心 10/12、完整 9/12** | 基线 `2d6ce5c`；原始测试文件目前保存在独立本地工作区，**尚未提交到公开仓库** |
 | **统一业务评测** | **60 道计划题，尚无总成绩** | 初步去重后 40 道历史候选题 + 20 道新泛化题；Oracle 尚未冻结、模型尚未执行 |
