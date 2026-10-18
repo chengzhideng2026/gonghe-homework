@@ -4,7 +4,7 @@
 
 ## 当前状态与阅读入口
 
-仓库已公开并已向评审提交链接，默认分支为 `main-v2`。原始应用验收基线为 `5fe679ea3aaffd53042518238acf09866e56bc4b`；当前增强版已在此基础上增加证据绑定的 `summarize_details`、重复父单快照冲突拒绝和相关测试，合并提交为 `e6d0ffdad0ba29de03068d1f715b50427acf1926`。GitHub Actions 对增强版完成 **190 项离线回归，全部通过**；原基线的真实模型评测不能自动算作新版本完整业务验收。首次评审从 [README](README.md) 的启动、三个演示和验收摘要开始，设计理由见 [WRITEUP](WRITEUP.md)，再按 [PROJECT_GUIDE](PROJECT_GUIDE.md) 深入。
+仓库已公开并已向评审提交链接，默认分支为 `main-v2`，当前交付 SHA 为 `2d6ce5c1b3c4a95f6d6ddbe6b640c76aaab4a800`。原始应用验收基线为 `5fe679ea3aaffd53042518238acf09866e56bc4b`；当前增强版已在此基础上增加证据绑定的 `summarize_details`、重复父单快照冲突拒绝和相关测试。源功能合并提交 `e6d0ffdad0ba29de03068d1f715b50427acf1926` 与当前默认分支提交分开记录。GitHub Actions 对增强版完成 **190 项离线回归，全部通过**；原基线的真实模型评测不能自动算作新版本完整业务验收。首次评审从 [README](README.md) 的启动、三个演示和验收摘要开始，设计理由见 [WRITEUP](WRITEUP.md)，再按 [PROJECT_GUIDE](PROJECT_GUIDE.md) 深入。
 
 全新克隆 170 项测试、248 项子测试及 `--demo` 通过。开发复测见 [N05/N07记录](evidence/N05_N07_REVIEW.md)；独立报告已核实在 `D:\work\gonghe-eval-runs\5fe679e_20261018\REPORT.md`，未纳入仓库，其结论仅为新 SHA 的 N05/N07 首次复测通过。不能合并旧版另八题为新版 10/10；F01/F02 未覆盖。用户已完成库存、跨轮计算、日期查询和采购预览，不代表用户已验证确认写入或全部案例。
 
