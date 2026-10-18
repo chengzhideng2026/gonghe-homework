@@ -1,0 +1,15 @@
+{
+  "original_head": "0a7e328a0eb6dd63d29dc3ba18bfe240c5d63dc5",
+  "original_branch": "master",
+  "original_status": "",
+  "baseline_head": "5fe679ea3aaffd53042518238acf09866e56bc4b",
+  "baseline_status": "",
+  "experiment_branch": "experiment/detail-statistics",
+  "original_env_unchanged": true,
+  "original_runtime_files_unchanged": {
+    "agent.py": true,
+    "erp_tools.py": true
+  },
+  "old_report_unchanged": true,
+  "key_scan": "No original LLM key in experiment artifacts"
+}

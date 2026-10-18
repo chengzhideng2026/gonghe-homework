@@ -1,0 +1,214 @@
+{
+  "program_checks": {
+    "frozen_question_unchanged": true,
+    "settings_equal": true,
+    "only_get_erp": true,
+    "po_names_unchanged": true,
+    "zero_erp_writes": true,
+    "fixed_runtime_hashes_match": true,
+    "one_statistics_success": true,
+    "no_calculate_fallback": true,
+    "ref_in_read_body": true,
+    "actual_request_contains_ref": true,
+    "stats_arguments_copy_body_ref": true,
+    "original_protocol_id_retained": true,
+    "qty_matches_retained_raw_oracle": true,
+    "amount_matches_retained_raw_oracle": true,
+    "min_matches_retained_raw_oracle": true,
+    "max_matches_retained_raw_oracle": true,
+    "numerator_matches_retained_raw_oracle": true,
+    "denominator_matches_retained_raw_oracle": true,
+    "weighted_rate_matches_retained_raw_oracle": true,
+    "counts_match": true,
+    "explicit_scope_kept": true,
+    "company_currency_unit_match": true,
+    "baseline_wire_equals_policy": true,
+    "baseline_all_usage_reported": true,
+    "fixed_wire_equals_policy": true,
+    "fixed_all_usage_reported": true,
+    "old_raw_runs_unchanged": true,
+    "baseline_actual_read_rows_match_retained_oracle": true,
+    "fixed_actual_read_rows_match_retained_oracle": true
+  },
+  "AI_review": {
+    "reviewer": "Coding assistant read raw answers and traces; no reviewer-model API calls",
+    "core_numbers": "Both answers match the retained independent raw ERP oracle and actual current read rows. Fixed statistics are all returned by one source-bound tool.",
+    "scope": "Both have explicit company/reference cutoff/docstatus/item/currency/unit and full exact parent list. Fixed complete alone is not used to infer full business coverage.",
+    "full_answer_limit": "Both enumerate unrequested details; baseline weighted-rate cell says USD where USD/Nos is the precise unit. No strict concise/full-answer pass is claimed.",
+    "remaining_parameter_overhead": "Fixed model unnecessarily repeated six default field mappings. They are optional, not required by the interface. No further tuning performed.",
+    "performance_attribution": "Baseline has one metadata read and one failed parent aggregation, absent in fixed. Success shows the body reference is usable; all latency/token/request gains cannot be assigned solely to the statistics tool."
+  },
+  "human_operation": "not_performed",
+  "scope": "One authorized repair pair on original D02, once per variant; not new business cases, hidden tests, or full acceptance",
+  "baseline_metrics": {
+    "model_calls": 5,
+    "erp_http_requests": 10,
+    "elapsed_seconds": 41.261,
+    "usage": {
+      "status": "reported",
+      "events": [
+        {
+          "completion_tokens": 220,
+          "completion_tokens_details": {
+            "reasoning_tokens": 39,
+            "text_tokens": 220
+          },
+          "prompt_tokens": 3513,
+          "prompt_tokens_details": {
+            "cached_tokens": 3072,
+            "text_tokens": 3513
+          },
+          "total_tokens": 3733
+        },
+        {
+          "completion_tokens": 211,
+          "completion_tokens_details": {
+            "reasoning_tokens": 40,
+            "text_tokens": 211
+          },
+          "prompt_tokens": 13093,
+          "prompt_tokens_details": {
+            "cached_tokens": 3200,
+            "text_tokens": 13093
+          },
+          "total_tokens": 13304
+        },
+        {
+          "completion_tokens": 146,
+          "completion_tokens_details": {
+            "reasoning_tokens": 21,
+            "text_tokens": 146
+          },
+          "prompt_tokens": 14136,
+          "prompt_tokens_details": {
+            "cached_tokens": 13056,
+            "text_tokens": 14136
+          },
+          "total_tokens": 14282
+        },
+        {
+          "completion_tokens": 365,
+          "completion_tokens_details": {
+            "reasoning_tokens": 211,
+            "text_tokens": 365
+          },
+          "prompt_tokens": 25342,
+          "prompt_tokens_details": {
+            "cached_tokens": 13312,
+            "text_tokens": 25342
+          },
+          "total_tokens": 25707
+        },
+        {
+          "completion_tokens": 642,
+          "completion_tokens_details": {
+            "reasoning_tokens": 83,
+            "text_tokens": 642
+          },
+          "prompt_tokens": 26192,
+          "prompt_tokens_details": {
+            "cached_tokens": 24960,
+            "text_tokens": 26192
+          },
+          "total_tokens": 26834
+        }
+      ],
+      "totals": {
+        "prompt_tokens": 82276,
+        "completion_tokens": 1584,
+        "total_tokens": 83860
+      }
+    },
+    "context": {
+      "trimmed": false,
+      "bytes": 84212,
+      "over_budget": true,
+      "removed_turns": 0,
+      "preserved_turns": 1
+    }
+  },
+  "fixed_metrics": {
+    "model_calls": 4,
+    "erp_http_requests": 7,
+    "elapsed_seconds": 35.275,
+    "usage": {
+      "status": "reported",
+      "events": [
+        {
+          "completion_tokens": 196,
+          "completion_tokens_details": {
+            "reasoning_tokens": 35,
+            "text_tokens": 196
+          },
+          "prompt_tokens": 3888,
+          "prompt_tokens_details": {
+            "cached_tokens": 1024,
+            "text_tokens": 3888
+          },
+          "total_tokens": 4084
+        },
+        {
+          "completion_tokens": 207,
+          "completion_tokens_details": {
+            "reasoning_tokens": 82,
+            "text_tokens": 207
+          },
+          "prompt_tokens": 4947,
+          "prompt_tokens_details": {
+            "cached_tokens": 3200,
+            "text_tokens": 4947
+          },
+          "total_tokens": 5154
+        },
+        {
+          "completion_tokens": 173,
+          "completion_tokens_details": {
+            "reasoning_tokens": 44,
+            "text_tokens": 173
+          },
+          "prompt_tokens": 16229,
+          "prompt_tokens_details": {
+            "cached_tokens": 4352,
+            "text_tokens": 16229
+          },
+          "total_tokens": 16402
+        },
+        {
+          "completion_tokens": 717,
+          "completion_tokens_details": {
+            "reasoning_tokens": 50,
+            "text_tokens": 717
+          },
+          "prompt_tokens": 18043,
+          "prompt_tokens_details": {
+            "cached_tokens": 15360,
+            "text_tokens": 18043
+          },
+          "total_tokens": 18760
+        }
+      ],
+      "totals": {
+        "prompt_tokens": 43107,
+        "completion_tokens": 1293,
+        "total_tokens": 44400
+      }
+    },
+    "context": {
+      "trimmed": false,
+      "bytes": 48965,
+      "over_budget": false
+    }
+  },
+  "http_accounting": {
+    "baseline": {
+      "audit_before": 3,
+      "ask": 10,
+      "audit_after": 3
+    },
+    "fixed": {
+      "audit_before": 3,
+      "ask": 7,
+      "audit_after": 3
+    }
+  }
+}
