@@ -29,7 +29,7 @@ CURRENCY_AMOUNT = re.compile(
     r'(?P<symbol>[$€£])\s*[-+]?\d[\d,]*(?:\.\d+)?|'
     rf'[-+]?\d[\d,]*(?:\.\d+)?\s*(?P<right>{CURRENCY_CODES})(?![A-Za-z]))', re.I)
 SYMBOL_CURRENCY = {'$': 'USD', '€': 'EUR', '£': 'GBP'}
-USER_BASIS = re.compile(r'(?:用户|您|你)(?:提供|给出|给定|输入|报价|口述|所述|的报价|的条件)|'
+USER_BASIS = re.compile(r'(?:用户|您|你)(?:提供|给出|给定|输入|报价|口述|所述|的报价|的条件|陈述)|'
                         r'来自(?:用户|您|你)|'
                         r'(?:按|根据)(?:用户|您|你)|'
                         r'来源[:：]\s*用户|\bsource:\s*user|'
@@ -112,6 +112,32 @@ def _quoted_amounts(messages):
             for match in CURRENCY_AMOUNT.finditer(message.get('content') or '')}
 
 
+def _currency_answer_sentences(answer):
+    """Carry explicit Markdown section attribution to following amount rows.
+
+    A user-quote section is not an ERP currency receipt. Every amount still
+    needs an exact current/labelled-prior user quote or a matching calculation.
+    Unrelated sections reset attribution rather than leaking it indefinitely.
+    """
+    section = None
+    for line in answer.splitlines():
+        stripped = line.strip()
+        heading = re.fullmatch(r'\*\*(.+)\*\*', stripped)
+        if heading is None:
+            heading = re.fullmatch(r'#{1,6}\s+(.+)', stripped)
+        if heading:
+            label = heading.group(1)
+            if USER_BASIS.search(label):
+                section = 'user'
+            elif (DERIVED.search(label)
+                  and re.search(r'金额|总额|总价|小计|合计|费用|price|total|amount', label, re.I)):
+                section = 'derived'
+            else:
+                section = None
+        for sentence in re.split(r'[；;]|(?<=[。！？!?])|(?<=[.!?])\s+', line):
+            yield sentence, section
+
+
 def _currency_issues(answer, messages):
     current = _current_turn_messages(messages)
     observed = _currency_values(current)
@@ -136,7 +162,7 @@ def _currency_issues(answer, messages):
                     if any((code, _first_decimal(str(item.get('rate', '')))) in quotes | earlier_quotes
                            for item in doc.get('items', [])):
                         prepared_totals.add((code, _first_decimal(str(data.get('estimated_total', '')))))
-    for sentence in re.split(r'\n|[；;]|(?<=[。！？!?])|(?<=[.!?])\s+', answer):
+    for sentence, section in _currency_answer_sentences(answer):
         for match in CURRENCY_AMOUNT.finditer(sentence):
             claimed, amount = _currency_claim(match)
             prefix = sentence[max(0, match.start()-48):match.start()]
@@ -145,10 +171,18 @@ def _currency_issues(answer, messages):
                 continue
             attribution = re.sub(r'(?:非|不是|并非|未经|未由|not\s+(?:from\s+|verified\s+by\s+)?)ERP',
                                  '', sentence, flags=re.I)
-            if USER_BASIS.search(sentence) and not ERP_BASIS.search(attribution):
+            if (USER_BASIS.search(sentence) or section in {'user', 'derived'}) and not ERP_BASIS.search(attribution):
                 source_quotes = earlier_quotes if EARLIER_SOURCE.search(sentence) else quotes
-                if ((claimed, amount) in source_quotes or (claimed, amount) in prepared_totals or (DERIVED.search(sentence)
-                        and _user_calculation_supported(claimed, amount, source_quotes, calculations))):
+                # A direct quoted price must match actual user input; a derived
+                # total must also match a successful current-turn calculation.
+                # Merely placing an unrelated number under a user heading is
+                # not evidence, nor can an explicit ERP claim borrow the heading.
+                direct_quote = ((USER_BASIS.search(sentence) or section == 'user')
+                                and (claimed, amount) in source_quotes)
+                computed = ((DERIVED.search(sentence) or section == 'derived')
+                            and _user_calculation_supported(claimed, amount,
+                                                            source_quotes, calculations))
+                if direct_quote or computed or (claimed, amount) in prepared_totals:
                     continue
                 return ['A user-sourced currency amount does not match the current (or explicitly '
                         'labelled earlier) user input or '
