@@ -1,6 +1,17 @@
 # Evaluation Evidence — reproducible test matrix
 
-**Evidence-rich validation across code, ERP and real-model business behavior.** This project has **offline code checks, real ERP REST checks, and actual-LLM business cases**. They validate different things. Historic model cases span **different commits and sometimes overlapping questions**; they cannot be merged into an overall pass rate. The 60-case unified bank is **planned but not run**.
+**Evidence-rich validation across code, ERP and real-model business behavior.** This project has **offline code checks, real ERP REST checks, and actual-LLM business cases**. They validate different things. Historic model cases span **different commits and sometimes overlapping questions**; they cannot be merged into an overall pass rate. The **60-case unified first-sample evaluation has now been completed on one fixed SHA**: **55/60 core (91.7%) and 50/60 full-answer (83.3%) PASS**, with 0 ERP writes. See [the authoritative 60-case scorecard](evidence/UNIFIED_60_FIRST_RUN_20261018.md).
+
+## Best single-SHA business evidence: 60 independent first attempts
+
+| Grade | PASS | PARTIAL | FAIL | EXCEPTION | Total |
+|---|---:|---:|---:|---:|---:|
+| **Core business answer** | **55** | 4 | 0 | 1 | 60 |
+| **Complete, fully sourced answer** | **50** | 6 | 3 | 1 | 60 |
+
+**[All 60 per-case grades and evidence-backed review](evidence/UNIFIED_60_FIRST_RUN_20261018.md)** · [original evaluation/freeze protocol](EVALUATION_60_PROTOCOL.md). This is a **first-run, fixed-code-SHA** result, independently graded against prior-frozen sources. Original-assignment-derived: 7/8 core PASS; 32 distinct E/H/C/FNL: 31/32; 20 independently drafted G cases: 17/20 core, 12/20 full. **The exact same SHA passed 234/234 offline tests.**
+
+Five material failures/risks were **preserved** rather than corrected during evaluation: **O05 price validity**, **FNL-04 missing Purchase Invoice link evidence**, **G13 invalid replenishment inequality**, **G16 reversed return flag and unjustified payment inference**, and **G11 timeout after context/request limits**. Read-only transport and drift audit recorded **zero ERP writes**. This does not certify production-autonomous procurement or account decisions.
 
 ## Executive scorecard
 
@@ -11,9 +22,9 @@
 | **Real ERP REST** | historical client/API revisions | **19/19** scoped read checks in their recorded runs | Actual seed data and interface compatibility, **not** LLM judgment. [REST evidence](evidence/live_read.json) |
 | **Six-case real-model directed run** | `f11d6c09` | **5 business-acceptable final answers; H08 exception** (independent AI-assisted review) | FNL-12/02/07 and E07/E08 worked; FX H08 failed to produce a final answer. [Case review](evidence/DIRECTED_SIX_CASE_F11_REVIEW_20261018.md) |
 | **H08-only real-model retest** | `3636ddb2` | **exception**, despite correct ERP reads, `calculate(10*29)=290`, **0 ERP writes** | A safe EUR-quote answer can be blocked by the limited evidence checker. [Recorded diagnosis](evidence/H08_3636_LIVE_RETEST_PENDING_20261018.md) |
-| **Unified 60-case bank** | **none** | **Not run; no score** | 40 deduplicated historical candidate questions + 20 new generalized cases remain a plan, not released validation. |
+| **Unified 60-case independent first sample** | **`3636ddb2`** | **Core 55/60 PASS (91.7%) · Full 50/60 PASS (83.3%)** | **60 attempted, 59 answered, 1 timeout; 209 model requests, 298 Agent ERP GET, 0 writes.** [All 60 outcomes & grader notes](evidence/UNIFIED_60_FIRST_RUN_20261018.md) |
 
-For the most recent six-case run, the operator-observed audit was **24 model requests / 21 ERP GET / 0 ERP write requests** with identical pre/post Purchase Order sets. Its runner set `scores=not_assessed`; the five acceptable outcomes are **case-by-case review**, not an official frozen-Oracle 5/6 result. A later isolated H08 test used 4 model calls / 2 GET / 0 ERP writes and ended in `exception` after one answer repair; neither draft was returned as a final answer.
+For an **earlier historical six-case run**, the operator-observed audit was **24 model requests / 21 ERP GET / 0 ERP write requests** with identical pre/post Purchase Order sets. Its runner set `scores=not_assessed`; the five acceptable outcomes are **case-by-case review**, not an official frozen-Oracle 5/6 result. A later isolated H08 test used 4 model calls / 2 GET / 0 ERP writes and ended in `exception` after one answer repair; neither draft was returned as a final answer.
 
 ## Business-case coverage (historic, deliberately not combined)
 
@@ -60,10 +71,10 @@ python agent.py --check-model
 - **Private directed evaluator**: historical first-run question SHA, operator's read-only ERP GET/HEAD transport, complete result JSON, pricing assumptions and seed date were saved outside the public repo. Do not represent their summaries as publicly executable test fixtures.
 - **Write-path limitation**: offline state-machine/idempotency tests and historical local created-draft/readback evidence exist, but **this latest read-only directed run did not execute `/confirm`**; its 0-write audit cannot prove end-to-end exactly-once delivery.
 
-## Release limitations and planned evaluation
+## Release limitations and completed evaluation
 
-The latest candidate's H08 answer checker can reject a correct response even when the foreign-currency boundary is safe. That reduces **answer availability**, not authorization. The current implementation also does not promise a transactional read snapshot, global ERP-server exactly-once, comprehensive tenant ACLs, or correct handling of arbitrary natural-language unsupported statements. These limitations are acceptance inputs, not hidden guarantees.
+Earlier isolated H08 regressions showed a conservative evidence-check false refusal; **H08 completed with core/full PASS in the later 60-case first sample at the same code SHA**, showing sampling variability, not a retrospective repair of the older failure. That reduces **answer availability**, not authorization. The current implementation also does not promise a transactional read snapshot, global ERP-server exactly-once, comprehensive tenant ACLs, or correct handling of arbitrary natural-language unsupported statements. These limitations are acceptance inputs, not hidden guarantees.
 
-The [60-case independent evaluation protocol](EVALUATION_60_PROTOCOL.md) collects original questions (10), E (8), H (10), C (6), and FNL (12): 46 candidate sources, with six **already specified** duplicate exclusions leaving 40 historical cases. The independent evaluator's PLAN.json also has twenty fully drafted G01–G20 questions; the independent Oracle, new freeze manifest and actual unified scored run are still pending. **No frozen independent Oracle or completed all-60 run exists.** Previous estimate of 240–360 model and 400–700 ERP calls is planning only, not measured usage.
+**The [60-case independent evaluation protocol](EVALUATION_60_PROTOCOL.md) has now been executed.** Its predefined 46 candidate sources minus 6 duplicate cases yielded 40 historical questions; G01–G20 supplied 20 new generalized questions. The independent evaluator froze question/Oracle hashes and checked business data before running six batches of ten on exactly `3636ddb2`. **Measured:** 209 model calls, 298 Agent ERP GET, 271 Oracle preflight GET, and **0 ERP writes**; complete grades and original failed cases are in the [60-case first-run report](evidence/UNIFIED_60_FIRST_RUN_20261018.md). It is a known-case independent evaluation, not a hidden employer benchmark.
 
 Further technical depth: [business grading criteria](BUSINESS_ACCEPTANCE.md) · [architecture](ARCHITECTURE.md) · [prior audit](AUDIT.md) · [H08 exception evidence](evidence/H08_3636_LIVE_RETEST_PENDING_20261018.md).
