@@ -92,7 +92,7 @@ Design/tradeoffs: [WRITEUP.md](WRITEUP.md) · [Tool Registry](TOOL_REGISTRY.md) 
 |---|---|
 | **Unified 60-case actual-model first run** | **55/60 core PASS, 50/60 full PASS** on candidate SHA `3636ddb2`; [detailed first-attempt review](evidence/UNIFIED_60_FIRST_RUN_20261018.md) |
 | **Offline code regression on the same SHA** | **234/234** Python tests in [PR #4](https://github.com/chengzhideng2026/gonghe-homework/pull/4) and GitHub Actions |
-| **Published baseline** | `main-v2` is still `2d6ce5c`, with **190/190** offline tests until code PR #4 is merged |
+| **Released code on `main-v2`** | [Code PR #4](https://github.com/chengzhideng2026/gonghe-homework/pull/4) merged as `f806519b`; tested source SHA `3636ddb2` with **234/234** offline CI. The newer documentation merge changes Git HEAD but not the evaluated code. |
 | **Earlier focused model regressions** | Preserved in [evidence index](EVALUATION_EVIDENCE.md), including a prior H08 false refusal; the **new same-SHA 60-case H08 passed both grades** |
 
 ```bash
@@ -103,4 +103,4 @@ python -m unittest discover -s tests -v
 
 **Deliberately omitted:** frontend, Milvus/RAG, multi-agent runtime, cloud hosting, arbitrary ERP writes, foreign-currency conversion, multi-line purchases. Current preview supports one line and agreed company currency. Source scans are not transactional snapshots; local journal idempotency is not an ERP-wide exactly-once guarantee.
 
-**Release scope:** public default branch [`main-v2`](https://github.com/chengzhideng2026/gonghe-homework/tree/main-v2); code hardening awaits [PR #4](https://github.com/chengzhideng2026/gonghe-homework/pull/4). This reviewer-facing documentation is prepared under [PR #5](https://github.com/chengzhideng2026/gonghe-homework/pull/5) and does not by itself change the released code.
+**Release:** [`main-v2`](https://github.com/chengzhideng2026/gonghe-homework/tree/main-v2) contains the merged nine-tool hardening from [PR #4](https://github.com/chengzhideng2026/gonghe-homework/pull/4) and evaluator-first documentation from [PR #5](https://github.com/chengzhideng2026/gonghe-homework/pull/5). The independently evaluated **source code SHA** is `3636ddb2`, contained in code merge `f806519b`. See [the 60-case report](evidence/UNIFIED_60_FIRST_RUN_20261018.md) for the exact test provenance.
