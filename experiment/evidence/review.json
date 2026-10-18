@@ -1,0 +1,848 @@
+{
+  "reviewer": "Coding assistant reading answers and full traces; not an independent reviewer model",
+  "human_operation": "not_performed",
+  "scope": "Two frozen pairs, first attempts only; not hidden or full acceptance",
+  "rows": [
+    {
+      "case": "D01",
+      "variant": "baseline",
+      "model_calls": 6,
+      "erp_http_requests": 8,
+      "elapsed_seconds": 41.526,
+      "provider_usage": {
+        "status": "reported",
+        "events": [
+          {
+            "completion_tokens": 190,
+            "completion_tokens_details": {
+              "reasoning_tokens": 69,
+              "text_tokens": 190
+            },
+            "prompt_tokens": 3512,
+            "prompt_tokens_details": {
+              "cached_tokens": 0,
+              "text_tokens": 3512
+            },
+            "total_tokens": 3702
+          },
+          {
+            "completion_tokens": 152,
+            "completion_tokens_details": {
+              "reasoning_tokens": 25,
+              "text_tokens": 152
+            },
+            "prompt_tokens": 4144,
+            "prompt_tokens_details": {
+              "cached_tokens": 3200,
+              "text_tokens": 4144
+            },
+            "total_tokens": 4296
+          },
+          {
+            "completion_tokens": 206,
+            "completion_tokens_details": {
+              "reasoning_tokens": 48,
+              "text_tokens": 206
+            },
+            "prompt_tokens": 4423,
+            "prompt_tokens_details": {
+              "cached_tokens": 4096,
+              "text_tokens": 4423
+            },
+            "total_tokens": 4629
+          },
+          {
+            "completion_tokens": 118,
+            "completion_tokens_details": {
+              "reasoning_tokens": 14,
+              "text_tokens": 118
+            },
+            "prompt_tokens": 5378,
+            "prompt_tokens_details": {
+              "cached_tokens": 4352,
+              "text_tokens": 5378
+            },
+            "total_tokens": 5496
+          },
+          {
+            "completion_tokens": 233,
+            "completion_tokens_details": {
+              "reasoning_tokens": 106,
+              "text_tokens": 233
+            },
+            "prompt_tokens": 14231,
+            "prompt_tokens_details": {
+              "cached_tokens": 5120,
+              "text_tokens": 14231
+            },
+            "total_tokens": 14464
+          },
+          {
+            "completion_tokens": 633,
+            "completion_tokens_details": {
+              "reasoning_tokens": 30,
+              "text_tokens": 633
+            },
+            "prompt_tokens": 14925,
+            "prompt_tokens_details": {
+              "cached_tokens": 14080,
+              "text_tokens": 14925
+            },
+            "total_tokens": 15558
+          }
+        ],
+        "totals": {
+          "prompt_tokens": 46613,
+          "completion_tokens": 1532,
+          "total_tokens": 48145
+        }
+      },
+      "tool_invocations": {
+        "calculate": 3,
+        "summarize_details": 0
+      },
+      "stats_successes": 0,
+      "program_execution_checks": {
+        "erp_write_count": 0,
+        "po_names_unchanged": true,
+        "wire_requests_equal_policy_count": true
+      },
+      "AI_business_review": {
+        "requested_numeric_results": "match independent raw-ERP oracle",
+        "expected": {
+          "company": "Crestwind Compressor Manufacturing Co.",
+          "currency": "USD",
+          "unit": "Meter",
+          "line_count": 4,
+          "parent_count": 4,
+          "qty": "900.0",
+          "amount": "25540.0",
+          "min": "28.0",
+          "max": "29.0",
+          "numerator": "25540.00",
+          "denominator": "900.0",
+          "weighted_rate": "28.38"
+        },
+        "scope": "Company, transaction_date<=2025-10-15, docstatus=1, exact item and single currency/UOM all stated and supported by actual query/read evidence. Not a global dataset claim.",
+        "derivation": "calculate produced sums and division; final two-decimal weighted rate is correct. No successful summarize_details call in any real run.",
+        "full_answer_limit": "All answers additionally enumerate lines despite request to answer only metrics. D01 also adds conversions and/or supplier facts present in reads. This is not a strict concise-answer pass.",
+        "overall": "core numerical results supported; deterministic-tool adoption goal not met"
+      },
+      "human_operation": "not_performed"
+    },
+    {
+      "case": "D01",
+      "variant": "experiment",
+      "model_calls": 4,
+      "erp_http_requests": 6,
+      "elapsed_seconds": 47.384,
+      "provider_usage": {
+        "status": "reported",
+        "events": [
+          {
+            "completion_tokens": 337,
+            "completion_tokens_details": {
+              "reasoning_tokens": 192,
+              "text_tokens": 337
+            },
+            "prompt_tokens": 3847,
+            "prompt_tokens_details": {
+              "cached_tokens": 1024,
+              "text_tokens": 3847
+            },
+            "total_tokens": 4184
+          },
+          {
+            "completion_tokens": 139,
+            "completion_tokens_details": {
+              "reasoning_tokens": 35,
+              "text_tokens": 139
+            },
+            "prompt_tokens": 4933,
+            "prompt_tokens_details": {
+              "cached_tokens": 3200,
+              "text_tokens": 4933
+            },
+            "total_tokens": 5072
+          },
+          {
+            "completion_tokens": 504,
+            "completion_tokens_details": {
+              "reasoning_tokens": 326,
+              "text_tokens": 504
+            },
+            "prompt_tokens": 13807,
+            "prompt_tokens_details": {
+              "cached_tokens": 4352,
+              "text_tokens": 13807
+            },
+            "total_tokens": 14311
+          },
+          {
+            "completion_tokens": 642,
+            "completion_tokens_details": {
+              "reasoning_tokens": 50,
+              "text_tokens": 642
+            },
+            "prompt_tokens": 14821,
+            "prompt_tokens_details": {
+              "cached_tokens": 13312,
+              "text_tokens": 14821
+            },
+            "total_tokens": 15463
+          }
+        ],
+        "totals": {
+          "prompt_tokens": 37408,
+          "completion_tokens": 1622,
+          "total_tokens": 39030
+        }
+      },
+      "tool_invocations": {
+        "calculate": 3,
+        "summarize_details": 0
+      },
+      "stats_successes": 0,
+      "program_execution_checks": {
+        "erp_write_count": 0,
+        "po_names_unchanged": true,
+        "wire_requests_equal_policy_count": true
+      },
+      "AI_business_review": {
+        "requested_numeric_results": "match independent raw-ERP oracle",
+        "expected": {
+          "company": "Crestwind Compressor Manufacturing Co.",
+          "currency": "USD",
+          "unit": "Meter",
+          "line_count": 4,
+          "parent_count": 4,
+          "qty": "900.0",
+          "amount": "25540.0",
+          "min": "28.0",
+          "max": "29.0",
+          "numerator": "25540.00",
+          "denominator": "900.0",
+          "weighted_rate": "28.38"
+        },
+        "scope": "Company, transaction_date<=2025-10-15, docstatus=1, exact item and single currency/UOM all stated and supported by actual query/read evidence. Not a global dataset claim.",
+        "derivation": "calculate produced sums and division; final two-decimal weighted rate is correct. No successful summarize_details call in any real run.",
+        "full_answer_limit": "All answers additionally enumerate lines despite request to answer only metrics. D01 also adds conversions and/or supplier facts present in reads. This is not a strict concise-answer pass.",
+        "overall": "core numerical results supported; deterministic-tool adoption goal not met"
+      },
+      "human_operation": "not_performed"
+    },
+    {
+      "case": "D02",
+      "variant": "baseline",
+      "model_calls": 5,
+      "erp_http_requests": 6,
+      "elapsed_seconds": 51.737,
+      "provider_usage": {
+        "status": "reported",
+        "events": [
+          {
+            "completion_tokens": 419,
+            "completion_tokens_details": {
+              "reasoning_tokens": 266,
+              "text_tokens": 419
+            },
+            "prompt_tokens": 3513,
+            "prompt_tokens_details": {
+              "cached_tokens": 3200,
+              "text_tokens": 3513
+            },
+            "total_tokens": 3932
+          },
+          {
+            "completion_tokens": 538,
+            "completion_tokens_details": {
+              "reasoning_tokens": 198,
+              "text_tokens": 538
+            },
+            "prompt_tokens": 4374,
+            "prompt_tokens_details": {
+              "cached_tokens": 3200,
+              "text_tokens": 4374
+            },
+            "total_tokens": 4912
+          },
+          {
+            "completion_tokens": 279,
+            "completion_tokens_details": {
+              "reasoning_tokens": 125,
+              "text_tokens": 279
+            },
+            "prompt_tokens": 6475,
+            "prompt_tokens_details": {
+              "cached_tokens": 4352,
+              "text_tokens": 6475
+            },
+            "total_tokens": 6754
+          },
+          {
+            "completion_tokens": 88,
+            "completion_tokens_details": {
+              "reasoning_tokens": 47,
+              "text_tokens": 88
+            },
+            "prompt_tokens": 7239,
+            "prompt_tokens_details": {
+              "cached_tokens": 6144,
+              "text_tokens": 7239
+            },
+            "total_tokens": 7327
+          },
+          {
+            "completion_tokens": 680,
+            "completion_tokens_details": {
+              "reasoning_tokens": 31,
+              "text_tokens": 680
+            },
+            "prompt_tokens": 7456,
+            "prompt_tokens_details": {
+              "cached_tokens": 7168,
+              "text_tokens": 7456
+            },
+            "total_tokens": 8136
+          }
+        ],
+        "totals": {
+          "prompt_tokens": 29057,
+          "completion_tokens": 2004,
+          "total_tokens": 31061
+        }
+      },
+      "tool_invocations": {
+        "calculate": 4,
+        "summarize_details": 0
+      },
+      "stats_successes": 0,
+      "program_execution_checks": {
+        "erp_write_count": 0,
+        "po_names_unchanged": true,
+        "wire_requests_equal_policy_count": true
+      },
+      "AI_business_review": {
+        "requested_numeric_results": "match independent raw-ERP oracle",
+        "expected": {
+          "company": "Crestwind Compressor Manufacturing Co.",
+          "currency": "USD",
+          "unit": "Nos",
+          "line_count": 5,
+          "parent_count": 5,
+          "qty": "60.0",
+          "amount": "43225.0",
+          "min": "720.0",
+          "max": "725.0",
+          "numerator": "43225.00",
+          "denominator": "60.0",
+          "weighted_rate": "720.42"
+        },
+        "scope": "Company, transaction_date<=2025-10-15, docstatus=1, exact item and single currency/UOM all stated and supported by actual query/read evidence. Not a global dataset claim.",
+        "derivation": "calculate produced sums and division; final two-decimal weighted rate is correct. No successful summarize_details call in any real run.",
+        "full_answer_limit": "All answers additionally enumerate lines despite request to answer only metrics. D01 also adds conversions and/or supplier facts present in reads. This is not a strict concise-answer pass.",
+        "overall": "core numerical results supported; deterministic-tool adoption goal not met"
+      },
+      "human_operation": "not_performed"
+    },
+    {
+      "case": "D02",
+      "variant": "experiment",
+      "model_calls": 6,
+      "erp_http_requests": 7,
+      "elapsed_seconds": 49.855,
+      "provider_usage": {
+        "status": "reported",
+        "events": [
+          {
+            "completion_tokens": 209,
+            "completion_tokens_details": {
+              "reasoning_tokens": 65,
+              "text_tokens": 209
+            },
+            "prompt_tokens": 3848,
+            "prompt_tokens_details": {
+              "cached_tokens": 3200,
+              "text_tokens": 3848
+            },
+            "total_tokens": 4057
+          },
+          {
+            "completion_tokens": 151,
+            "completion_tokens_details": {
+              "reasoning_tokens": 26,
+              "text_tokens": 151
+            },
+            "prompt_tokens": 4654,
+            "prompt_tokens_details": {
+              "cached_tokens": 3200,
+              "text_tokens": 4654
+            },
+            "total_tokens": 4805
+          },
+          {
+            "completion_tokens": 225,
+            "completion_tokens_details": {
+              "reasoning_tokens": 148,
+              "text_tokens": 225
+            },
+            "prompt_tokens": 15865,
+            "prompt_tokens_details": {
+              "cached_tokens": 4352,
+              "text_tokens": 15865
+            },
+            "total_tokens": 16090
+          },
+          {
+            "completion_tokens": 179,
+            "completion_tokens_details": {
+              "reasoning_tokens": 102,
+              "text_tokens": 179
+            },
+            "prompt_tokens": 16218,
+            "prompt_tokens_details": {
+              "cached_tokens": 15360,
+              "text_tokens": 16218
+            },
+            "total_tokens": 16397
+          },
+          {
+            "completion_tokens": 479,
+            "completion_tokens_details": {
+              "reasoning_tokens": 300,
+              "text_tokens": 479
+            },
+            "prompt_tokens": 16525,
+            "prompt_tokens_details": {
+              "cached_tokens": 15360,
+              "text_tokens": 16525
+            },
+            "total_tokens": 17004
+          },
+          {
+            "completion_tokens": 671,
+            "completion_tokens_details": {
+              "reasoning_tokens": 57,
+              "text_tokens": 671
+            },
+            "prompt_tokens": 17514,
+            "prompt_tokens_details": {
+              "cached_tokens": 16384,
+              "text_tokens": 17514
+            },
+            "total_tokens": 18185
+          }
+        ],
+        "totals": {
+          "prompt_tokens": 74624,
+          "completion_tokens": 1914,
+          "total_tokens": 76538
+        }
+      },
+      "tool_invocations": {
+        "calculate": 3,
+        "summarize_details": 2
+      },
+      "stats_successes": 0,
+      "program_execution_checks": {
+        "erp_write_count": 0,
+        "po_names_unchanged": true,
+        "wire_requests_equal_policy_count": true
+      },
+      "AI_business_review": {
+        "requested_numeric_results": "match independent raw-ERP oracle",
+        "expected": {
+          "company": "Crestwind Compressor Manufacturing Co.",
+          "currency": "USD",
+          "unit": "Nos",
+          "line_count": 5,
+          "parent_count": 5,
+          "qty": "60.0",
+          "amount": "43225.0",
+          "min": "720.0",
+          "max": "725.0",
+          "numerator": "43225.00",
+          "denominator": "60.0",
+          "weighted_rate": "720.42"
+        },
+        "scope": "Company, transaction_date<=2025-10-15, docstatus=1, exact item and single currency/UOM all stated and supported by actual query/read evidence. Not a global dataset claim.",
+        "derivation": "calculate produced sums and division; final two-decimal weighted rate is correct. No successful summarize_details call in any real run.",
+        "full_answer_limit": "All answers additionally enumerate lines despite request to answer only metrics. D01 also adds conversions and/or supplier facts present in reads. This is not a strict concise-answer pass.",
+        "overall": "core numerical results supported; deterministic-tool adoption goal not met"
+      },
+      "human_operation": "not_performed"
+    }
+  ],
+  "offline_replays": [
+    {
+      "case": "D01",
+      "scope": "Offline replay of retained actual ERP reads with correct source IDs; no new HTTP or model calls; NOT a successful real-model ask integration",
+      "checks": {
+        "qty": true,
+        "amount": true,
+        "min": true,
+        "max": true,
+        "numerator": true,
+        "denominator": true,
+        "weighted_rate": true,
+        "line_count": true,
+        "parent_count": true
+      },
+      "result": {
+        "line_count": 4,
+        "distinct_parent_count": 4,
+        "groups": [
+          {
+            "company": "Crestwind Compressor Manufacturing Co.",
+            "currency": "USD",
+            "unit": "Meter",
+            "line_count": 4,
+            "distinct_parent_count": 4,
+            "quantity_sum": "900.0",
+            "line_amount_sum": "25540.0",
+            "rate_min": "28.0",
+            "rate_max": "29.0",
+            "weighted_rate_numerator": "25540.00",
+            "weighted_rate_denominator": "900.0",
+            "weighted_rate": "28.38",
+            "weighted_rate_reason": null
+          }
+        ],
+        "duplicates_collapsed": 0,
+        "examined_rows": 6,
+        "excluded_rows": 2,
+        "complete": true,
+        "failures": [],
+        "sources": [
+          {
+            "call_id": "call_eb6b718c44e64f49b88f762d",
+            "tool": "get_documents",
+            "version": "1",
+            "arguments": {
+              "doctype": "Purchase Order",
+              "names": [
+                "PUR-ORD-2026-00001",
+                "PUR-ORD-2026-00007",
+                "PUR-ORD-2026-00012",
+                "PUR-ORD-2026-00022"
+              ]
+            },
+            "io": {
+              "http_attempts": 4,
+              "cache_hits": 0,
+              "rejected_requests": 0,
+              "sources": [
+                {
+                  "source": "http",
+                  "path": "/api/resource/Purchase%20Order/PUR-ORD-2026-00001",
+                  "fetched_at": "2026-10-18T03:05:29.753167+00:00",
+                  "age_seconds": 0
+                },
+                {
+                  "source": "http",
+                  "path": "/api/resource/Purchase%20Order/PUR-ORD-2026-00007",
+                  "fetched_at": "2026-10-18T03:05:30.004121+00:00",
+                  "age_seconds": 0
+                },
+                {
+                  "source": "http",
+                  "path": "/api/resource/Purchase%20Order/PUR-ORD-2026-00012",
+                  "fetched_at": "2026-10-18T03:05:30.262494+00:00",
+                  "age_seconds": 0
+                },
+                {
+                  "source": "http",
+                  "path": "/api/resource/Purchase%20Order/PUR-ORD-2026-00022",
+                  "fetched_at": "2026-10-18T03:05:30.504806+00:00",
+                  "age_seconds": 0
+                }
+              ],
+              "source_log_capped": false,
+              "limits": {
+                "requests_per_turn": 40,
+                "requests_per_minute": 120
+              },
+              "freshness": "Cache hits are prior observations at fetched_at, not proof of current state. Exact request reuse only; partial pages retain their original coverage."
+            }
+          }
+        ],
+        "parent_observations": [
+          {
+            "doctype": "Purchase Order",
+            "name": "PUR-ORD-2026-00001",
+            "fields": {
+              "company": "Crestwind Compressor Manufacturing Co.",
+              "currency": "USD",
+              "docstatus": 1,
+              "transaction_date": "2025-01-08"
+            }
+          },
+          {
+            "doctype": "Purchase Order",
+            "name": "PUR-ORD-2026-00007",
+            "fields": {
+              "company": "Crestwind Compressor Manufacturing Co.",
+              "currency": "USD",
+              "docstatus": 1,
+              "transaction_date": "2025-03-05"
+            }
+          },
+          {
+            "doctype": "Purchase Order",
+            "name": "PUR-ORD-2026-00012",
+            "fields": {
+              "company": "Crestwind Compressor Manufacturing Co.",
+              "currency": "USD",
+              "docstatus": 1,
+              "transaction_date": "2025-05-06"
+            }
+          },
+          {
+            "doctype": "Purchase Order",
+            "name": "PUR-ORD-2026-00022",
+            "fields": {
+              "company": "Crestwind Compressor Manufacturing Co.",
+              "currency": "USD",
+              "docstatus": 1,
+              "transaction_date": "2025-09-10"
+            }
+          }
+        ],
+        "query_scope": {
+          "table_field": "items",
+          "fields": {
+            "quantity": "qty",
+            "amount": "amount",
+            "rate": "rate",
+            "currency": "currency",
+            "unit": "uom",
+            "company": "company"
+          },
+          "row_equals": {
+            "item_code": "RM-COIL-CU-2.0"
+          },
+          "parent_names": [
+            {
+              "doctype": "Purchase Order",
+              "name": "PUR-ORD-2026-00001"
+            },
+            {
+              "doctype": "Purchase Order",
+              "name": "PUR-ORD-2026-00007"
+            },
+            {
+              "doctype": "Purchase Order",
+              "name": "PUR-ORD-2026-00012"
+            },
+            {
+              "doctype": "Purchase Order",
+              "name": "PUR-ORD-2026-00022"
+            }
+          ]
+        },
+        "calculation": {
+          "weighted_rate": "sum(quantity * rate) / sum(quantity)",
+          "numerator_is_not_line_amount_sum": true,
+          "rounding": "Decimal ROUND_HALF_UP to 2 decimal places; sums unrounded"
+        },
+        "coverage": "complete covers only referenced parent reads and selected rows, never the whole business dataset. Partial reads are successful-record subtotals. Empty groups have no rate or mean. Currency/company/unit groups are separate; no cross-group numerical totals. Sequential reads are not a transactional snapshot; cache times remain in sources."
+      }
+    },
+    {
+      "case": "D02",
+      "scope": "Offline replay of retained actual ERP reads with correct source IDs; no new HTTP or model calls; NOT a successful real-model ask integration",
+      "checks": {
+        "qty": true,
+        "amount": true,
+        "min": true,
+        "max": true,
+        "numerator": true,
+        "denominator": true,
+        "weighted_rate": true,
+        "line_count": true,
+        "parent_count": true
+      },
+      "result": {
+        "line_count": 5,
+        "distinct_parent_count": 5,
+        "groups": [
+          {
+            "company": "Crestwind Compressor Manufacturing Co.",
+            "currency": "USD",
+            "unit": "Nos",
+            "line_count": 5,
+            "distinct_parent_count": 5,
+            "quantity_sum": "60.0",
+            "line_amount_sum": "43225.0",
+            "rate_min": "720.0",
+            "rate_max": "725.0",
+            "weighted_rate_numerator": "43225.00",
+            "weighted_rate_denominator": "60.0",
+            "weighted_rate": "720.42",
+            "weighted_rate_reason": null
+          }
+        ],
+        "duplicates_collapsed": 0,
+        "examined_rows": 6,
+        "excluded_rows": 1,
+        "complete": true,
+        "failures": [],
+        "sources": [
+          {
+            "call_id": "call_a6fa535806934a38a00af771",
+            "tool": "get_documents",
+            "version": "1",
+            "arguments": {
+              "doctype": "Sales Order",
+              "names": [
+                "SAL-ORD-2026-00009",
+                "SAL-ORD-2026-00010",
+                "SAL-ORD-2026-00015",
+                "SAL-ORD-2026-00018",
+                "SAL-ORD-2026-00020"
+              ]
+            },
+            "io": {
+              "http_attempts": 5,
+              "cache_hits": 0,
+              "rejected_requests": 0,
+              "sources": [
+                {
+                  "source": "http",
+                  "path": "/api/resource/Sales%20Order/SAL-ORD-2026-00009",
+                  "fetched_at": "2026-10-18T03:07:25.970759+00:00",
+                  "age_seconds": 0
+                },
+                {
+                  "source": "http",
+                  "path": "/api/resource/Sales%20Order/SAL-ORD-2026-00010",
+                  "fetched_at": "2026-10-18T03:07:26.242240+00:00",
+                  "age_seconds": 0
+                },
+                {
+                  "source": "http",
+                  "path": "/api/resource/Sales%20Order/SAL-ORD-2026-00015",
+                  "fetched_at": "2026-10-18T03:07:26.490514+00:00",
+                  "age_seconds": 0
+                },
+                {
+                  "source": "http",
+                  "path": "/api/resource/Sales%20Order/SAL-ORD-2026-00018",
+                  "fetched_at": "2026-10-18T03:07:26.741784+00:00",
+                  "age_seconds": 0
+                },
+                {
+                  "source": "http",
+                  "path": "/api/resource/Sales%20Order/SAL-ORD-2026-00020",
+                  "fetched_at": "2026-10-18T03:07:26.971920+00:00",
+                  "age_seconds": 0
+                }
+              ],
+              "source_log_capped": false,
+              "limits": {
+                "requests_per_turn": 40,
+                "requests_per_minute": 120
+              },
+              "freshness": "Cache hits are prior observations at fetched_at, not proof of current state. Exact request reuse only; partial pages retain their original coverage."
+            }
+          }
+        ],
+        "parent_observations": [
+          {
+            "doctype": "Sales Order",
+            "name": "SAL-ORD-2026-00009",
+            "fields": {
+              "company": "Crestwind Compressor Manufacturing Co.",
+              "currency": "USD",
+              "docstatus": 1,
+              "transaction_date": "2025-06-16"
+            }
+          },
+          {
+            "doctype": "Sales Order",
+            "name": "SAL-ORD-2026-00010",
+            "fields": {
+              "company": "Crestwind Compressor Manufacturing Co.",
+              "currency": "USD",
+              "docstatus": 1,
+              "transaction_date": "2025-06-30"
+            }
+          },
+          {
+            "doctype": "Sales Order",
+            "name": "SAL-ORD-2026-00015",
+            "fields": {
+              "company": "Crestwind Compressor Manufacturing Co.",
+              "currency": "USD",
+              "docstatus": 1,
+              "transaction_date": "2025-08-29"
+            }
+          },
+          {
+            "doctype": "Sales Order",
+            "name": "SAL-ORD-2026-00018",
+            "fields": {
+              "company": "Crestwind Compressor Manufacturing Co.",
+              "currency": "USD",
+              "docstatus": 1,
+              "transaction_date": "2025-09-18"
+            }
+          },
+          {
+            "doctype": "Sales Order",
+            "name": "SAL-ORD-2026-00020",
+            "fields": {
+              "company": "Crestwind Compressor Manufacturing Co.",
+              "currency": "USD",
+              "docstatus": 1,
+              "transaction_date": "2025-09-25"
+            }
+          }
+        ],
+        "query_scope": {
+          "table_field": "items",
+          "fields": {
+            "quantity": "qty",
+            "amount": "amount",
+            "rate": "rate",
+            "currency": "currency",
+            "unit": "uom",
+            "company": "company"
+          },
+          "row_equals": {
+            "item_code": "FG-COMP-1.5HP-R32"
+          },
+          "parent_names": [
+            {
+              "doctype": "Sales Order",
+              "name": "SAL-ORD-2026-00009"
+            },
+            {
+              "doctype": "Sales Order",
+              "name": "SAL-ORD-2026-00010"
+            },
+            {
+              "doctype": "Sales Order",
+              "name": "SAL-ORD-2026-00015"
+            },
+            {
+              "doctype": "Sales Order",
+              "name": "SAL-ORD-2026-00018"
+            },
+            {
+              "doctype": "Sales Order",
+              "name": "SAL-ORD-2026-00020"
+            }
+          ]
+        },
+        "calculation": {
+          "weighted_rate": "sum(quantity * rate) / sum(quantity)",
+          "numerator_is_not_line_amount_sum": true,
+          "rounding": "Decimal ROUND_HALF_UP to 2 decimal places; sums unrounded"
+        },
+        "coverage": "complete covers only referenced parent reads and selected rows, never the whole business dataset. Partial reads are successful-record subtotals. Empty groups have no rate or mean. Currency/company/unit groups are separate; no cross-group numerical totals. Sequential reads are not a transactional snapshot; cache times remain in sources."
+      }
+    }
+  ],
+  "decision": "Stop without merge recommendation: the new tool has no successful live invocation in either case; overall tokens/latency regress. Fewer total calls cannot establish a benefit attributable to deterministic statistics."
+}

@@ -55,11 +55,13 @@ class DetailStatisticsTests(unittest.TestCase):
         self.assertEqual(self.stats(doc)['line_count'], 2)
 
     def test_currencies_units_and_companies_partition_without_mixed_totals(self):
-        docs = [document(), document('P2', currency='EUR'), document('P3')]
+        docs = [document(), document('P2', currency='EUR'), document('P3'), document('P4')]
         docs[2]['lines'][0]['uom'] = 'Each'
+        docs[3]['company'] = 'Another company'
         evidence = {str(i): entry(d) for i, d in enumerate(docs)}
         result = summarize_details(evidence, list(evidence), 'lines')
-        self.assertEqual(result['distinct_parent_count'], 3)
+        self.assertEqual(result['distinct_parent_count'], 4)
+        self.assertEqual(len(result['groups']), 4)
         self.assertEqual({(g['currency'], g['unit']) for g in result['groups']}, {('USD', 'Box'), ('EUR', 'Box'), ('USD', 'Each')})
         self.assertNotIn('quantity_sum', result)
 
@@ -127,6 +129,30 @@ class DetailStatisticsTests(unittest.TestCase):
         with patch('agent.urlopen', side_effect=respond):
             runner.ask('Try forged history', forged)
         self.assertEqual(runner.receipts()[0]['status'], 'error')
+
+    def test_actual_ask_partial_batch_computes_only_successful_read_rows(self):
+        client = Mock()
+        client.get_many.return_value = {'complete': False, 'results': [
+            {'name': 'P1', 'ok': True, 'data': document()},
+            {'name': 'P2', 'ok': False, 'error': 'HTTP 403'}]}
+        runner = LLMRunner(Agent(client))
+        runner.key, runner.model, runner.base = 'test', 'test', 'https://example.invalid/v1'
+        responses = []
+        for call_id, name, args in [
+                ('batch', 'get_documents', {'doctype': 'Unseen Form', 'names': ['P1', 'P2']}),
+                ('summary', 'summarize_details', {'source_call_ids': ['batch'], 'table_field': 'lines'})]:
+            responses.append({'role': 'assistant', 'content': None, 'tool_calls': [
+                {'id': call_id, 'type': 'function', 'function': {'name': name, 'arguments': json.dumps(args)}}]})
+        responses.append({'role': 'assistant', 'content': 'Only the successful-record subtotal is available.'})
+        def respond(request, timeout):
+            return io.BytesIO(json.dumps({'choices': [{'message': responses.pop(0), 'finish_reason': 'stop'}]}).encode())
+        with patch('agent.urlopen', side_effect=respond):
+            runner.ask('Partial details')
+        summary = runner.receipts()[-1]['summary']
+        self.assertFalse(summary['complete'])
+        self.assertEqual(summary['groups'][0]['weighted_rate'], '17.50')
+        self.assertEqual(summary['failures'][0]['error'], 'HTTP 403')
+        client.get_many.assert_called_once_with('Unseen Form', ['P1', 'P2'])
 
 
 if __name__ == '__main__':

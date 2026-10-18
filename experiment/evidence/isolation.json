@@ -1,0 +1,18 @@
+{
+  "original_head": "0a7e328a0eb6dd63d29dc3ba18bfe240c5d63dc5",
+  "original_branch": "master",
+  "original_status": "",
+  "original_file_hashes_unchanged": {
+    "agent.py": true,
+    "erp_tools.py": true,
+    ".env": true
+  },
+  "baseline_eval_head": "5fe679ea3aaffd53042518238acf09866e56bc4b",
+  "baseline_eval_status": "",
+  "experiment_branch": "experiment/detail-statistics",
+  "runtime_consistent_with_evaluation": {
+    "D01_experiment.json": true,
+    "D02_experiment.json": true
+  },
+  "llm_key_scan": "no original LLM key found in experiment files"
+}
